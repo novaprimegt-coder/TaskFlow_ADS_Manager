@@ -1,114 +1,108 @@
-# TaskFlow ADS Manager
+# TaskFlow ADS Manager — Producción V10
 
-Administrador comercial de campañas publicitarias para TaskFlow.
+Administrador comercial de publicidad conectado al ecosistema TaskFlow.
 
-## Estado actual
+## Estado
 
-Versión inicial de desarrollo. No está lanzada ni publicada como producto final.
+Código preparado para publicación. No se ha habilitado GitHub Pages ni se ha realizado el lanzamiento público.
 
-### Implementado
+## Arquitectura
 
-- Registro e inicio de sesión obligatorios.
-- Autenticación conectada al mismo proyecto Firebase de TaskFlow: `taskflow-b0ece`.
-- Sesión persistente.
-- Cuenta comercial obligatoria después del registro.
-- Datos separados por usuario.
-- Respaldo local de campañas cuando Firestore no está disponible.
-- Estructura comercial:
-  - Campaña.
-  - Audiencia y ubicación.
-  - Presupuesto y calendario.
-  - Anuncio.
-- Objetivos:
-  - Reconocimiento.
-  - Tráfico.
-  - Interacción.
-  - Clientes potenciales.
-  - Ventas.
-  - Aplicación.
-- Segmentación:
-  - País.
-  - Departamento / región.
-  - Ciudad / municipio.
-  - Radio.
-  - Edad mínima y máxima.
-- Ubicaciones reales preparadas para TaskFlow:
-  - Banner debajo del temporizador.
-  - Banner entre Hábitos y Tareas.
-  - Banner al final.
-  - Anuncio de ingreso.
-  - Anuncio por interacción.
-- Estados de campaña:
-  - Borrador.
-  - Activa.
-  - Pausada.
-- Presupuesto diario o total en GTQ.
-- Fechas de inicio y finalización.
-- URL de destino HTTPS.
-- URL de creativo HTTPS.
-- Imagen, GIF o video.
-- Control de audio para video.
-- Interfaz responsive.
-- GSAP + ScrollTrigger para efectos visuales de la página de acceso.
+- Firebase compartido con TaskFlow: `taskflow-b0ece`.
+- Firebase Authentication para registro, inicio de sesión y sesión persistente.
+- Cloud Firestore para cuentas comerciales y campañas.
+- Firebase Storage para imágenes, GIF y videos publicitarios.
+- Catálogo público mínimo en `adsPublicCampaigns` para que TaskFlow pueda leer únicamente anuncios aprobados.
+- TaskFlow_Sistem consume ese catálogo mediante `taskflow-ads-bridge.js` V2.
+- Los datos privados de anunciantes no se envían al sistema principal.
 
-## Firebase compartido con TaskFlow
+## Campañas
 
-La aplicación reutiliza la configuración web ya empleada por TaskFlow:
+Cada campaña admite de 1 a 12 anuncios.
 
-- Proyecto: `taskflow-b0ece`
-- Firebase Authentication.
-- Cloud Firestore.
+La campaña controla:
+- objetivo;
+- país, región, ciudad, radio y edades;
+- formato: Banner, Ingreso o Interacción;
+- presupuesto diario o total;
+- calendario;
+- distribución del presupuesto.
 
-Esto permite que el usuario utilice la misma cuenta de TaskFlow en ADS Manager.
+Distribución:
+- Optimización automática de TaskFlow.
+- Partes iguales entre todos los anuncios.
 
-Los datos del administrador se organizan así:
+Cada anuncio conserva:
+- nombre;
+- URL HTTPS de destino;
+- creativo propio;
+- audio cuando corresponde;
+- estado y metadatos del creativo.
+
+## Especificaciones estrictas
+
+### Banner
+- 1200 × 180 px.
+- JPG, PNG, WEBP o GIF.
+- No acepta video.
+- Un anuncio Banner puede aparecer en cualquiera de los tres espacios Banner de TaskFlow.
+
+### Ingreso
+- 1080 × 1920 px.
+- JPG, PNG, WEBP, GIF, MP4 o WEBM.
+- Video: 10 segundos.
+
+### Interacción
+- 1080 × 1920 px.
+- JPG, PNG, WEBP, GIF, MP4 o WEBM.
+- Video: 10 segundos.
+- TaskFlow mantiene su contador acumulativo de 10 interacciones.
+
+## Flujo de aprobación
+
+1. El anunciante crea o edita la campaña.
+2. La campaña queda con `approvalStatus: pending`.
+3. Una cuenta con custom claim `taskflowAdsAdmin=true` puede aprobar o rechazar.
+4. Solo una campaña `active + approved` se copia a `adsPublicCampaigns`.
+5. TaskFlow lee únicamente `adsPublicCampaigns`.
+6. Si la campaña se pausa, elimina o deja de estar aprobada, desaparece del espejo público.
+
+## Rutas Firestore
 
 ```
 users/{uid}/adsManager/business
 users/{uid}/adsCampaigns/{campaignId}
+adsPublicCampaigns/{campaignId}
 ```
 
-La cuenta comercial mantiene un campo `accountStatus` preparado para control administrativo.
+## Ruta Storage
+
+```
+ads/{uid}/{campaignId}/{adId}/{fileName}
+```
 
 ## Seguridad
 
-El archivo `firestore.ads.rules.example` contiene reglas propuestas para integrar ADS Manager con las reglas existentes de TaskFlow.
+El frontend no contiene secretos privados de servidor.
 
-No debe desplegarse sustituyendo reglas existentes sin fusionarlas y validarlas previamente.
+Archivos incluidos para fusionar con la seguridad existente:
+- `firestore.ads.rules.example`
+- `storage.ads.rules.example`
 
-El modelo preparado permite:
+No deben reemplazar las reglas actuales de TaskFlow. Deben fusionarse dentro de las reglas existentes.
 
-- Cada usuario solo puede leer y modificar sus propios datos.
-- Un administrador futuro puede usar el custom claim `taskflowAdsAdmin=true`.
-- El propietario no puede quitar una suspensión administrativa modificando `accountStatus`.
-- El frontend no contiene credenciales privadas de servidor.
+## Requisitos antes de LANZAR
 
-## Persistencia
+- Fusionar y desplegar las reglas Firestore de ADS.
+- Fusionar y desplegar las reglas Storage de ADS.
+- Asignar `taskflowAdsAdmin=true` a la cuenta administrativa mediante Firebase Admin SDK.
+- Autorizar el dominio definitivo del ADS Manager en Firebase Authentication.
+- Probar registro, inicio de sesión, subida de creativos, aprobación y entrega en TaskFlow.
+- Habilitar el hosting/GitHub Pages únicamente cuando se dé la orden expresa de publicación.
 
-Las campañas se guardan primero en el almacenamiento local del navegador y después se sincronizan con Firestore.
+## Métricas y cobros
 
-Si Firestore rechaza temporalmente una operación, la interfaz conserva la copia local y muestra el estado correspondiente.
-
-## Conexión con TaskFlow_Sistem
-
-Esta primera etapa comparte cuentas y base de datos con TaskFlow, pero no modifica `TaskFlow_Sistem`.
-
-La conexión de campañas aprobadas con los slots publicitarios activos de TaskFlow debe realizarse en una siguiente etapa mediante un contrato de entrega seguro, sin exponer administración ni permisos de escritura dentro del sistema principal.
-
-## Archivos
-
-```
-index.html
-styles.css
-firebase-config.js
-app.js
-firestore.ads.rules.example
-README.md
-```
-
-## Entrada
-
-`index.html`
+El panel está preparado visualmente para informes y facturación. No se habilitan escrituras públicas inseguras para inventar métricas ni se procesa dinero sin un backend/proveedor de pagos. Impresiones, clics, CTR, conversiones y cobros reales requieren un endpoint seguro de medición/pagos antes de considerarlos financieros o analíticos de producción.
 
 ## Regla de desarrollo
 
