@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isAdsAdmin() {
+      return signedIn() && request.auth.token.taskflowAdsAdmin == true;
+    }
+
+    match /users/{userId}/adsManager/{docId} {
+      allow read: if isOwner(userId) || isAdsAdmin();
+
+      allow create: if isOwner(userId)
+        && request.resource.data.ownerUid == userId
+        && request.resource.data.accountStatus == 'active';
+
+      allow update: if (
+          isOwner(userId)
+          && resource.data.ownerUid == userId
+          && request.resource.data.ownerUid == userId
+          && request.resource.data.accountStatus == resource.data.accountStatus
+        ) || isAdsAdmin();
+
+      allow delete: if isAdsAdmin();
+    }
+
+    match /users/{userId}/adsCampaigns/{campaignId} {
+      allow read: if isOwner(userId) || isAdsAdmin();
+
+      allow create: if isOwner(userId)
+        && request.resource.data.ownerUid == userId
+        && request.resource.data.status in ['draft', 'active', 'paused'];
+
+      allow update: if (
+          isOwner(userId)
+          && resource.data.ownerUid == userId
+          && request.resource.data.ownerUid == userId
+          && request.resource.data.status in ['draft', 'active', 'paused']
+        ) || isAdsAdmin();
+
+      allow delete: if isOwner(userId) || isAdsAdmin();
+    }
+  }
+}
