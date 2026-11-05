@@ -451,10 +451,22 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 .password-control{position:relative;display:flex;align-items:center}
 .password-control>input{width:100%;padding-right:72px!important}
 .password-toggle{position:absolute;right:5px;top:50%;transform:translateY(-50%);height:30px;min-width:58px;padding:0 8px;border:0;border-radius:6px;background:#f0f2f5;color:#4b4f56;display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:9px;font-weight:700}
-.password-toggle:hover{background:#e4e6eb}
-.password-toggle .tf-icon{width:14px;height:14px}
-.password-toggle span{line-height:1}
-</style></head>
+.password-toggle:hover{background:#e4e6eb}.password-toggle .tf-icon{width:14px;height:14px}.password-toggle span{line-height:1}
+</style><style id="tf-auth-gooey-style">
+/* GooeyNav: controles de sesión / crear cuenta. No altera el resto del panel. */
+#tfAuthTabs{position:relative;isolation:isolate;overflow:visible;}
+#tfAuthTabs .auth-tab{position:relative;z-index:2;background:transparent!important;box-shadow:none!important;color:#66758a!important;transition:color .14s ease;}
+#tfAuthTabs .auth-tab:hover{color:#14263b!important;}
+#tfAuthTabs .tf-auth-gooey-canvas{position:absolute;z-index:1;pointer-events:none;max-width:none;}
+#tfAuthTabs .tf-auth-gooey-fallback{position:absolute;z-index:1;left:0;top:0;border-radius:999px;background:#0866ff;box-shadow:0 4px 12px rgba(8,102,255,.22);pointer-events:none;transition:transform .6s cubic-bezier(.22,1,.36,1),width .6s cubic-bezier(.22,1,.36,1);}
+#tfAuthTabs .tf-auth-gooey-overlay{position:absolute;z-index:3;inset:0;display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;color:#fff;font-size:11px;font-weight:900;pointer-events:none;visibility:hidden;}
+#tfAuthTabs .tf-auth-gooey-overlay span{height:40px;display:flex;align-items:center;justify-content:center;white-space:nowrap;}
+#tfAuthTabs:not(.tf-gooey-ready) .auth-tab.active{color:#fff!important;background:#0866ff!important;}
+#tfAuthTabs .tf-auth-gooey-canvas[hidden],#tfAuthTabs .tf-auth-gooey-fallback[hidden]{display:none!important;}
+@media(prefers-reduced-motion:reduce){#tfAuthTabs .tf-auth-gooey-fallback{transition:none;}}
+
+</style>
+</head>
 <body>
 
 <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -505,7 +517,13 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 <main class="auth-panel">
 <div class="auth-box">
 <div class="auth-logo"><span class="logo-mark">TF</span><div><strong>TaskFlow ADS Manager</strong><small>Administrador comercial</small></div></div>
-<div class="auth-tabs"><button class="auth-tab active" id="loginTab" type="button">Iniciar sesión</button><button class="auth-tab" id="registerTab" type="button">Crear cuenta</button></div>
+<div class="auth-tabs" id="tfAuthTabs" role="tablist" aria-label="Acceso a TaskFlow ADS">
+<canvas class="tf-auth-gooey-canvas" id="tfAuthCanvas" aria-hidden="true"></canvas>
+<span class="tf-auth-gooey-fallback" id="tfAuthFallback" aria-hidden="true"></span>
+<div class="tf-auth-gooey-overlay" id="tfAuthOverlay" aria-hidden="true"><span>Iniciar sesión</span><span>Crear cuenta</span></div>
+<button class="auth-tab active" id="loginTab" type="button" role="tab" aria-selected="true" aria-controls="authForm">Iniciar sesión</button>
+<button class="auth-tab" id="registerTab" type="button" role="tab" aria-selected="false" aria-controls="authForm">Crear cuenta</button>
+</div>
 <form id="authForm" novalidate="">
 <div class="field" hidden="" id="nameField"><label>Nombre completo</label><input autocomplete="name" id="fullName" maxlength="80" placeholder="Nombre del responsable"/></div>
 <div class="field" hidden="" id="companyField"><label>Empresa o marca</label><input id="companyName" maxlength="100" placeholder="Nombre comercial"/></div>
@@ -519,7 +537,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 </div>
 </main>
 </section>
-<div class="shell" hidden="" id="appView">
+<div class="shell app-shell" hidden="" id="appView">
 <aside class="sidebar">
 <div class="side-brand"><span class="logo-mark">TF</span><div class="side-brand-copy"><strong>ADS</strong><small>Manager</small></div></div>
 <div class="nav-section">Administración</div>
@@ -624,17 +642,389 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-storage-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script id="tf-auth-gooey-engine">
+/* TaskFlow ADS - animación GooeyNav adaptada de React a HTML autónomo.
+   Mantiene WebGL2, gotas animadas y alternativa sin WebGL. */
+(function(){
+'use strict';
+const MAX_DROPS=32, MAX_PILLS=4, MARGIN=72;
+const VERTEX=`#version 300 es
+in vec2 aPosition;
+void main(){gl_Position=vec4(aPosition,0.0,1.0);}`;
+const FRAGMENT=`#version 300 es
+precision highp float;
+uniform vec2 uSize;
+uniform float uRatio;
+uniform vec4 uPills[${MAX_PILLS}];
+uniform vec4 uHover;
+uniform vec4 uDrops[${MAX_DROPS}];
+uniform vec2 uTails[${MAX_DROPS}];
+uniform vec3 uTints[${MAX_DROPS}];
+uniform int uCount;
+uniform float uSmooth;
+uniform vec3 uPill;
+uniform vec4 uHoverColor;
+uniform float uShadow;
+out vec4 outColor;
+float sdPill(vec2 p,vec4 box){
+ vec2 extent=max(box.zw,vec2(0.0));float r=min(extent.x,extent.y);
+ vec2 q=abs(p-box.xy)-extent+r;
+ return length(max(q,0.0))+min(max(q.x,q.y),0.0)-r;
+}
+float sdCapsule(vec2 p,vec2 a,vec2 b,float r){
+ vec2 pa=p-a;vec2 ba=b-a;
+ float h=clamp(dot(pa,ba)/max(dot(ba,ba),0.0001),0.0,1.0);
+ return length(pa-ba*h)-r;
+}
+vec4 blend(vec4 a,vec4 b,float k){
+ float h=clamp(0.5+0.5*(b.w-a.w)/k,0.0,1.0);
+ return vec4(mix(b.rgb,a.rgb,h),mix(b.w,a.w,h)-k*h*(1.0-h));
+}
+vec4 field(vec2 p){
+ vec4 shape=vec4(uPill,1e5);
+ for(int i=0;i<${MAX_PILLS};i++){
+  vec4 pill=uPills[i];if(pill.z<=0.0)continue;
+  shape=blend(shape,vec4(uPill,sdPill(p,pill)),uSmooth);
+ }
+ for(int i=0;i<${MAX_DROPS};i++){
+  if(i>=uCount)break;
+  vec4 drop=uDrops[i];if(drop.z<=0.0)continue;
+  float d=sdCapsule(p,drop.xy,drop.xy-uTails[i],drop.z);
+  if(d>shape.w+uSmooth)continue;
+  shape=blend(shape,vec4(uTints[i],d),uSmooth);
+ }
+ return shape;
+}
+void main(){
+ vec2 p=vec2(gl_FragCoord.x,uSize.y*uRatio-gl_FragCoord.y)/uRatio;
+ vec4 shape=field(p);float d=shape.w;float aa=max(fwidth(d),0.35);
+ float body=clamp(0.5-d/aa,0.0,1.0);
+ vec2 grad=vec2(dFdx(d),-dFdy(d));
+ vec2 n=length(grad)>0.0001?normalize(grad):vec2(0.0,1.0);
+ float rim=(1.0-smoothstep(0.0,1.6,-d))*max(0.0,-n.y)*0.3;
+ vec3 fill=mix(shape.rgb,vec3(1.0),rim)*(1.0-0.06*max(0.0,n.y)*(1.0-smoothstep(0.0,6.0,-d)));
+ float lifted=field(p-vec2(0.0,3.0)).w;
+ float shadow=(1.0-smoothstep(-3.0,9.0,lifted))*uShadow*(1.0-body);
+ float hover=clamp(0.5-sdPill(p,uHover)/aa,0.0,1.0)*uHoverColor.a;
+ vec4 color=vec4(0.0,0.0,0.0,shadow);
+ color=vec4(uHoverColor.rgb*hover,hover)+color*(1.0-hover);
+ color=vec4(fill*body,body)+color*(1.0-body);
+ outColor=color;
+}`;
+const clamp01=value=>Math.min(1,Math.max(0,value));
+const travelEase=t=>{const x=clamp01(t);return x<.5?4*x*x*x:1-(-2*x+2)**3/2};
+const bezier=(a,b,c,d,t)=>{const u=1-t;return u*u*u*a+3*u*u*t*b+3*u*t*t*c+t*t*t*d};
+const pillPath=(x,y,w,h)=>{
+ if(w<=.5||h<=.5)return'M0,0Z';
+ const r=Math.min(w,h)/2;
+ return`M${x+r},${y}H${x+w-r}A${r},${r} 0 0 1 ${x+w},${y+r}V${y+h-r}A${r},${r} 0 0 1 ${x+w-r},${y+h}H${x+r}A${r},${r} 0 0 1 ${x},${y+h-r}V${y+r}A${r},${r} 0 0 1 ${x+r},${y}Z`;
+};
+function compile(gl,type,source){
+ const shader=gl.createShader(type);gl.shaderSource(shader,source);gl.compileShader(shader);
+ if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS)){
+  console.warn('GooeyNav: shader no disponible:',gl.getShaderInfoLog(shader));gl.deleteShader(shader);return null;
+ }
+ return shader;
+}
+function build(gl){
+ const vertex=compile(gl,gl.VERTEX_SHADER,VERTEX),fragment=compile(gl,gl.FRAGMENT_SHADER,FRAGMENT);
+ if(!vertex||!fragment)return null;
+ const program=gl.createProgram();gl.attachShader(program,vertex);gl.attachShader(program,fragment);gl.linkProgram(program);
+ gl.deleteShader(vertex);gl.deleteShader(fragment);
+ if(!gl.getProgramParameter(program,gl.LINK_STATUS)){
+  console.warn('GooeyNav: programa no disponible:',gl.getProgramInfoLog(program));gl.deleteProgram(program);return null;
+ }
+ const names=['uSize','uRatio','uPills','uHover','uDrops','uTails','uTints','uCount','uSmooth','uPill','uHoverColor','uShadow'];
+ const uniforms=Object.fromEntries(names.map(n=>[n,gl.getUniformLocation(program,n)]));
+ const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+ gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+ return{program,uniforms,buffer,position:gl.getAttribLocation(program,'aPosition')};
+}
+let engine=null;
+function init(){
+ if(engine)return;
+ const stage=document.getElementById('tfAuthTabs');
+ const canvas=document.getElementById('tfAuthCanvas');
+ const overlay=document.getElementById('tfAuthOverlay');
+ const fallback=document.getElementById('tfAuthFallback');
+ if(!stage||!canvas||!overlay||!fallback)return;
+ const buttons=[document.getElementById('loginTab'),document.getElementById('registerTab')];
+ if(buttons.some(b=>!b))return;
+ let reduced=false;
+ try{reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches}catch(_){ }
+ let gl=null,pipeline=null;
+ if(!reduced){try{gl=canvas.getContext('webgl2',{alpha:true,premultipliedAlpha:true,antialias:false});pipeline=gl?build(gl):null}catch(e){console.warn('GooeyNav: fallback visual',e)}}
+ const enabled=!!(gl&&pipeline);
+ canvas.hidden=!enabled;fallback.hidden=enabled;
+ const view={width:0,height:0},rects=[];
+ const pills=new Map(),drops=[];
+ const hover={x:0,y:0,w:0,h:0,alpha:0,index:-1};
+ const pillData=new Float32Array(MAX_PILLS*4),dropData=new Float32Array(MAX_DROPS*4);
+ const tailData=new Float32Array(MAX_DROPS*2),tintData=new Float32Array(MAX_DROPS*3);
+ const colors=[[8/255,102/255,1],[22/255,198/255,213/255],[46/255,128/255,1]];
+ const ink=[8/255,102/255,1];
+ let target=-1,raf=0,last=0,disposed=false;
+ const settings={animationTime:600,particleCount:15,timeVariance:300,spread:56,gooeyness:.5,wobble:.5,hoverEffect:true};
+ function measure(){
+  const box=stage.getBoundingClientRect();
+  view.width=box.width;view.height=box.height;
+  const ratio=Math.min(window.devicePixelRatio||1,2);
+  const outerWidth=box.width+MARGIN*2,outerHeight=box.height+MARGIN*2;
+  Object.assign(canvas.style,{left:`${-MARGIN}px`,top:`${-MARGIN}px`,width:`${outerWidth}px`,height:`${outerHeight}px`});
+  const width=Math.max(1,Math.round(outerWidth*ratio)),height=Math.max(1,Math.round(outerHeight*ratio));
+  if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height}
+  rects.length=0;
+  buttons.forEach(item=>{const r=item.getBoundingClientRect();rects.push({x:r.left-box.left,y:r.top-box.top,w:r.width,h:r.height})});
+ }
+ function pill(index){if(!pills.has(index))pills.set(index,{mass:0,scale:0,velocity:0,outgoing:0});return pills.get(index)}
+ function shape(index,amount){
+  const r=rects[index];if(!r||amount<=.002)return null;
+  const h=r.h*Math.min(1.08,.42+.58*Math.sqrt(Math.max(0,amount)));
+  const w=Math.max(h,r.w*Math.max(0,amount)**.75);
+  return{x:r.x+r.w/2-w/2,y:r.y+r.h/2-h/2,w,h};
+ }
+ function plan(drop,index,now,fresh){
+  const r=rects[index];if(!r)return;
+  const reach=Math.max(0,settings.spread);
+  const ex=r.x+r.w/2+(Math.random()-.5)*r.w*.45;
+  const ey=r.y+r.h/2+(Math.random()-.5)*r.h*.2;
+  const base=Math.max(.15,settings.animationTime/1000);
+  const variance=(Math.random()-.5)*(Math.max(0,settings.timeVariance)/1000);
+  const duration=Math.max(.15,base*(.62+Math.random()*.32)+variance*.6);
+  const out=Math.random()*Math.PI*2,into=Math.random()*Math.PI*2;
+  const burst=reach*(.7+Math.random()*.6),swing=reach*(.55+Math.random()*.55);
+  const carry=Math.min(duration/3,.12);
+  drop.index=index;drop.start=now;drop.duration=duration;
+  drop.path=[drop.x,drop.y,fresh?drop.x+Math.cos(out)*burst*1.6:drop.x+drop.vx*carry,
+    fresh?drop.y+Math.sin(out)*burst*1.6:drop.y+drop.vy*carry,
+    ex+Math.cos(into)*swing*1.5,ey+Math.sin(into)*swing*1.5,ex,ey];
+ }
+ function emit(from,to,now){
+  const source=pills.get(from),r=rects[from];if(!source||!r||!rects[to])return;
+  const available=source.mass-source.outgoing;if(available<=.002)return;
+  const count=Math.min(MAX_DROPS-drops.length,Math.max(1,Math.round(settings.particleCount*available)));
+  if(count<=0)return;
+  const windowMs=Math.max(.15,settings.animationTime/1000)*.16;
+  for(let i=0;i<count;i++){
+   const mass=available/count;source.outgoing+=mass;
+   drops.push({x:r.x+r.w/2+(Math.random()-.5)*r.w*.6,
+     y:r.y+r.h/2+(Math.random()-.5)*r.h*.3,vx:0,vy:0,mass,
+     size:.8+Math.random()*.4,given:0,source:from,index:to,
+     leave:now+Math.random()*windowMs*1000,emerged:0,absorbed:0,state:'waiting',
+     tint:colors[Math.floor(Math.random()*colors.length)]});
+  }
+ }
+ // Máscara de letras con contorno metaball, respetando el trazado original.
+ function trace(boxes,blobs,smooth){
+  const field=(x,y)=>{
+   let d=1e5;
+   const merge=value=>{const h=clamp01(.5+(.5*(value-d))/smooth);d=value+(d-value)*h-smooth*h*(1-h)};
+   for(const b of boxes){
+    const r=Math.min(b.hw,b.hh),qx=Math.abs(x-b.cx)-b.hw+r,qy=Math.abs(y-b.cy)-b.hh+r;
+    merge(Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-r);
+   }
+   for(const b of blobs){
+    const px=x-b.x,py=y-b.y,bx=-b.tx,by=-b.ty,span=bx*bx+by*by;
+    const h=span>.0001?clamp01((px*bx+py*by)/span):0;
+    const v=Math.hypot(px-bx*h,py-by*h)-b.r;
+    if(v>d+smooth)continue;merge(v);
+   }
+   return d;
+  };
+  const parts=[],step=2;
+  for(let y=0;y<view.height;y++){
+   const cy=y+.5;let previous=field(0,cy),start=previous<0?0:null;
+   for(let x=step;x<=view.width+step;x+=step){
+    const value=field(Math.min(x,view.width),cy);
+    // Corrección de precedencia: se comparan los signos de ambos campos.
+    if((previous<0)!==(value<0)){
+     const cross=x-step+step*previous/(previous-value);
+     if(value<0)start=cross;
+     else if(start!==null){parts.push(`M${start.toFixed(1)},${y}H${cross.toFixed(1)}V${y+1}H${start.toFixed(1)}Z`);start=null}
+    }
+    previous=value;
+   }
+   if(start!==null)parts.push(`M${start.toFixed(1)},${y}H${view.width}V${y+1}H${start.toFixed(1)}Z`);
+  }
+  return parts.join('');
+ }
+ function render(){
+  const height=rects[target]?.h??rects[0]?.h??36;
+  const smooth=height*(.18+.5*clamp01(settings.gooeyness));
+  const boxes=[],blobs=[];
+  for(const[index,state]of pills){const b=shape(index,state.scale);if(b)boxes.push({cx:b.x+b.w/2,cy:b.y+b.h/2,hw:b.w/2,hh:b.h/2})}
+  for(const drop of drops){
+   if(drop.state==='waiting')continue;
+   const radius=.26*height*drop.size*Math.min(drop.emerged,1-drop.absorbed);
+   if(radius<=.05)continue;
+   const speed=Math.hypot(drop.vx,drop.vy),len=Math.min(radius*1.1,speed*.018);
+   blobs.push({x:drop.x,y:drop.y,r:radius,tx:speed>.01?drop.vx/speed*len:0,
+     ty:speed>.01?drop.vy/speed*len:0,tint:drop.tint});
+  }
+  const single=boxes.length===1&&blobs.length===0;
+  const b=single?boxes[0]:null;
+  overlay.style.clipPath=`path('${b?pillPath(b.cx-b.hw,b.cy-b.hh,b.hw*2,b.hh*2):(trace(boxes,blobs,smooth)||'M0,0Z')}')`;
+  overlay.style.visibility='visible';
+  if(!enabled){
+   const box=shape(target,1);
+   if(box){fallback.style.transform=`translate(${box.x.toFixed(2)}px,${box.y.toFixed(2)}px)`;
+      fallback.style.width=`${box.w}px`;fallback.style.height=`${box.h}px`}
+   fallback.style.opacity=box?'1':'0';return;
+  }
+  let slot=0;
+  for(const b of boxes){if(slot>=MAX_PILLS)break;
+   pillData[slot*4]=b.cx+MARGIN;pillData[slot*4+1]=b.cy+MARGIN;
+   pillData[slot*4+2]=b.hw;pillData[slot*4+3]=b.hh;slot++}
+  pillData.fill(0,slot*4);
+  let count=0;
+  for(const blob of blobs){if(count>=MAX_DROPS)break;
+   dropData[count*4]=blob.x+MARGIN;dropData[count*4+1]=blob.y+MARGIN;
+   dropData[count*4+2]=blob.r;dropData[count*4+3]=0;
+   tailData[count*2]=blob.tx;tailData[count*2+1]=blob.ty;
+   const tint=blob.tint||ink;
+   tintData[count*3]=tint[0];tintData[count*3+1]=tint[1];tintData[count*3+2]=tint[2];count++;
+  }
+  const{program,uniforms,buffer,position}=pipeline;
+  gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.enableVertexAttribArray(position);
+  gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
+  gl.uniform2f(uniforms.uSize,view.width+MARGIN*2,view.height+MARGIN*2);
+  gl.uniform1f(uniforms.uRatio,canvas.width/Math.max(1,view.width+MARGIN*2));
+  gl.uniform4fv(uniforms.uPills,pillData);
+  gl.uniform4f(uniforms.uHover,hover.x+MARGIN,hover.y+MARGIN,hover.w/2,hover.h/2);
+  gl.uniform4fv(uniforms.uDrops,dropData);gl.uniform2fv(uniforms.uTails,tailData);
+  gl.uniform3fv(uniforms.uTints,tintData);gl.uniform1i(uniforms.uCount,count);
+  gl.uniform1f(uniforms.uSmooth,smooth);
+  gl.uniform3f(uniforms.uPill,ink[0],ink[1],ink[2]);
+  gl.uniform4f(uniforms.uHoverColor,0.09,0.10,0.11,hover.alpha*.06);
+  gl.uniform1f(uniforms.uShadow,.2);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+ }
+ function wake(){if(raf||disposed)return;last=performance.now();raf=requestAnimationFrame(frame)}
+ function settle(index){
+  pills.clear();drops.length=0;target=index;
+  const p=pill(index);p.mass=1;p.scale=1;p.velocity=0;
+  render();
+ }
+ function frame(now){
+  raf=0;const dt=Math.min(.05,(now-last)/1000||0);last=now;
+  const emergeTime=.09,absorbTime=.12;
+  for(let i=drops.length-1;i>=0;i--){
+   const d=drops[i];
+   if(d.state==='waiting'){
+    if(now<d.leave)continue;d.state='flying';plan(d,d.index,now,true);
+   }
+   if(d.state==='flying'){
+    d.emerged=Math.min(1,d.emerged+dt/emergeTime);
+    const source=pills.get(d.source);
+    if(source&&d.given<d.mass){const step=Math.min(d.mass*dt/emergeTime,d.mass-d.given);
+     source.mass=Math.max(0,source.mass-step);source.outgoing=Math.max(0,source.outgoing-step);d.given+=step}
+    const t=clamp01((now-d.start)/1000/d.duration),eased=travelEase(t);
+    const[x0,y0,x1,y1,x2,y2,x3,y3]=d.path;
+    const x=bezier(x0,x1,x2,x3,eased),y=bezier(y0,y1,y2,y3,eased);
+    if(dt>0){d.vx=(x-d.x)/dt;d.vy=(y-d.y)/dt}
+    d.x=x;d.y=y;if(t>=1)d.state='absorbing';
+   }
+   if(d.state==='absorbing'){
+    const step=Math.min(1-d.absorbed,dt/absorbTime);d.absorbed+=step;
+    d.vx*=.8;d.vy*=.8;
+    pill(d.index).mass=Math.min(1,pill(d.index).mass+d.mass*step);
+    if(d.absorbed>=1)drops.splice(i,1);
+   }
+  }
+  const zeta=reduced?1:1-.72*clamp01(settings.wobble),omega=26;
+  const steps=Math.max(1,Math.ceil(dt/(1/240))),h=dt/steps;
+  for(const[index,state]of pills){
+   for(let n=0;n<steps;n++){
+    state.velocity+=(omega*omega*(state.mass-state.scale)-2*zeta*omega*state.velocity)*h;
+    state.scale+=state.velocity*h;
+   }
+   if(index!==target&&state.mass<=.002&&state.outgoing<=.002&&Math.abs(state.scale)<.004)pills.delete(index);
+  }
+  if(hover.index>=0&&rects[hover.index]){
+   const r=rects[hover.index],k=1-Math.exp(-dt/.06);
+   hover.x+=(r.x+r.w/2-hover.x)*k;hover.y+=(r.y+r.h/2-hover.y)*k;
+   hover.w+=(r.w-hover.w)*k;hover.h+=(r.h-hover.h)*k;
+  }
+  const goal=settings.hoverEffect&&hover.index>=0&&hover.index!==target?1:0;
+  hover.alpha+=(goal-hover.alpha)*(1-Math.exp(-dt/.08));
+  render();
+  const host=pills.get(target);
+  const resting=drops.length===0&&pills.size===1&&host&&Math.abs(host.mass-host.scale)<.0008&&Math.abs(host.velocity)<.004;
+  const hr=rects[hover.index];
+  const hovering=Math.abs(goal-hover.alpha)>.003||(hr&&Math.abs(hr.x+hr.w/2-hover.x)+Math.abs(hr.w-hover.w)>.1);
+  if(!resting||hovering)raf=requestAnimationFrame(frame);
+  else{host.mass=1;host.scale=1;host.velocity=0;hover.alpha=goal;render()}
+ }
+ function go(index){
+  index=Math.max(0,Math.min(1,Number(index)||0));
+  if(index===target)return;
+  if(!rects[index]||reduced||target<0||!enabled){settle(index);return}
+  const t=performance.now();target=index;pill(index);
+  for(const d of drops){
+   d.index=index;
+   if(d.state==='flying')plan(d,index,t,false);
+   if(d.state==='absorbing'){d.state='flying';d.mass*=1-d.absorbed;d.absorbed=0;plan(d,index,t,false)}
+  }
+  for(const from of[...pills.keys()])if(from!==index)emit(from,index,t);
+  wake();
+ }
+ function over(event){const el=event.target.closest('.auth-tab');if(!el||!stage.contains(el))return;
+  const index=buttons.indexOf(el),r=rects[index];if(!r)return;
+  if(hover.alpha<.01){hover.x=r.x+r.w/2;hover.y=r.y+r.h/2;hover.w=r.w;hover.h=r.h}
+  hover.index=index;wake();
+ }
+ function leave(){hover.index=-1;wake()}
+ stage.addEventListener('pointerover',over);stage.addEventListener('pointerleave',leave);
+ if(typeof ResizeObserver!=='undefined'){
+  const ro=new ResizeObserver(()=>{measure();if(!drops.length)settle(target<0?0:target);else render()});
+  ro.observe(stage);engine={go,destroy:()=>{disposed=true;cancelAnimationFrame(raf);ro.disconnect()}};
+ }else{
+  window.addEventListener('resize',()=>{measure();settle(target<0?0:target)});
+  engine={go,destroy:()=>{disposed=true;cancelAnimationFrame(raf)}};
+ }
+ measure();settle(document.getElementById('registerTab').classList.contains('active')?1:0);
+ stage.classList.add('tf-gooey-ready');
+ if(document.fonts?.ready)document.fonts.ready.then(()=>{if(!disposed){measure();if(!drops.length)settle(target)}});
+}
+window.TaskFlowGooey={init,go:index=>{if(!engine)init();engine?.go(index)}};
+document.addEventListener('DOMContentLoaded',init,{once:true});
+})();
+
+</script>
 <script>
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const FIREBASE_CONFIG=Object.freeze({apiKey:'AIzaSyAswSpJcc1oEy93DFcKZ-9RBfszuGJJbKQ',authDomain:'taskflow-b0ece.firebaseapp.com',projectId:'taskflow-b0ece',storageBucket:'taskflow-b0ece.firebasestorage.app',messagingSenderId:'1015897402601',appId:'1:1015897402601:web:68350cebb63c52d72c1478'});
 const CAMPAIGN_CACHE_KEY='tf_ads_manager_campaigns_prod_';
+ let registrationGate=null;
 let fbApp=null,fbAuth=null,fbDb=null,fbStorage=null,currentUser=null,campaigns=[],step=1,objective='awareness',editingId=null,pendingMedia=null,existingMediaMeta=null,currentPreviewUrl=null,managerLevel='campaigns',selectedCampaignIds=new Set(),adDrafts=[],currentAdDraftId=null,isAdsAdmin=false,authReady=false;
 const placementSpecs={banner:{label:'Banner',width:1200,height:180,accept:'image/jpeg,image/png,image/webp,image/gif',formats:'JPG · PNG · WEBP · GIF',specFormat:'Imagen / GIF',duration:'No aplica',frame:'banner'},entry:{label:'Anuncio de ingreso',width:1080,height:1920,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'10 s si es video',frame:'vertical'},interaction:{label:'Por interacción',width:1080,height:1920,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'10 s si es video',frame:'vertical'}};
 function clean(v){return String(v==null?'':v).trim()}function money(v){return new Intl.NumberFormat('es-GT',{style:'currency',currency:'GTQ'}).format(Number(v)||0)}function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function now(){return new Date().toISOString()}function makeId(){return 'cmp_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9)}function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2300)}function msg(text,type=''){const e=$('campaignMessage');e.textContent=text||'';e.className='form-message'+(type?' '+type:'')}function authMsg(text,type=''){const e=$('authMessage');e.textContent=text||'';e.className='form-message'+(type?' '+type:'')}
 function readJSON(key,fallback){try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback}catch(_){return fallback}}function writeJSON(key,v){try{localStorage.setItem(key,JSON.stringify(v));return true}catch(_){return false}}
 function initials(n,e){const p=(clean(n)||clean(e)||'TF').split(/\s+/).filter(Boolean).slice(0,2);return p.map(x=>x[0]).join('').toUpperCase()||'TF'}
+ // Normalización requerida por la carga de campañas, anuncios y panel tras autenticar.
+ function makeAdId(){return 'ad_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9)}
+ function normalizeAd(input,index=0){
+  const a=input&&typeof input==='object'?input:{};
+  return {...a,id:clean(a.id)||('ad_legacy_'+index),name:clean(a.name)||('Anuncio '+(index+1)),
+   destination:clean(a.destination),sound:a.sound===true||a.sound==='true',
+   src:clean(a.src),storagePath:clean(a.storagePath),mediaMeta:a.mediaMeta||null,
+   createdAt:a.createdAt||'',updatedAt:a.updatedAt||''};
+ }
+ function normalizeCampaign(input){
+  const c=input&&typeof input==='object'?input:{};
+  const fallbackAd=(c.adName||c.destination||c.mediaMeta||c.src)?[{
+   id:clean(c.adId)||'ad_legacy_0',name:c.adName||'Anuncio 1',destination:c.destination||'',
+   sound:c.sound,mediaMeta:c.mediaMeta||null,src:c.src||'',storagePath:c.storagePath||''
+  }]:[];
+  const source=Array.isArray(c.ads)?c.ads:fallbackAd;
+  const ads=source.slice(0,12).map(normalizeAd);
+  return {...c,ads,adCount:ads.length,status:c.status||'draft',
+   approvalStatus:c.approvalStatus||'pending',budgetDistribution:c.budgetDistribution||'system',
+   budgetType:c.budgetType||'daily',budget:Number(c.budget)||0};
+ }
+
 
 function togglePasswordVisibility(button){
  const id=button&&button.dataset&&button.dataset.passwordTarget,input=id?$(id):null;if(!input)return;
@@ -660,25 +1050,51 @@ function campaignsRef(uid){return fbDb.collection('users').doc(uid).collection('
 function publicCampaignRef(id){return fbDb.collection('adsPublicCampaigns').doc(id)}
 async function getBusiness(uid){try{const snap=await businessRef(uid).get();return snap.exists?snap.data():null}catch(e){console.warn('ADS business load:',e);return null}}
 async function getAdminClaim(user){try{const t=await user.getIdTokenResult();return t&&t.claims&&t.claims.taskflowAdsAdmin===true}catch(_){return false}}
-function setAuthMode(mode){resetPasswordVisibility();const reg=mode==='register';$('loginTab').classList.toggle('active',!reg);$('registerTab').classList.toggle('active',reg);$('nameField').hidden=!reg;$('companyField').hidden=!reg;$('confirmField').hidden=!reg;$('authSubmit').textContent=reg?'Crear cuenta':'Iniciar sesión';$('authForm').dataset.mode=reg?'register':'login';$('password').autocomplete=reg?'new-password':'current-password';authMsg('')}
+function setAuthMode(mode){resetPasswordVisibility();const reg=mode==='register';$('loginTab').classList.toggle('active',!reg);$('registerTab').classList.toggle('active',reg);$('loginTab').setAttribute('aria-selected',String(!reg));$('registerTab').setAttribute('aria-selected',String(reg));$('nameField').hidden=!reg;$('companyField').hidden=!reg;$('confirmField').hidden=!reg;$('authSubmit').textContent=reg?'Crear cuenta':'Iniciar sesión';$('authForm').dataset.mode=reg?'register':'login';$('password').autocomplete=reg?'new-password':'current-password';window.TaskFlowGooey?.go(reg?1:0);authMsg('')}
 function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'auth/email-already-in-use':'Ese correo ya está registrado.','auth/invalid-email':'El correo electrónico no es válido.','auth/weak-password':'La contraseña debe tener al menos 8 caracteres.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Intenta nuevamente más tarde.','auth/network-request-failed':'No hay conexión con el servicio de cuentas.','auth/unauthorized-domain':'Este dominio todavía no está autorizado en Firebase.'};return map[c]||'No fue posible completar el acceso.'}
-async function handleAuth(e){
- e.preventDefault();authMsg('');const mode=$('authForm').dataset.mode||'login';const email=clean($('email').value).toLowerCase(),pass=$('password').value||'';
- if(!email||!/^\S+@\S+\.\S+$/.test(email)){authMsg('Ingresa un correo válido.','error');return}
- if(pass.length<8){authMsg('La contraseña debe tener al menos 8 caracteres.','error');return}
- $('authSubmit').disabled=true;
- try{
+ async function handleAuth(e){
+  e.preventDefault();authMsg('');
+  const mode=$('authForm').dataset.mode||'login';
+  const email=clean($('email').value).toLowerCase(),pass=$('password').value||'';
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){authMsg('Ingresa un correo válido.','error');return}
+  if(pass.length<8){authMsg('La contraseña debe tener al menos 8 caracteres.','error');return}
+  let name='',company='';
   if(mode==='register'){
-   const name=clean($('fullName').value),company=clean($('companyName').value),confirm=$('confirmPassword').value||'';
+   name=clean($('fullName').value);company=clean($('companyName').value);
    if(!name||!company){authMsg('Completa el nombre y la empresa.','error');return}
-   if(pass!==confirm){authMsg('Las contraseñas no coinciden.','error');return}
-   const cred=await fbAuth.createUserWithEmailAndPassword(email,pass);
-   if(name)await cred.user.updateProfile({displayName:name});
-   await businessRef(cred.user.uid).set({ownerUid:cred.user.uid,ownerName:name,ownerEmail:email,businessName:company,country:'GT',accountStatus:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-  }else await fbAuth.signInWithEmailAndPassword(email,pass);
- }catch(err){authMsg(friendlyAuthError(err),'error')}
- finally{$('authSubmit').disabled=false}
-}
+   if(pass!==$('confirmPassword').value){authMsg('Las contraseñas no coinciden.','error');return}
+  }
+  if(!fbAuth||!fbDb){authMsg('No fue posible conectar con Firebase. Verifica la conexión e inténtalo nuevamente.','error');return}
+  const submit=$('authSubmit');submit.disabled=true;
+  let resolveGate=null,created=false;
+  if(mode==='register')registrationGate=new Promise(resolve=>{resolveGate=resolve});
+  try{
+   if(mode==='register'){
+    const cred=await fbAuth.createUserWithEmailAndPassword(email,pass);
+    created=true;
+    await cred.user.updateProfile({displayName:name});
+    await businessRef(cred.user.uid).set({
+     ownerUid:cred.user.uid,ownerName:name,ownerEmail:email,businessName:company,
+     country:'GT',accountStatus:'active',
+     createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+    authMsg('Cuenta comercial creada correctamente.','success');
+   }else{
+    await fbAuth.signInWithEmailAndPassword(email,pass);
+   }
+  }catch(err){
+   if(mode==='register'&&created){
+    // Evita entrar al panel con un registro empresarial incompleto.
+    try{await fbAuth.signOut()}catch(_){ }
+    authMsg('La cuenta se creó, pero no fue posible guardar el perfil comercial. Verifica los permisos de Firebase y vuelve a iniciar sesión.','error');
+   }else authMsg(friendlyAuthError(err),'error');
+  }finally{
+   if(resolveGate)resolveGate();
+   registrationGate=null;submit.disabled=false;
+  }
+ }
+
 async function loadCampaigns(){
  const cache=readJSON(CAMPAIGN_CACHE_KEY+(currentUser?.id||''),[]);
  campaigns=Array.isArray(cache)?cache.map(normalizeCampaign):[];campaigns.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));renderAll();
@@ -1006,7 +1422,7 @@ function blockExtraction(){
  document.addEventListener('gesturestart',e=>e.preventDefault());
 }
 function bind(){qa('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>togglePasswordVisibility(btn)));setAuthMode('login');$('loginTab').addEventListener('click',()=>setAuthMode('login'));$('registerTab').addEventListener('click',()=>setAuthMode('register'));$('authForm').addEventListener('submit',handleAuth);$('logoutBtn').addEventListener('click',logout);$('menuBtn').addEventListener('click',()=>$('appView').classList.toggle('menu-open'));const scrim=$('menuScrim');if(scrim)scrim.addEventListener('click',()=>$('appView').classList.remove('menu-open'));qa('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));qa('[data-view-link]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewLink)));qa('[data-new]').forEach(b=>b.addEventListener('click',openNew));$('topCreate').addEventListener('click',openNew);$('closeModal').addEventListener('click',closeModal);$('campaignModal').addEventListener('click',e=>{if(e.target===$('campaignModal'))closeModal()});$('objectiveGrid').addEventListener('click',e=>{const c=e.target.closest('.choice');if(!c)return;objective=c.dataset.objective;qa('.choice').forEach(x=>x.classList.toggle('active',x===c));review()});$('placements').addEventListener('change',()=>{commitCurrentAd();adDrafts.forEach(a=>{a.mediaMeta=null;a._blob=null});pendingMedia=null;existingMediaMeta=null;updateCreativeRules(true);renderAdDraftList();review()});qa('.step').forEach(s=>s.addEventListener('click',()=>{const n=Number(s.dataset.step);if(n<=step||validateStep())setStep(n)}));$('backBtn').addEventListener('click',()=>setStep(step-1));$('nextBtn').addEventListener('click',async()=>{if(!validateStep())return;if(step<4)setStep(step+1);else await saveCampaign()});$('draftBtn').addEventListener('click',saveDraft);$('campaignForm').addEventListener('input',e=>{if(['budgetAmount','budgetType'].includes(e.target.id)||e.target.name==='budgetDistribution'){renderBudgetAllocation();renderAdDraftList()}if(step===4){commitCurrentAd();review()}});$('search').addEventListener('input',renderTable);$('statusFilter').addEventListener('change',renderTable);$('creativeFile').addEventListener('change',e=>handleCreativeFile(e.target.files&&e.target.files[0]));$('addAdBtn').addEventListener('click',addCampaignAd);$('removeAdBtn').addEventListener('click',removeCampaignAd);$('adDraftList').addEventListener('click',e=>{const b=e.target.closest('[data-ad-draft]');if(b)loadAdDraftEditor(b.dataset.adDraft)});qa('input[name="budgetDistribution"]').forEach(x=>x.addEventListener('change',()=>{renderBudgetAllocation();renderAdDraftList();if(step===4)review()}));const zone=$('uploadZone');['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('drag')}));['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('drag')}));zone.addEventListener('drop',e=>{const f=e.dataTransfer?.files?.[0];if(f)handleCreativeFile(f)});$('campaignBody').addEventListener('click',e=>{const sel=e.target.closest('[data-select-id]');if(sel){if(sel.checked)selectedCampaignIds.add(sel.dataset.selectId);else selectedCampaignIds.delete(sel.dataset.selectId);renderTable();renderManagerSummary();return}const edit=e.target.closest('[data-edit]');if(edit){openEdit(edit.dataset.edit);return}const dup=e.target.closest('[data-duplicate]');if(dup){duplicateCampaign(dup.dataset.duplicate);return}const t=e.target.closest('[data-toggle]');if(t){toggleCampaign(t.dataset.toggle);return}const d=e.target.closest('[data-delete]');if(d)deleteCampaign(d.dataset.delete)});$('refreshBtn').addEventListener('click',async()=>{await loadCampaigns();renderAll();toast('Datos actualizados.')});qa('[data-entity-level]').forEach(btn=>btn.addEventListener('click',()=>{managerLevel=btn.dataset.entityLevel;qa('[data-entity-level]').forEach(x=>x.classList.toggle('active',x===btn));selectedCampaignIds.clear();renderTable();renderManagerSummary()}));const mgrRefresh=$('managerRefresh');if(mgrRefresh)mgrRefresh.addEventListener('click',async()=>{await loadCampaigns();renderAll();toast('Administrador actualizado.')});const clear=$('clearFilters');if(clear)clear.addEventListener('click',()=>{$('search').value='';$('statusFilter').value='all';renderTable()});const dupBtn=$('duplicateBtn');if(dupBtn)dupBtn.addEventListener('click',()=>{[...selectedCampaignIds].forEach(id=>duplicateCampaign(id));selectedCampaignIds.clear();renderAll()});const editBtn=$('bulkEditBtn');if(editBtn)editBtn.addEventListener('click',()=>{const id=[...selectedCampaignIds][0];if(id)openEdit(id)});const delBtn=$('bulkDeleteBtn');if(delBtn)delBtn.addEventListener('click',async()=>{const ids=[...selectedCampaignIds];if(!ids.length)return;if(confirm('¿Eliminar '+ids.length+' elemento(s) seleccionado(s)?')){for(const id of ids){const c=campaigns.find(x=>x.id===id);if(c){for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete().catch(()=>{});await publicCampaignRef(id).delete().catch(()=>{})}}campaigns=campaigns.filter(c=>!selectedCampaignIds.has(c.id));selectedCampaignIds.clear();saveCampaigns();renderAll();toast('Elementos eliminados.')}});['columnsBtn','breakdownBtn','reportsBtn','testBtn','moreBtn'].forEach(id=>{const el=$(id);if(el)el.addEventListener('click',()=>toast('Control preparado para métricas reales.'))});blockExtraction()}
-document.addEventListener('DOMContentLoaded',()=>{bind();try{initFirebase();fbAuth.onAuthStateChanged(u=>handleAuthState(u).catch(e=>{console.error(e);authMsg('No fue posible cargar la cuenta comercial.','error')}))}catch(e){console.error(e);authMsg('No fue posible iniciar Firebase.','error');animateAuth()}});
+document.addEventListener('DOMContentLoaded',()=>{bind();try{initFirebase();fbAuth.onAuthStateChanged(async u=>{try{if(u&&registrationGate)await registrationGate;if(u&&fbAuth.currentUser?.uid!==u.uid)return;await handleAuthState(u)}catch(e){console.error(e);authMsg('No fue posible cargar la cuenta comercial.','error')}})}catch(e){console.error(e);authMsg('No fue posible iniciar Firebase.','error');animateAuth()}});
 })();
 </script>
 </body>
