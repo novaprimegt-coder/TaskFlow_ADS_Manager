@@ -1,4 +1,4 @@
-# TaskFlow ADS Manager — Producción V10
+# TaskFlow ADS Manager — Producción V11
 
 Administrador comercial de publicidad conectado al ecosistema TaskFlow.
 
@@ -6,9 +6,11 @@ Administrador comercial de publicidad conectado al ecosistema TaskFlow.
 
 Código preparado para publicación. No se ha habilitado GitHub Pages ni se ha realizado el lanzamiento público.
 
+La pantalla de acceso usa Firebase Authentication y permite mostrar u ocultar la contraseña de forma local en el navegador. La contraseña no se almacena ni se replica dentro del código del sitio.
+
 ## Arquitectura
 
-- Firebase compartido con TaskFlow: `taskflow-b0ece`.
+- Backend Firebase compartido con TaskFlow.
 - Firebase Authentication para registro, inicio de sesión y sesión persistente.
 - Cloud Firestore para cuentas comerciales y campañas.
 - Firebase Storage para imágenes, GIF y videos publicitarios.
@@ -62,7 +64,7 @@ Cada anuncio conserva:
 
 1. El anunciante crea o edita la campaña.
 2. La campaña queda con `approvalStatus: pending`.
-3. Una cuenta con custom claim `taskflowAdsAdmin=true` puede aprobar o rechazar.
+3. Una cuenta administrativa autorizada puede aprobar o rechazar.
 4. Solo una campaña `active + approved` se copia a `adsPublicCampaigns`.
 5. TaskFlow lee únicamente `adsPublicCampaigns`.
 6. Si la campaña se pausa, elimina o deja de estar aprobada, desaparece del espejo público.
@@ -95,7 +97,7 @@ No deben reemplazar las reglas actuales de TaskFlow. Deben fusionarse dentro de 
 
 - Fusionar y desplegar las reglas Firestore de ADS.
 - Fusionar y desplegar las reglas Storage de ADS.
-- Asignar `taskflowAdsAdmin=true` a la cuenta administrativa mediante Firebase Admin SDK.
+- Autorizar la cuenta administrativa en Firebase.
 - Autorizar el dominio definitivo del ADS Manager en Firebase Authentication.
 - Probar registro, inicio de sesión, subida de creativos, aprobación y entrega en TaskFlow.
 - Habilitar el hosting/GitHub Pages únicamente cuando se dé la orden expresa de publicación.
