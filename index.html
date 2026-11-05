@@ -491,6 +491,12 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 @media(prefers-reduced-motion:reduce){#placements .placement-card{transition:none}}
 /* Mantener accesible la elección de archivos mientras se integra el servicio protegido. */
 #uploadZone:focus-within{outline:3px solid #80bcff;outline-offset:2px}
+/* V14: el selector ocupa TODA la zona interactiva incluso dentro de .field input!important. */
+#uploadZone{position:relative!important;cursor:pointer;touch-action:manipulation}
+#uploadZone #creativeFile{position:absolute!important;inset:0!important;top:0!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;max-height:none!important;opacity:0!important;z-index:8!important;display:block!important;cursor:pointer!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;appearance:none!important;-webkit-appearance:none!important}
+#uploadZone>div{pointer-events:none!important}
+#uploadZone:active{border-color:#0866ff;background:#eaf2ff}
+#uploadZone #creativeFile:focus-visible{outline:none!important}
 </style>
 </head>
 <body>
@@ -647,7 +653,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 <div class="field"><label>Nombre del anuncio</label><input id="adName" maxlength="120" placeholder="Ej. Creativo principal"/></div>
 <div class="field"><label>URL de destino</label><input id="destination" maxlength="500" placeholder="https://tuempresa.com" type="url"/></div>
 <div class="field"><label>Archivo publicitario</label>
-<div class="upload-zone" id="uploadZone"><input accept="image/jpeg,image/png,image/webp,image/gif" id="creativeFile" type="file"/><div><div class="upload-icon"><svg class="tf-icon" aria-hidden="true"><use href="#i-upload"></use></svg></div><b>Seleccionar archivo publicitario</b><span id="uploadHelp">Banner: 1200 × 180 exactos.</span><small id="uploadFormats">JPG · PNG · WEBP · GIF</small><small>Hasta 20 MB. Se enviará a GitHub al guardar la campaña.</small></div></div>
+<div class="upload-zone" id="uploadZone"><input accept="image/jpeg,image/png,image/webp,image/gif" id="creativeFile" type="file" aria-label="Seleccionar archivo publicitario: imagen, GIF o video"/><div><div class="upload-icon"><svg class="tf-icon" aria-hidden="true"><use href="#i-upload"></use></svg></div><b>Seleccionar archivo publicitario</b><span id="uploadHelp">Banner: 1200 × 180 exactos.</span><small id="uploadFormats">JPG · PNG · WEBP · GIF</small><small>Hasta 20 MB. Se cargará a GitHub al guardar la campaña, si el servicio está activo.</small></div></div>
 <div class="media-status" id="mediaStatus">No se ha seleccionado un archivo.</div>
 </div>
 <div class="field" hidden="" id="soundField"><label>Audio del video</label><select id="sound"><option value="false">Sin audio</option><option value="true">Con audio</option></select></div>
@@ -1035,6 +1041,51 @@ let fbApp=null,fbAuth=null,fbDb=null,fbStorage=null,currentUser=null,campaigns=[
 const placementSpecs={banner:{label:'Banner',width:1200,height:180,accept:'image/jpeg,image/png,image/webp,image/gif',formats:'JPG · PNG · WEBP · GIF',specFormat:'Imagen / GIF',duration:'No aplica',frame:'banner'},entry:{label:'Anuncio de ingreso',width:1080,height:1920,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'10 s si es video',frame:'vertical'},interaction:{label:'Por interacción',width:1080,height:1920,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'10 s si es video',frame:'vertical'}};
 function clean(v){return String(v==null?'':v).trim()}function money(v){return new Intl.NumberFormat('es-GT',{style:'currency',currency:'GTQ'}).format(Number(v)||0)}function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function now(){return new Date().toISOString()}function makeId(){return 'cmp_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9)}function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2300)}function msg(text,type=''){const e=$('campaignMessage');e.textContent=text||'';e.className='form-message'+(type?' '+type:'')}function authMsg(text,type=''){const e=$('authMessage');e.textContent=text||'';e.className='form-message'+(type?' '+type:'')}
 function readJSON(key,fallback){try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback}catch(_){return fallback}}function writeJSON(key,v){try{localStorage.setItem(key,JSON.stringify(v));return true}catch(_){return false}}
+// V14: conservamos creativos seleccionados mientras la campaña sigue como borrador.
+// IndexedDB es local al navegador: Firestore sincroniza datos, NO estos archivos binarios.
+const ADS_DRAFT_DB='tf_ads_draft_files_v1';
+function draftMediaKey(campaignId,adId){return (currentUser?.id||'guest')+'/'+campaignId+'/'+adId}
+function openDraftMediaDB(){return new Promise((resolve,reject)=>{
+ if(!window.indexedDB){reject(new Error('Este navegador no admite almacenamiento de archivos de borrador.'));return}
+ const req=indexedDB.open(ADS_DRAFT_DB,1);
+ req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('files'))req.result.createObjectStore('files')};
+ req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error('No se pudo acceder a los archivos locales.'));
+ req.onblocked=()=>reject(new Error('El almacenamiento local está bloqueado.'));
+})}
+async function storeDraftMedia(campaignId,ads){
+ const db=await openDraftMediaDB();
+ try{return await new Promise((resolve,reject)=>{
+  const tx=db.transaction('files','readwrite'),store=tx.objectStore('files');
+  const prefix=(currentUser?.id||'guest')+'/'+campaignId+'/';
+  const keep=new Set(ads.filter(a=>a._blob instanceof Blob||a.pendingMediaLocal).map(a=>draftMediaKey(campaignId,a.id)));
+  const keys=store.getAllKeys();keys.onsuccess=()=>{
+   for(const key of keys.result){if(String(key).startsWith(prefix)&&!keep.has(key))store.delete(key)}
+   for(const a of ads){if(a._blob instanceof Blob)store.put(a._blob,draftMediaKey(campaignId,a.id))}
+  };
+  keys.onerror=()=>reject(keys.error||new Error('Error al recuperar archivos del borrador.'));
+  tx.oncomplete=()=>resolve(true);
+  tx.onerror=()=>reject(tx.error||new Error('No se pudo conservar el archivo seleccionado.'));
+  tx.onabort=()=>reject(tx.error||new Error('No se pudo conservar el archivo seleccionado.'));
+ })}finally{db.close()}
+}
+async function restoreDraftMedia(campaignId,ads){
+ if(!ads.some(a=>a.pendingMediaLocal))return;
+ try{
+  const db=await openDraftMediaDB();
+  try{await new Promise((resolve,reject)=>{
+   const tx=db.transaction('files','readonly'),store=tx.objectStore('files');
+   for(const a of ads){if(!a.pendingMediaLocal)continue;const r=store.get(draftMediaKey(campaignId,a.id));r.onsuccess=()=>{if(r.result instanceof Blob)a._blob=r.result}}
+   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)
+  })}finally{db.close()}
+ }catch(e){console.warn('Archivo de borrador no recuperable:',e)}
+}
+async function clearDraftMedia(campaignId){
+ try{const db=await openDraftMediaDB();try{await new Promise((resolve,reject)=>{
+  const tx=db.transaction('files','readwrite'),store=tx.objectStore('files'),prefix=(currentUser?.id||'guest')+'/'+campaignId+'/';
+  const req=store.getAllKeys();req.onsuccess=()=>{for(const k of req.result)if(String(k).startsWith(prefix))store.delete(k)};
+  tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)
+ })}finally{db.close()}}catch(e){console.warn('Limpieza local de borrador:',e)}
+}
 function initials(n,e){const p=(clean(n)||clean(e)||'TF').split(/\s+/).filter(Boolean).slice(0,2);return p.map(x=>x[0]).join('').toUpperCase()||'TF'}
  // Normalización requerida por la carga de campañas, anuncios y panel tras autenticar.
  function makeAdId(){return 'ad_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9)}
@@ -1134,7 +1185,11 @@ async function loadCampaigns(){
  if(!currentUser||!fbDb)return campaigns;
  try{
   const snap=await campaignsRef(currentUser.id).get(),remote=[];snap.forEach(doc=>remote.push(normalizeCampaign({...doc.data(),id:doc.id})));
-  campaigns=remote.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns);renderAll();
+  const pending=campaigns.filter(c=>c.localPendingSync);
+  const index=new Map(remote.map(c=>[c.id,c]));
+  for(const c of pending)index.set(c.id,c);
+  campaigns=[...index.values()].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+  writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns);renderAll();
  }catch(e){console.warn('ADS campaigns load:',e);toast('Sincronización remota no disponible; se muestra la copia local.')}
  return campaigns
 }
@@ -1288,7 +1343,7 @@ async function loadAdDraftEditor(id){
  currentAdDraftId=id;$('adName').value=a.name||'';$('destination').value=a.destination||'';$('sound').value=String(!!a.sound);pendingMedia=a._blob?{blob:a._blob,meta:a.mediaMeta}:null;existingMediaMeta=a.mediaMeta||null;updateCreativeRules(false);
  if(a._blob){showPreviewBlob(a._blob,a.mediaMeta);setMediaStatus('Archivo listo · '+(a.mediaMeta?.name||'Creativo'),'ok')}
  else if(a.src&&a.mediaMeta){showPreviewUrl(a.src,a.mediaMeta);setMediaStatus('Creativo sincronizado · '+(a.mediaMeta?.name||'Archivo'),'ok')}
- else{clearPreview();setMediaStatus('No se ha seleccionado un archivo.','')}
+ else{clearPreview();setMediaStatus(a.pendingMediaLocal?'El archivo se guardó en otro navegador o ya no está disponible. Selecciónalo de nuevo para publicar.':'No se ha seleccionado un archivo.',a.pendingMediaLocal?'error':'')}
  updateSoundVisibility();renderAdDraftList();review()
 }
 async function addCampaignAd(){
@@ -1320,7 +1375,7 @@ async function handleCreativeFile(file){
  if(!file)return;if(file.size>GITHUB_MEDIA_MAX_BYTES){setMediaStatus('El archivo supera el máximo de 20 MB permitido para GitHub.','error');$('creativeFile').value='';return}setMediaStatus('Validando archivo...','');
  try{
    const meta=await inspectMedia(file);pendingMedia={blob:file,meta};existingMediaMeta=null;
-   const a=currentAdDraft();if(a){a.mediaMeta=meta;a._blob=file;a.updatedAt=now()}
+   const a=currentAdDraft();if(a){a.mediaMeta=meta;a._blob=file;a.pendingMediaLocal=true;a.updatedAt=now()}
    showPreviewBlob(file,meta);setMediaStatus('Archivo válido · '+meta.width+'×'+meta.height+(meta.kind==='video'?' · '+meta.duration.toFixed(2)+' s':'')+' · '+meta.name,'ok');updateSoundVisibility();renderAdDraftList();review()
  }catch(err){pendingMedia=null;$('creativeFile').value='';clearPreview();setMediaStatus(err.message||'Archivo inválido.','error');updateSoundVisibility()}
 }
@@ -1348,7 +1403,7 @@ async function githubMediaRequest(action,campaignId,ad,blob){
 async function uploadCreative(campaignId,ad){
  if(!ad._blob)return ad.src||'';
  if(ad._blob.size>GITHUB_MEDIA_MAX_BYTES)throw new Error('El anuncio '+(ad.name||ad.id)+' supera 20 MB.');
- setMediaStatus('Subiendo a GitHub · '+(ad.mediaMeta?.name||'Archivo')+'...');
+ setMediaStatus('Conectando con GitHub · '+(ad.mediaMeta?.name||'Archivo')+'...');
  const result=await githubMediaRequest('upload',campaignId,ad,ad._blob);
  if(!result.src||!result.storagePath||!result.storagePath.startsWith('ads/media/'))throw new Error('El servidor no confirmó el archivo en GitHub.');
  ad.src=result.src;ad.storagePath=result.storagePath;
@@ -1402,7 +1457,7 @@ async function openEdit(id){
  $('budgetType').value=c.budgetType||'daily';$('budgetAmount').value=String(c.budget||0);$('startDate').value=c.start||'';$('endDate').value=c.end||'';
  const mode=qa('input[name="budgetDistribution"]').find(x=>x.value===(c.budgetDistribution||'system'));if(mode)mode.checked=true;
  const normalized=normalizeCampaign(c);adDrafts=normalized.ads.length?normalized.ads.map((a,i)=>({...normalizeAd(a,i),_blob:null})):[newAdDraft(0)];
- currentAdDraftId=null;updateCreativeRules(false);setStep(1);$('campaignModal').hidden=false;
+ currentAdDraftId=null;await restoreDraftMedia(id,adDrafts);updateCreativeRules(false);setStep(1);$('campaignModal').hidden=false;
  await loadAdDraftEditor(adDrafts[0].id);
  setStep(1);renderBudgetAllocation();
 }
@@ -1424,7 +1479,7 @@ function validateStep(){
      if(!clean(a.name)){msg('El anuncio '+(i+1)+' necesita un nombre.','error');return false}
      if(!dest){msg('El anuncio '+(i+1)+' necesita una URL de destino HTTPS.','error');return false}
      if(dest&&!/^https:\/\//i.test(dest)){msg('La URL de destino del anuncio '+(i+1)+' debe comenzar con https://','error');return false}
-     if(!a.mediaMeta){msg('El anuncio '+(i+1)+' necesita un archivo publicitario válido.','error');return false}
+     if(!a.mediaMeta||(!a.src&&!a._blob)||(a.pendingMediaLocal&&!a._blob)){msg('El anuncio '+(i+1)+' necesita un archivo publicitario disponible y válido. Selecciónalo de nuevo si cambiaste de dispositivo.','error');return false}
    }
  }
  return true;
@@ -1444,11 +1499,53 @@ async function saveCampaign(){
   for(let i=0;i<adDrafts.length;i++){const a=adDrafts[i];await uploadCreative(id,a);cleanAds.push({id:a.id,name:clean(a.name)||('Anuncio '+(i+1)),destination:clean(a.destination),sound:!!a.sound,mediaMeta:a.mediaMeta||null,src:a.src||'',storagePath:a.storagePath||'',createdAt:a.createdAt||now(),updatedAt:now()})}
   const first=cleanAds[0]||{},approvalStatus=existing?.approvalStatus==='approved'?'pending':(existing?.approvalStatus||'pending');
   const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
-  await syncCampaignDoc(c);await syncPublicCampaign(c);for(const old of previousAds){const retained=cleanAds.find(a=>a.id===old.id);if(!retained||retained.storagePath!==old.storagePath)await deleteCreative(id,old)}const idx=campaigns.findIndex(x=>x.id===id);if(idx>=0)campaigns[idx]=c;else campaigns.unshift(c);campaigns.sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));saveCampaigns();renderAll();closeModal();showView('campaigns');toast(existing?'Campaña actualizada y enviada nuevamente a revisión.':'Campaña guardada y enviada a revisión.');editingId=null
+  await syncCampaignDoc(c);await syncPublicCampaign(c);for(const old of previousAds){const retained=cleanAds.find(a=>a.id===old.id);if(!retained||retained.storagePath!==old.storagePath)await deleteCreative(id,old)}const idx=campaigns.findIndex(x=>x.id===id);if(idx>=0)campaigns[idx]=c;else campaigns.unshift(c);campaigns.sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));saveCampaigns();await clearDraftMedia(id);renderAll();closeModal();showView('campaigns');toast(existing?'Campaña actualizada y enviada nuevamente a revisión.':'Campaña guardada y enviada a revisión.');editingId=null
  }catch(e){console.error(e);msg('No fue posible completar el guardado: '+(e?.message||'comprueba Firebase y el servicio de GitHub.'),'error')}
  finally{$('nextBtn').disabled=false;$('draftBtn').disabled=false}
 }
-async function saveDraft(){if(!clean($('campaignName').value)){msg('Escribe el nombre de la campaña antes de guardar.','error');setStep(1);return}if(step===4){commitCurrentAd();const missing=adDrafts.findIndex(a=>!a.mediaMeta);if(missing>=0){msg('El anuncio '+(missing+1)+' necesita un creativo válido antes de guardar.','error');return}}await saveCampaign()}
+async function saveDraft(){
+ // Nunca exigir URL, creativo, presupuesto ni conexión al servicio GitHub al guardar un borrador.
+ commitCurrentAd();
+ const name=clean($('campaignName').value);
+ if(!name){msg('Escribe el nombre de la campaña para identificar el borrador.','error');setStep(1);return}
+ const existing=editingId?campaigns.find(c=>c.id===editingId):null;
+ const id=editingId||makeId();
+ const ads=adDrafts.map((a,i)=>({
+  id:a.id,name:clean(a.name)||('Anuncio '+(i+1)),destination:clean(a.destination),sound:!!a.sound,
+  mediaMeta:a.mediaMeta||null,src:a.src||'',storagePath:a.storagePath||'',
+  pendingMediaLocal:!!a._blob||!!a.pendingMediaLocal,
+  createdAt:a.createdAt||now(),updatedAt:now()
+ }));
+ const first=ads[0]||{};
+ const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name,objective,
+  status:'draft',approvalStatus:existing?.approvalStatus==='rejected'?'rejected':'pending',
+  placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),
+  radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,
+  budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,
+  budgetDistribution:currentBudgetMode(),start:$('startDate').value,end:$('endDate').value,
+  ads,adCount:ads.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,
+  mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
+ const btn=$('draftBtn'),next=$('nextBtn');btn.disabled=true;next.disabled=true;msg('Guardando borrador...');
+ try{
+  // Para NO perder el archivo antes de cerrar el formulario, se almacena localmente en IndexedDB.
+  if(adDrafts.some(a=>a._blob||a.pendingMediaLocal)){
+   try{await storeDraftMedia(id,adDrafts)}catch(e){throw new Error('No se pudo conservar el archivo seleccionado en este dispositivo: '+(e?.message||'almacenamiento no disponible.'))}
+  }else if(existing){await clearDraftMedia(id)}
+  let remoteSaved=false;
+  try{remoteSaved=await syncCampaignDoc(c)}catch(error){console.warn('Borrador remoto pendiente:',error)}
+  c.localPendingSync=!remoteSaved;
+  const idx=campaigns.findIndex(x=>x.id===id);
+  if(idx>=0)campaigns[idx]=c;else campaigns.unshift(c);
+  campaigns.sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  const localOk=writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns);
+  if(!remoteSaved&&!localOk)throw new Error('No hay conexión con Firebase y el navegador no permitió guardar una copia local.');
+  // Una campaña en borrador no debe seguir figurando como anuncio público activo.
+  if(remoteSaved)await syncPublicCampaign(c);
+  renderAll();closeModal();showView('campaigns');editingId=null;
+  toast(remoteSaved?'Borrador guardado en tu cuenta.':'Borrador guardado en este dispositivo; pendiente de sincronizar.');
+ }catch(e){console.error(e);msg('No se pudo guardar el borrador: '+(e?.message||'Inténtalo de nuevo.'),'error')}
+ finally{btn.disabled=false;next.disabled=false}
+}
 async function duplicateCampaign(id){
  const source=campaigns.find(c=>c.id===id);if(!source)return;const sourceNorm=normalizeCampaign(source),newId=makeId(),ads=sourceNorm.ads.map(a=>({...a,id:makeAdId(),createdAt:now(),updatedAt:now()}));
  const copy={...sourceNorm,id:newId,name:source.name+' - copia',status:'draft',approvalStatus:'pending',ads,adCount:ads.length,createdAt:now(),updatedAt:now(),ownerUid:currentUser.id};
@@ -1462,7 +1559,7 @@ async function toggleCampaign(id){
 }
 async function deleteCampaign(id){
  const c=campaigns.find(x=>x.id===id);if(!c)return;if(!confirm('¿Eliminar la campaña "'+c.name+'"?'))return;
- try{for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete();await publicCampaignRef(id).delete().catch(()=>{});campaigns=campaigns.filter(x=>x.id!==id);saveCampaigns();renderAll();toast('Campaña eliminada.')}catch(e){console.error(e);toast('No fue posible eliminar la campaña.')}
+ try{for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete();await publicCampaignRef(id).delete().catch(()=>{});campaigns=campaigns.filter(x=>x.id!==id);saveCampaigns();await clearDraftMedia(id);renderAll();toast('Campaña eliminada.')}catch(e){console.error(e);toast('No fue posible eliminar la campaña.')}
 }
 function animateAuth(){if(!window.gsap)return;try{if(window.ScrollTrigger)gsap.registerPlugin(ScrollTrigger);gsap.from('.brand-pill,.auth-hero h1,.auth-hero>p',{opacity:0,y:18,duration:.65,stagger:.08,ease:'power3.out'});gsap.from('.hero-console',{opacity:0,y:18,duration:.7,delay:.15,ease:'power3.out'});gsap.from('.auth-logo,.auth-tabs,#authForm',{opacity:0,y:12,duration:.5,stagger:.05,ease:'power2.out'});if(window.ScrollTrigger)gsap.to('#parallaxHero',{backgroundPositionY:'18%',ease:'none',scrollTrigger:{trigger:'#parallaxHero',start:'top top',end:'bottom top',scrub:true}})}catch(_){}}
 function animateApp(){if(!window.gsap)return;try{gsap.from('.view.active .heading,.view.active .metric,.view.active .panel,.view.active .table-wrap',{opacity:0,y:9,duration:.3,stagger:.03,ease:'power2.out'})}catch(_){}}
@@ -1486,7 +1583,7 @@ function blockExtraction(){
  document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});
  document.addEventListener('gesturestart',e=>e.preventDefault());
 }
-function bind(){qa('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>togglePasswordVisibility(btn)));setAuthMode('login');$('loginTab').addEventListener('click',()=>setAuthMode('login'));$('registerTab').addEventListener('click',()=>setAuthMode('register'));$('authForm').addEventListener('submit',handleAuth);$('logoutBtn').addEventListener('click',logout);$('menuBtn').addEventListener('click',()=>$('appView').classList.toggle('menu-open'));const scrim=$('menuScrim');if(scrim)scrim.addEventListener('click',()=>$('appView').classList.remove('menu-open'));qa('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));qa('[data-view-link]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewLink)));qa('[data-new]').forEach(b=>b.addEventListener('click',openNew));$('topCreate').addEventListener('click',openNew);$('closeModal').addEventListener('click',closeModal);$('campaignModal').addEventListener('click',e=>{if(e.target===$('campaignModal'))closeModal()});$('objectiveGrid').addEventListener('click',e=>{const c=e.target.closest('.choice');if(!c)return;objective=c.dataset.objective;qa('.choice').forEach(x=>x.classList.toggle('active',x===c));review()});$('placements').addEventListener('change',()=>{commitCurrentAd();adDrafts.forEach(a=>{a.mediaMeta=null;a._blob=null;a.src='';a.storagePath=''});pendingMedia=null;existingMediaMeta=null;updateCreativeRules(true);renderAdDraftList();review()});qa('.step').forEach(s=>s.addEventListener('click',()=>{const n=Number(s.dataset.step);if(n<=step||validateStep())setStep(n)}));$('backBtn').addEventListener('click',()=>setStep(step-1));$('nextBtn').addEventListener('click',async()=>{if(!validateStep())return;if(step<4)setStep(step+1);else await saveCampaign()});$('draftBtn').addEventListener('click',saveDraft);$('campaignForm').addEventListener('input',e=>{if(['budgetAmount','budgetType'].includes(e.target.id)||e.target.name==='budgetDistribution'){renderBudgetAllocation();renderAdDraftList()}if(step===4){commitCurrentAd();review()}});$('search').addEventListener('input',renderTable);$('statusFilter').addEventListener('change',renderTable);$('creativeFile').addEventListener('change',e=>handleCreativeFile(e.target.files&&e.target.files[0]));$('addAdBtn').addEventListener('click',addCampaignAd);$('removeAdBtn').addEventListener('click',removeCampaignAd);$('adDraftList').addEventListener('click',e=>{const b=e.target.closest('[data-ad-draft]');if(b)loadAdDraftEditor(b.dataset.adDraft)});qa('input[name="budgetDistribution"]').forEach(x=>x.addEventListener('change',()=>{renderBudgetAllocation();renderAdDraftList();if(step===4)review()}));const zone=$('uploadZone');['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('drag')}));['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('drag')}));zone.addEventListener('drop',e=>{const f=e.dataTransfer?.files?.[0];if(f)handleCreativeFile(f)});$('campaignBody').addEventListener('click',e=>{const sel=e.target.closest('[data-select-id]');if(sel){if(sel.checked)selectedCampaignIds.add(sel.dataset.selectId);else selectedCampaignIds.delete(sel.dataset.selectId);renderTable();renderManagerSummary();return}const edit=e.target.closest('[data-edit]');if(edit){openEdit(edit.dataset.edit);return}const dup=e.target.closest('[data-duplicate]');if(dup){duplicateCampaign(dup.dataset.duplicate);return}const t=e.target.closest('[data-toggle]');if(t){toggleCampaign(t.dataset.toggle);return}const d=e.target.closest('[data-delete]');if(d)deleteCampaign(d.dataset.delete)});$('refreshBtn').addEventListener('click',async()=>{await loadCampaigns();renderAll();toast('Datos actualizados.')});qa('[data-entity-level]').forEach(btn=>btn.addEventListener('click',()=>{managerLevel=btn.dataset.entityLevel;qa('[data-entity-level]').forEach(x=>x.classList.toggle('active',x===btn));selectedCampaignIds.clear();renderTable();renderManagerSummary()}));const mgrRefresh=$('managerRefresh');if(mgrRefresh)mgrRefresh.addEventListener('click',async()=>{await loadCampaigns();renderAll();toast('Administrador actualizado.')});const clear=$('clearFilters');if(clear)clear.addEventListener('click',()=>{$('search').value='';$('statusFilter').value='all';renderTable()});const dupBtn=$('duplicateBtn');if(dupBtn)dupBtn.addEventListener('click',()=>{[...selectedCampaignIds].forEach(id=>duplicateCampaign(id));selectedCampaignIds.clear();renderAll()});const editBtn=$('bulkEditBtn');if(editBtn)editBtn.addEventListener('click',()=>{const id=[...selectedCampaignIds][0];if(id)openEdit(id)});const delBtn=$('bulkDeleteBtn');if(delBtn)delBtn.addEventListener('click',async()=>{const ids=[...selectedCampaignIds];if(!ids.length)return;if(confirm('¿Eliminar '+ids.length+' elemento(s) seleccionado(s)?')){for(const id of ids){const c=campaigns.find(x=>x.id===id);if(c){for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete().catch(()=>{});await publicCampaignRef(id).delete().catch(()=>{})}}campaigns=campaigns.filter(c=>!selectedCampaignIds.has(c.id));selectedCampaignIds.clear();saveCampaigns();renderAll();toast('Elementos eliminados.')}});['columnsBtn','breakdownBtn','reportsBtn','testBtn','moreBtn'].forEach(id=>{const el=$(id);if(el)el.addEventListener('click',()=>toast('Control preparado para métricas reales.'))});blockExtraction()}
+function bind(){qa('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>togglePasswordVisibility(btn)));setAuthMode('login');$('loginTab').addEventListener('click',()=>setAuthMode('login'));$('registerTab').addEventListener('click',()=>setAuthMode('register'));$('authForm').addEventListener('submit',handleAuth);$('logoutBtn').addEventListener('click',logout);$('menuBtn').addEventListener('click',()=>$('appView').classList.toggle('menu-open'));const scrim=$('menuScrim');if(scrim)scrim.addEventListener('click',()=>$('appView').classList.remove('menu-open'));qa('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));qa('[data-view-link]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewLink)));qa('[data-new]').forEach(b=>b.addEventListener('click',openNew));$('topCreate').addEventListener('click',openNew);$('closeModal').addEventListener('click',closeModal);$('campaignModal').addEventListener('click',e=>{if(e.target===$('campaignModal'))closeModal()});$('objectiveGrid').addEventListener('click',e=>{const c=e.target.closest('.choice');if(!c)return;objective=c.dataset.objective;qa('.choice').forEach(x=>x.classList.toggle('active',x===c));review()});$('placements').addEventListener('change',()=>{commitCurrentAd();adDrafts.forEach(a=>{a.mediaMeta=null;a._blob=null;a.pendingMediaLocal=false;a.src='';a.storagePath=''});pendingMedia=null;existingMediaMeta=null;updateCreativeRules(true);renderAdDraftList();review()});qa('.step').forEach(s=>s.addEventListener('click',()=>{const n=Number(s.dataset.step);if(n<=step||validateStep())setStep(n)}));$('backBtn').addEventListener('click',()=>setStep(step-1));$('nextBtn').addEventListener('click',async()=>{if(!validateStep())return;if(step<4)setStep(step+1);else await saveCampaign()});$('draftBtn').addEventListener('click',saveDraft);$('campaignForm').addEventListener('input',e=>{if(['budgetAmount','budgetType'].includes(e.target.id)||e.target.name==='budgetDistribution'){renderBudgetAllocation();renderAdDraftList()}if(step===4){commitCurrentAd();review()}});$('search').addEventListener('input',renderTable);$('statusFilter').addEventListener('change',renderTable);$('creativeFile').addEventListener('change',e=>handleCreativeFile(e.target.files&&e.target.files[0]));$('addAdBtn').addEventListener('click',addCampaignAd);$('removeAdBtn').addEventListener('click',removeCampaignAd);$('adDraftList').addEventListener('click',e=>{const b=e.target.closest('[data-ad-draft]');if(b)loadAdDraftEditor(b.dataset.adDraft)});qa('input[name="budgetDistribution"]').forEach(x=>x.addEventListener('change',()=>{renderBudgetAllocation();renderAdDraftList();if(step===4)review()}));const zone=$('uploadZone');['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('drag')}));['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('drag')}));zone.addEventListener('drop',e=>{const f=e.dataTransfer?.files?.[0];if(f)handleCreativeFile(f)});$('campaignBody').addEventListener('click',e=>{const sel=e.target.closest('[data-select-id]');if(sel){if(sel.checked)selectedCampaignIds.add(sel.dataset.selectId);else selectedCampaignIds.delete(sel.dataset.selectId);renderTable();renderManagerSummary();return}const edit=e.target.closest('[data-edit]');if(edit){openEdit(edit.dataset.edit);return}const dup=e.target.closest('[data-duplicate]');if(dup){duplicateCampaign(dup.dataset.duplicate);return}const t=e.target.closest('[data-toggle]');if(t){toggleCampaign(t.dataset.toggle);return}const d=e.target.closest('[data-delete]');if(d)deleteCampaign(d.dataset.delete)});$('refreshBtn').addEventListener('click',async()=>{await loadCampaigns();renderAll();toast('Datos actualizados.')});qa('[data-entity-level]').forEach(btn=>btn.addEventListener('click',()=>{managerLevel=btn.dataset.entityLevel;qa('[data-entity-level]').forEach(x=>x.classList.toggle('active',x===btn));selectedCampaignIds.clear();renderTable();renderManagerSummary()}));const mgrRefresh=$('managerRefresh');if(mgrRefresh)mgrRefresh.addEventListener('click',async()=>{await loadCampaigns();renderAll();toast('Administrador actualizado.')});const clear=$('clearFilters');if(clear)clear.addEventListener('click',()=>{$('search').value='';$('statusFilter').value='all';renderTable()});const dupBtn=$('duplicateBtn');if(dupBtn)dupBtn.addEventListener('click',()=>{[...selectedCampaignIds].forEach(id=>duplicateCampaign(id));selectedCampaignIds.clear();renderAll()});const editBtn=$('bulkEditBtn');if(editBtn)editBtn.addEventListener('click',()=>{const id=[...selectedCampaignIds][0];if(id)openEdit(id)});const delBtn=$('bulkDeleteBtn');if(delBtn)delBtn.addEventListener('click',async()=>{const ids=[...selectedCampaignIds];if(!ids.length)return;if(confirm('¿Eliminar '+ids.length+' elemento(s) seleccionado(s)?')){for(const id of ids){const c=campaigns.find(x=>x.id===id);if(c){for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete().catch(()=>{});await publicCampaignRef(id).delete().catch(()=>{})}}campaigns=campaigns.filter(c=>!selectedCampaignIds.has(c.id));selectedCampaignIds.clear();saveCampaigns();renderAll();toast('Elementos eliminados.')}});['columnsBtn','breakdownBtn','reportsBtn','testBtn','moreBtn'].forEach(id=>{const el=$(id);if(el)el.addEventListener('click',()=>toast('Control preparado para métricas reales.'))});blockExtraction()}
 document.addEventListener('DOMContentLoaded',()=>{bind();try{initFirebase();fbAuth.onAuthStateChanged(async u=>{try{if(u&&registrationGate)await registrationGate;if(u&&fbAuth.currentUser?.uid!==u.uid)return;await handleAuthState(u)}catch(e){console.error(e);authMsg('No fue posible cargar la cuenta comercial.','error')}})}catch(e){console.error(e);authMsg('No fue posible iniciar Firebase.','error');animateAuth()}});
 })();
 </script>
