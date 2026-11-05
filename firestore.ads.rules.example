@@ -1,51 +1,75 @@
-rules_version = '2';
+// Fragmento para fusionar dentro de las reglas Firestore existentes de TaskFlow.
+// NO reemplaza las reglas actuales del proyecto.
 
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function signedIn() {
-      return request.auth != null;
-    }
+function adsSignedIn() {
+  return request.auth != null;
+}
+function adsAdmin() {
+  return adsSignedIn() && request.auth.token.taskflowAdsAdmin == true;
+}
+function adsOwner(userId) {
+  return adsSignedIn() && request.auth.uid == userId;
+}
 
-    function isOwner(userId) {
-      return signedIn() && request.auth.uid == userId;
-    }
+match /users/{userId}/adsManager/{docId} {
+  allow read: if adsOwner(userId) || adsAdmin();
 
-    function isAdsAdmin() {
-      return signedIn() && request.auth.token.taskflowAdsAdmin == true;
-    }
+  allow create: if adsOwner(userId)
+    && request.resource.data.ownerUid == userId
+    && request.resource.data.accountStatus == 'active';
 
-    match /users/{userId}/adsManager/{docId} {
-      allow read: if isOwner(userId) || isAdsAdmin();
+  allow update: if adsAdmin() || (
+    adsOwner(userId)
+    && resource.data.ownerUid == userId
+    && request.resource.data.ownerUid == userId
+    && request.resource.data.accountStatus == resource.data.accountStatus
+  );
 
-      allow create: if isOwner(userId)
-        && request.resource.data.ownerUid == userId
-        && request.resource.data.accountStatus == 'active';
+  allow delete: if adsAdmin();
+}
 
-      allow update: if (
-          isOwner(userId)
-          && resource.data.ownerUid == userId
-          && request.resource.data.ownerUid == userId
-          && request.resource.data.accountStatus == resource.data.accountStatus
-        ) || isAdsAdmin();
+match /users/{userId}/adsCampaigns/{campaignId} {
+  allow read: if adsOwner(userId) || adsAdmin();
 
-      allow delete: if isAdsAdmin();
-    }
+  allow create: if adsOwner(userId)
+    && request.resource.data.ownerUid == userId
+    && request.resource.data.approvalStatus == 'pending'
+    && request.resource.data.status in ['draft', 'active', 'paused']
+    && request.resource.data.ads.size() >= 1
+    && request.resource.data.ads.size() <= 12;
 
-    match /users/{userId}/adsCampaigns/{campaignId} {
-      allow read: if isOwner(userId) || isAdsAdmin();
+  allow update: if adsAdmin() || (
+    adsOwner(userId)
+    && resource.data.ownerUid == userId
+    && request.resource.data.ownerUid == userId
+    && request.resource.data.status in ['draft', 'active', 'paused']
+    && request.resource.data.ads.size() >= 1
+    && request.resource.data.ads.size() <= 12
+    && (
+      request.resource.data.approvalStatus == resource.data.approvalStatus
+      || (
+        resource.data.approvalStatus in ['approved', 'rejected']
+        && request.resource.data.approvalStatus == 'pending'
+      )
+    )
+  );
 
-      allow create: if isOwner(userId)
-        && request.resource.data.ownerUid == userId
-        && request.resource.data.status in ['draft', 'active', 'paused'];
+  allow delete: if adsOwner(userId) || adsAdmin();
+}
 
-      allow update: if (
-          isOwner(userId)
-          && resource.data.ownerUid == userId
-          && request.resource.data.ownerUid == userId
-          && request.resource.data.status in ['draft', 'active', 'paused']
-        ) || isAdsAdmin();
+match /adsPublicCampaigns/{campaignId} {
+  allow read: if true;
 
-      allow delete: if isOwner(userId) || isAdsAdmin();
-    }
-  }
+  allow create, update: if adsAdmin() || (
+    adsSignedIn()
+    && request.resource.data.campaignId == campaignId
+    && exists(/databases/$(database)/documents/users/$(request.auth.uid)/adsCampaigns/$(campaignId))
+    && get(/databases/$(database)/documents/users/$(request.auth.uid)/adsCampaigns/$(campaignId)).data.approvalStatus == 'approved'
+    && get(/databases/$(database)/documents/users/$(request.auth.uid)/adsCampaigns/$(campaignId)).data.status == 'active'
+  );
+
+  allow delete: if adsAdmin() || (
+    adsSignedIn()
+    && exists(/databases/$(database)/documents/users/$(request.auth.uid)/adsCampaigns/$(campaignId))
+  );
 }
