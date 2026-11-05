@@ -1,255 +1,998 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#0b1220">
-  <title>TaskFlow ADS Manager</title>
-  <link rel="stylesheet" href="./styles.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" name="viewport"/>
+<meta content="#08111f" name="theme-color"/>
+<title>TaskFlow ADS Manager</title>
+<style>
+:root{--bg:#f2f5f9;--panel:#fff;--ink:#101827;--muted:#6f7f93;--line:#dfe6ef;--nav:#07111f;--nav2:#0c1728;--blue:#155dfc;--blue2:#0d49cf;--cyan:#16c6d5;--green:#15966d;--amber:#c27a0a;--red:#d64054;--shadow:0 18px 50px rgba(15,23,42,.08);--soft:#f7f9fc;--radius:16px}
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overscroll-behavior:none}
+body{overflow-x:hidden}button,input,select,textarea{font:inherit}button{cursor:pointer}input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:text}img,video{-webkit-user-drag:none;user-drag:none} [hidden]{display:none!important}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(21,93,252,.15);outline-offset:1px}
+.auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(420px,.88fr);background:#07111f}
+.auth-hero{position:relative;overflow:hidden;padding:7vh 6vw;display:flex;flex-direction:column;justify-content:center;color:#fff;background:radial-gradient(circle at 16% 14%,rgba(22,198,213,.18),transparent 28%),radial-gradient(circle at 76% 78%,rgba(21,93,252,.28),transparent 32%),linear-gradient(145deg,#07101c,#0b1730 58%,#08111f)}
+.auth-hero:after{content:"";position:absolute;inset:auto -12% -25% auto;width:58vw;height:58vw;border-radius:50%;border:1px solid rgba(255,255,255,.06);box-shadow:0 0 0 80px rgba(255,255,255,.018),0 0 0 160px rgba(255,255,255,.012)}
+.brand-pill{position:relative;z-index:2;display:inline-flex;align-items:center;gap:8px;width:max-content;padding:7px 10px;border-radius:999px;border:1px solid rgba(141,226,233,.19);background:rgba(21,93,252,.12);color:#a6eff4;font-size:9px;font-weight:950;letter-spacing:.1em;text-transform:uppercase}.brand-pill:before{content:"";width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),#7cf6ff);box-shadow:0 0 0 5px rgba(22,198,213,.08)}
+.auth-hero h1{position:relative;z-index:2;max-width:760px;margin:22px 0 14px;font-size:clamp(44px,5.1vw,76px);line-height:.98;letter-spacing:-.047em}.auth-hero>p{position:relative;z-index:2;max-width:610px;margin:0;color:#a9b8cb;font-size:clamp(14px,1.4vw,18px);line-height:1.62}
+.hero-console{position:relative;z-index:3;max-width:780px;margin-top:44px;padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:22px;background:rgba(10,24,45,.74);backdrop-filter:blur(16px);box-shadow:0 28px 90px rgba(0,0,0,.27)}
+.hero-console-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 7px 14px;border-bottom:1px solid rgba(255,255,255,.07)}.hero-console-top b{font-size:11px}.hero-console-top span{font-size:8px;color:#6f87a6}.hero-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.hero-kpi{padding:14px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}.hero-kpi span,.hero-kpi small{display:block;color:#7f95b0}.hero-kpi span{font-size:8px;text-transform:uppercase;letter-spacing:.08em;font-weight:900}.hero-kpi strong{display:block;margin:8px 0 4px;font-size:25px}.hero-kpi small{font-size:8px}.hero-chart{height:100px;display:flex;align-items:flex-end;gap:7px;margin-top:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.025)}.bar{flex:1;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#3f7eff,#1e4ebd);min-height:12px}.bar:nth-child(2n){background:linear-gradient(180deg,#2cd5e1,#168794)}
+.auth-panel{display:grid;place-items:center;padding:34px;background:#fff}.auth-box{width:min(430px,100%)}.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}.logo-mark{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,#155dfc,#16c6d5);color:#fff;font-weight:950;letter-spacing:-.04em;box-shadow:0 12px 28px rgba(21,93,252,.26)}.auth-logo strong,.auth-logo small{display:block}.auth-logo strong{font-size:17px}.auth-logo small{margin-top:2px;color:#8290a3;font-size:9px}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;border-radius:12px;background:#eef2f7;margin-bottom:20px}.auth-tab{height:37px;border:0;border-radius:9px;background:transparent;color:#748196;font-size:10px;font-weight:900}.auth-tab.active{background:#fff;color:#172033;box-shadow:0 4px 12px rgba(15,23,42,.08)}
+.field{display:grid;gap:6px}.field+.field{margin-top:13px}.field label{font-size:9px;font-weight:900;color:#415069}.field input,.field select,.field textarea{width:100%;border:1px solid #dbe2ec;border-radius:10px;background:#fff;padding:0 11px;color:#1f2c40;outline:none;font-size:11px;transition:.16s}.field input,.field select{height:43px}.field textarea{min-height:78px;padding-top:10px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#76a2ff;box-shadow:0 0 0 3px rgba(21,93,252,.08)}
+.primary,.secondary,.ghost,.danger-btn,.icon-btn{border:0;border-radius:10px;font-weight:900;font-size:10px;transition:.16s}.primary{height:42px;padding:0 15px;background:var(--blue);color:#fff;box-shadow:0 8px 18px rgba(21,93,252,.17)}.primary:hover{background:var(--blue2)}.secondary{height:40px;padding:0 13px;border:1px solid #dbe2ec;background:#fff;color:#334158}.ghost{height:40px;padding:0 13px;background:#edf2f8;color:#415069}.danger-btn{height:36px;padding:0 11px;background:#fff1f3;color:#bd2f44}.icon-btn{width:38px;height:38px;background:#edf2f7;color:#344155;font-size:18px}.wide{width:100%}.auth-actions{display:grid;gap:9px;margin-top:17px}.form-message{min-height:15px;margin:9px 0 0;font-size:9px;color:#79879a;line-height:1.45}.form-message.error{color:var(--red)}.form-message.success{color:var(--green)}.auth-note{margin:16px 0 0;color:#8a96a7;font-size:9px;line-height:1.5;text-align:center}
+.shell{min-height:100vh;display:grid;grid-template-columns:236px minmax(0,1fr)}.sidebar{position:sticky;top:0;height:100vh;z-index:50;display:flex;flex-direction:column;padding:16px 12px;background:linear-gradient(180deg,#07111f,#0b1525 64%,#07101d);color:#dce7f5}.side-brand{display:flex;align-items:center;gap:10px;padding:3px 8px 20px}.side-brand .logo-mark{width:38px;height:38px;border-radius:12px;font-size:11px}.side-brand strong,.side-brand small{display:block}.side-brand strong{font-size:14px}.side-brand small{color:#7388a5;font-size:8px;margin-top:2px}.nav{display:grid;gap:3px}.nav-section{margin:13px 10px 5px;color:#506780;font-size:7px;font-weight:950;text-transform:uppercase;letter-spacing:.12em}.nav-item{width:100%;height:41px;display:flex;align-items:center;gap:10px;padding:0 11px;border:0;border-radius:10px;background:transparent;color:#8fa0b7;text-align:left;font-size:10px;font-weight:800}.nav-item span{width:20px;text-align:center;color:#607895}.nav-item:hover,.nav-item.active{background:#142239;color:#fff}.nav-item.active span{color:#64dce4}.side-version{margin-top:auto;margin-bottom:10px;padding:12px;border:1px solid rgba(255,255,255,.055);border-radius:11px;background:rgba(255,255,255,.025)}.side-version span,.side-version b{display:block}.side-version span{font-size:7px;color:#59708d;text-transform:uppercase;letter-spacing:.12em;font-weight:900}.side-version b{margin-top:4px;font-size:9px;color:#8799b1}.side-foot{display:grid;gap:4px}.workspace{min-width:0}.topbar{position:sticky;top:0;z-index:40;height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:0 22px;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}.top-left,.top-actions,.account{display:flex;align-items:center}.top-left{gap:10px}.top-left small,.top-left strong{display:block}.top-left small{font-size:8px;color:#7f8da0;text-transform:uppercase;letter-spacing:.09em;font-weight:900}.top-left strong{font-size:13px;margin-top:3px}.top-actions{gap:8px}.sync{padding:6px 8px;border-radius:999px;background:#e6f8f0;color:#10865e;font-size:8px;font-weight:950}.account{gap:8px;padding:5px 8px 5px 5px;border:1px solid #dce3ed;border-radius:11px;background:#fff}.account>span{width:31px;height:31px;border-radius:9px;display:grid;place-items:center;background:#e9f0ff;color:#1554cd;font-weight:950;font-size:9px}.account b,.account small{display:block;text-align:left}.account b{font-size:9px}.account small{font-size:7px;color:#8996a7;margin-top:2px}
+.view{display:none;padding:24px}.view.active{display:block}.heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}.heading .eyebrow,.panel-head .eyebrow,.section-title .eyebrow,.modal-head .eyebrow{color:#8794a6;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.11em}.heading h2,.modal-head h2{margin:4px 0 5px;font-size:23px;letter-spacing:-.028em}.heading p,.modal-head p{margin:0;color:#718094;font-size:10px;line-height:1.5}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:13px}.metric{padding:15px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 7px 20px rgba(15,23,42,.03)}.metric span,.metric small{display:block}.metric span{color:#6f7f93;font-size:9px;font-weight:850}.metric strong{display:block;margin:7px 0 3px;font-size:25px;letter-spacing:-.035em}.metric small{color:#9aa5b4;font-size:8px}.dashboard{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.75fr);gap:13px}.panel{border:1px solid var(--line);border-radius:15px;background:#fff;box-shadow:var(--shadow);overflow:hidden}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 16px;border-bottom:1px solid #edf1f5}.panel-head h3{margin:4px 0 0;font-size:13px}.badge{padding:5px 7px;border-radius:999px;background:#eef2f7;color:#65758a;font-size:7px;font-weight:950}.badge.ok{background:#e7f8f1;color:#0f8a61}.badge.blue{background:#eaf1ff;color:#1557d5}.side-list{display:grid}.side-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid #edf1f5}.side-row:last-child{border-bottom:0}.side-row b,.side-row span{display:block}.side-row b{font-size:10px}.side-row span{margin-top:3px;color:#8391a4;font-size:8px}.place-code{white-space:nowrap;padding:5px 7px;border-radius:7px;background:#f2f5f9!important;color:#536176!important;font-size:7px!important;font-weight:900}.activity-list{display:grid}.activity{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #edf1f5}.activity:last-child{border-bottom:0}.activity-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#edf3ff;color:#175bdc;font-weight:950;font-size:9px}.activity b,.activity span{display:block}.activity b{font-size:10px}.activity span{font-size:8px;color:#8491a4;margin-top:3px}.activity small{font-size:8px;color:#7b8798}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.search{height:40px;min-width:280px;display:flex;align-items:center;gap:8px;padding:0 11px;border:1px solid #dce3ec;border-radius:10px;background:#fff}.search input{width:100%;border:0;outline:0;background:transparent;font-size:10px}.table-toolbar select{height:40px;border:1px solid #dce3ec;border-radius:10px;background:#fff;padding:0 11px;font-size:10px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow)}table{width:100%;min-width:930px;border-collapse:collapse}th,td{padding:12px 13px;border-bottom:1px solid #edf1f5;text-align:left;vertical-align:middle}th{background:#f9fbfd;color:#76859a;font-size:8px;text-transform:uppercase;letter-spacing:.06em}td{font-size:9.5px;color:#344158}.campaign-name{display:flex;align-items:center;gap:9px;font-weight:900;color:#182235}.creative-thumb{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;overflow:hidden;background:#edf2f8;border:1px solid #e1e7ef;color:#6d7b90;font-size:8px;font-weight:900}.creative-thumb img,.creative-thumb video{width:100%;height:100%;object-fit:cover}.status-pill{display:inline-flex;padding:4px 7px;border-radius:999px;font-size:7px;font-weight:950;text-transform:uppercase}.status-draft{background:#eef2f7;color:#69778a}.status-active{background:#e5f8ef;color:#0a8d60}.status-paused{background:#fff2dc;color:#a36a09}.row-actions{display:flex;gap:5px}.row-actions button{height:30px;padding:0 8px;border:1px solid #dfe5ee;border-radius:8px;background:#fff;color:#536277;font-size:8px;font-weight:900}.row-actions button:hover{background:#f5f8fc}.empty{padding:36px 18px;color:#94a0b1;font-size:10px;text-align:center}
+.modal{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:14px;background:rgba(4,9,17,.74);backdrop-filter:blur(8px);overflow:auto}.modal-card{width:min(1120px,100%);max-height:calc(100dvh - 28px);overflow:auto;border-radius:20px;background:#fff;box-shadow:0 32px 100px rgba(0,0,0,.3)}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}.wizard{display:grid;grid-template-columns:205px minmax(0,1fr);min-height:610px}.steps{padding:14px;border-right:1px solid var(--line);background:#f8fafc}.step{width:100%;display:flex;align-items:center;gap:9px;padding:10px;border:0;border-radius:10px;background:transparent;text-align:left;color:#718096}.step+.step{margin-top:3px}.step>span{width:27px;height:27px;border-radius:8px;display:grid;place-items:center;background:#e9eef5;color:#69778b;font-size:9px;font-weight:950}.step b,.step small{display:block}.step b{font-size:9px}.step small{font-size:7px;color:#9ba5b3;margin-top:2px}.step.active{background:#eaf1ff;color:#153f94}.step.active>span{background:var(--blue);color:#fff}.wizard-body{display:flex;flex-direction:column;min-height:610px;padding:20px}.wizard-page{display:none}.wizard-page.active{display:block}.section-title{margin-bottom:16px}.section-title h3{margin:4px 0 0;font-size:17px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.formgrid .field+.field{margin-top:0}.full{grid-column:1/-1}.choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.choice{min-height:95px;padding:12px;border:1px solid #dfe5ed;border-radius:12px;background:#fff;text-align:left}.choice b,.choice span{display:block}.choice b{font-size:10px}.choice span{margin-top:5px;color:#7d8a9d;font-size:8px;line-height:1.45}.choice.active{border-color:#6c9cff;background:#f1f6ff;box-shadow:0 0 0 2px rgba(21,93,252,.07)}
+.placements{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.placement{position:relative;display:block;cursor:pointer}.placement input{position:absolute;opacity:0;pointer-events:none}.placement-card{height:100%;padding:13px;border:1px solid #dfe5ed;border-radius:12px;background:#fff;transition:.16s}.placement input:checked+.placement-card{border-color:#6b9aff;background:#f2f6ff;box-shadow:0 0 0 2px rgba(21,93,252,.07)}.placement-card b,.placement-card span,.placement-card small{display:block}.placement-card b{font-size:10px}.placement-card span{margin-top:5px;font-size:8px;color:#7e8b9e;line-height:1.45}.placement-card small{margin-top:8px;color:#1557d5;font-size:7px;font-weight:950;text-transform:uppercase;letter-spacing:.06em}
+.notice{margin-top:15px;padding:12px;border:1px solid #d8e4ff;border-radius:11px;background:#f2f6ff}.notice b,.notice span{display:block}.notice b{font-size:9px}.notice span{margin-top:4px;color:#687893;font-size:8px;line-height:1.5}
+.creative-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px}.upload-zone{position:relative;min-height:185px;display:grid;place-items:center;padding:18px;border:1.5px dashed #bfcbe0;border-radius:14px;background:linear-gradient(180deg,#fbfcfe,#f5f8fc);text-align:center;transition:.16s}.upload-zone:hover{border-color:#7ca5ff;background:#f4f8ff}.upload-zone.drag{border-color:#155dfc;background:#edf4ff}.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}.upload-icon{width:42px;height:42px;margin:0 auto 10px;border-radius:13px;display:grid;place-items:center;background:#e9f0ff;color:#1557d5;font-size:17px;font-weight:950}.upload-zone b,.upload-zone span,.upload-zone small{display:block}.upload-zone b{font-size:11px}.upload-zone span{margin-top:5px;color:#6f7f93;font-size:8px}.upload-zone small{margin-top:7px;color:#1557d5;font-size:7px;font-weight:950}.media-status{margin-top:9px;padding:9px 10px;border-radius:9px;background:#f6f8fb;color:#66758a;font-size:8px;line-height:1.45}.media-status.ok{background:#e9f8f2;color:#0f805b}.media-status.error{background:#fff0f2;color:#bd3348}.preview-card{border:1px solid #dfe6ef;border-radius:14px;background:#0b1220;padding:12px}.preview-label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;color:#a5b5ca;font-size:8px}.media-frame{position:relative;display:grid;place-items:center;overflow:hidden;border-radius:10px;background:linear-gradient(145deg,#111d31,#09111e);border:1px solid rgba(255,255,255,.07)}.media-frame.banner{aspect-ratio:20/3}.media-frame.vertical{aspect-ratio:9/16;max-height:390px;margin:auto}.media-frame img,.media-frame video{width:100%;height:100%;object-fit:contain;background:#050a12}.media-placeholder{padding:18px;text-align:center;color:#7286a4;font-size:8px;line-height:1.5}.spec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}.spec{padding:8px;border-radius:9px;background:#111d31;border:1px solid rgba(255,255,255,.06)}.spec span,.spec b{display:block}.spec span{color:#6f86a5;font-size:6.5px;text-transform:uppercase;font-weight:950;letter-spacing:.08em}.spec b{margin-top:4px;color:#d9e5f5;font-size:8px}.review{margin-top:14px;padding:13px;border:1px solid #dfe6ee;border-radius:11px;background:#f9fbfd;font-size:9px;line-height:1.65;color:#526176}.wizard-footer{margin-top:auto;padding-top:20px;display:flex;align-items:center;justify-content:space-between;gap:10px}.wizard-right{display:flex;gap:7px}.toast{position:fixed;right:16px;bottom:16px;z-index:500;max-width:350px;padding:11px 13px;border-radius:11px;background:#0f172a;color:#fff;font-size:9px;line-height:1.45;box-shadow:0 18px 50px rgba(15,23,42,.3);opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}.mobile-only{display:none}
+@media(max-width:1100px){.auth{grid-template-columns:1fr 430px}.auth-hero{padding-left:5vw;padding-right:5vw}.metrics{grid-template-columns:repeat(2,1fr)}.dashboard{grid-template-columns:1fr}.creative-layout{grid-template-columns:1fr}.preview-card{max-width:440px}.choice-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:820px){.auth{display:block;background:#fff}.auth-hero{min-height:38vh;padding:42px 22px}.auth-hero h1{font-size:40px}.hero-console{display:none}.auth-panel{padding:28px 18px}.shell{display:block}.sidebar{position:fixed;left:0;top:0;bottom:0;width:236px;transform:translateX(-103%);transition:.2s;box-shadow:30px 0 70px rgba(0,0,0,.18)}.shell.menu-open .sidebar{transform:none}.mobile-only{display:grid}.topbar{padding:0 12px}.account div{display:none}.view{padding:16px 12px}.wizard{grid-template-columns:1fr}.steps{display:grid;grid-template-columns:repeat(4,1fr);border-right:0;border-bottom:1px solid var(--line);overflow:auto}.step{justify-content:center;padding:7px}.step div{display:none}.wizard-body{min-height:550px;padding:14px}.modal{padding:7px}.modal-card{max-height:calc(100dvh - 14px);border-radius:14px}.placements{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.heading{display:block}.heading>button{margin-top:10px}.metrics{grid-template-columns:1fr 1fr;gap:8px}.metric{padding:12px}.metric strong{font-size:21px}.table-toolbar{display:grid}.search,.table-toolbar select{width:100%;min-width:0}.formgrid,.choice-grid,.placements{grid-template-columns:1fr}.full{grid-column:auto}.wizard-footer{align-items:stretch}.wizard-right{flex:1;justify-content:flex-end}.top-actions .primary{padding:0 10px}.top-left strong{max-width:115px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.creative-layout{display:block}.preview-card{margin-top:12px}.media-frame.vertical{max-height:330px}}
+@media print{body{display:none!important}}
+
+/* ===== FINAL PROFESSIONAL LAYER V5 ===== */
+:root{
+ --bg:#f5f7fb;--panel:#fff;--ink:#142033;--muted:#6d7c91;--line:#e4e9f1;--nav:#07111f;--nav2:#0c1728;
+ --blue:#195ff5;--blue2:#104ac4;--cyan:#18c4d0;--green:#11845f;--amber:#b56d08;--red:#c9344a;
+ --shadow-sm:0 4px 14px rgba(15,23,42,.045);--shadow:0 14px 38px rgba(15,23,42,.07);--shadow-lg:0 28px 90px rgba(3,10,24,.18);
+ --radius:14px;--radius-lg:20px;
+}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{font-size:14px;line-height:1.45;background:linear-gradient(180deg,#f8fafd 0,#f3f6fa 100%);letter-spacing:-.005em}
+button,input,select,textarea{letter-spacing:0}
+.auth{grid-template-columns:minmax(0,1.18fr) minmax(440px,.82fr);min-height:100dvh}
+.auth-hero{padding:7vh clamp(42px,6vw,92px);background:radial-gradient(circle at 10% 5%,rgba(24,196,208,.13),transparent 26%),radial-gradient(circle at 84% 84%,rgba(25,95,245,.22),transparent 30%),linear-gradient(145deg,#07111f 0%,#0b1830 60%,#07111f 100%)}
+.auth-hero:before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,rgba(0,0,0,.7),transparent 92%);pointer-events:none}
+.brand-pill{padding:8px 12px;border-color:rgba(129,232,239,.18);background:rgba(12,28,51,.7);font-size:10px;letter-spacing:.12em;box-shadow:inset 0 1px rgba(255,255,255,.04)}
+.auth-hero h1{max-width:820px;margin:26px 0 18px;font-size:clamp(48px,5.15vw,78px);line-height:1.02;letter-spacing:-.052em;font-weight:790}
+.auth-hero>p{max-width:690px;font-size:clamp(15px,1.3vw,19px);color:#aebbd0;line-height:1.7}
+.hero-console{max-width:850px;margin-top:48px;padding:16px;border-radius:24px;border-color:rgba(255,255,255,.085);background:linear-gradient(180deg,rgba(13,29,52,.83),rgba(8,20,38,.78));box-shadow:0 34px 90px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035)}
+.hero-console-top{padding:7px 8px 15px}.hero-console-top>div b,.hero-console-top>div small{display:block}.hero-console-top>div b{font-size:12px}.hero-console-top>div small{margin-top:4px;font-size:9px;color:#7088a7}.hero-secure{display:inline-flex!important;align-items:center;gap:7px;padding:7px 9px;border:1px solid rgba(83,221,186,.12);border-radius:999px;background:rgba(14,119,85,.10);color:#8fe3c7!important;font-weight:800}.hero-secure i{width:7px;height:7px;border-radius:50%;background:#38d79d;box-shadow:0 0 0 5px rgba(56,215,157,.08)}
+.hero-kpis{gap:10px;margin-top:14px}.hero-kpi{min-height:108px;padding:16px;border-radius:15px;background:rgba(255,255,255,.032);border-color:rgba(255,255,255,.055)}.hero-kpi span{font-size:8px}.hero-kpi strong{margin:9px 0 5px;font-size:22px}.hero-kpi small{font-size:9px;line-height:1.45;color:#8ca0ba}
+.hero-flow{display:flex;align-items:center;gap:9px;margin-top:12px;padding:13px 14px;border:1px solid rgba(255,255,255,.06);border-radius:14px;background:rgba(255,255,255,.02);overflow:hidden}.hero-flow>b{color:#425a79;font-size:12px}.flow-step{min-width:0;display:flex;align-items:center;gap:7px;color:#738aa7;font-size:9px;font-weight:800;white-space:nowrap}.flow-step i{width:24px;height:24px;display:grid;place-items:center;border-radius:8px;background:#162640;color:#83a1c8;font-style:normal;font-size:8px;font-weight:950}.flow-step.active{color:#dce8f7}.flow-step.active i{background:#1b5cef;color:#fff}.flow-step.ready{color:#8bd9bf}.flow-step.ready i{background:rgba(17,132,95,.22);color:#72d8b5}
+.auth-panel{padding:44px;background:linear-gradient(180deg,#fff,#fbfcfe)}.auth-box{width:min(455px,100%)}.auth-logo{margin-bottom:32px}.auth-logo .logo-mark{width:52px;height:52px;border-radius:16px;box-shadow:0 14px 32px rgba(21,93,252,.23)}.auth-logo strong{font-size:18px}.auth-logo small{font-size:10px;margin-top:3px}.auth-tabs{padding:5px;margin-bottom:24px;border-radius:13px}.auth-tab{height:40px;font-size:11px}.field{gap:7px}.field+.field{margin-top:15px}.field label{font-size:10px;color:#3e4d64}.field input,.field select,.field textarea{border-color:#d9e1ec;border-radius:11px;font-size:12px;box-shadow:inset 0 1px 2px rgba(15,23,42,.015)}.field input,.field select{height:46px}.field textarea{min-height:92px}.primary,.secondary,.ghost,.danger-btn,.icon-btn{font-size:11px;border-radius:10px}.primary{height:43px;padding:0 16px;box-shadow:0 8px 18px rgba(25,95,245,.15)}.secondary,.ghost{height:41px}.auth-actions .primary{height:47px;font-size:12px}.auth-note{font-size:9.5px;line-height:1.6}
+.shell{grid-template-columns:258px minmax(0,1fr)}.sidebar{padding:18px 13px;background:linear-gradient(180deg,#07111f 0%,#0a1526 60%,#07101c 100%);box-shadow:1px 0 rgba(255,255,255,.02)}.side-brand{padding:4px 9px 24px}.side-brand .logo-mark{width:42px;height:42px;border-radius:13px}.side-brand strong{font-size:15px;letter-spacing:-.01em}.side-brand small{font-size:8.5px}.nav-section{margin:17px 11px 7px;font-size:7.5px;letter-spacing:.14em}.nav{gap:4px}.nav-item{height:44px;padding:0 12px;border-radius:11px;font-size:11px;color:#8fa0b8}.nav-item span{font-size:14px}.nav-item:hover{background:#101e34}.nav-item.active{background:linear-gradient(90deg,#162944,#12243d);box-shadow:inset 3px 0 #36cbd5;color:#fff}.nav-item.active span{color:#70e0e8}
+.topbar{height:74px;padding:0 26px;border-color:#e6ebf2;background:rgba(255,255,255,.92);box-shadow:0 1px 0 rgba(15,23,42,.018)}.top-left small{font-size:8px}.top-left strong{font-size:14px}.top-actions{gap:9px}.top-status{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;background:#eef8f4;color:#24775c;font-size:8.5px;font-weight:900}.top-status i{width:7px;height:7px;border-radius:50%;background:#2ab684;box-shadow:0 0 0 4px rgba(42,182,132,.10)}.sync{padding:7px 10px;font-size:8.5px;background:#f0f3f8;color:#65748a}.account{padding:5px 10px 5px 6px;border-radius:12px}.account>span{width:34px;height:34px;border-radius:10px}.account b{font-size:10px}.account small{font-size:8px}
+.view{padding:30px 30px 42px;max-width:1680px;margin:0 auto}.heading{margin-bottom:22px}.heading .eyebrow,.panel-head .eyebrow,.section-title .eyebrow,.modal-head .eyebrow{font-size:8.5px;letter-spacing:.13em}.heading h2,.modal-head h2{margin:5px 0 7px;font-size:27px;letter-spacing:-.035em}.heading p,.modal-head p{font-size:11px;line-height:1.6;max-width:760px}.metrics{gap:13px;margin-bottom:15px}.metric{position:relative;overflow:hidden;padding:18px 19px;border-radius:16px;box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease}.metric:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#195ff5,#18c4d0);opacity:.75}.metric:hover{transform:translateY(-1px);box-shadow:var(--shadow)}.metric span{font-size:10px}.metric strong{margin:9px 0 4px;font-size:29px}.metric small{font-size:8.5px}
+.dashboard{gap:15px}.panel{border-radius:17px;box-shadow:var(--shadow-sm);transition:box-shadow .18s ease}.panel:hover{box-shadow:var(--shadow)}.panel-head{padding:17px 18px}.panel-head h3{font-size:14px}.badge{padding:6px 8px;font-size:7.5px}.activity{grid-template-columns:38px minmax(0,1fr) auto;padding:14px 18px}.activity-icon{width:38px;height:38px;border-radius:11px}.activity b{font-size:11px}.activity span,.activity small{font-size:8.5px}.side-row{padding:14px 18px}.side-row b{font-size:11px}.side-row span{font-size:8.5px}.place-code{font-size:7.5px!important}
+.table-toolbar{margin-bottom:12px}.search{height:43px;min-width:330px;border-radius:11px}.search input,.table-toolbar select{font-size:11px}.table-toolbar select{height:43px;border-radius:11px}.table-wrap{border-radius:16px;box-shadow:var(--shadow-sm)}table{min-width:1040px}th,td{padding:14px 14px}th{font-size:8.5px;background:#fafbfd}td{font-size:10.5px}.campaign-name{font-size:11px}.creative-thumb{width:38px!important;height:38px!important;border-radius:10px!important}.row-actions{gap:6px}.row-actions button{min-height:31px;padding:0 9px;border-radius:8px;font-size:8.5px!important;font-weight:850}
+.modal{padding:20px;background:rgba(3,9,18,.72);backdrop-filter:blur(10px)}.modal-card{width:min(1240px,100%);max-height:calc(100dvh - 40px);border-radius:22px;box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.08)}.modal-head{position:sticky;top:0;z-index:5;padding:21px 24px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.modal-head h2{font-size:24px}.wizard{grid-template-columns:235px minmax(0,1fr)}.steps{padding:18px;background:linear-gradient(180deg,#f8fafc,#f5f7fb)}.step{min-height:50px;padding:10px 11px;border-radius:11px}.step+.step{margin-top:5px}.step>span{width:30px;height:30px;border-radius:9px}.step b{font-size:10px}.step small{font-size:8px}.step.active{background:#eaf1ff;box-shadow:inset 0 0 0 1px #d8e5ff}.wizard-body{min-height:650px;padding:25px 27px}.section-title{margin-bottom:20px}.section-title h3{font-size:20px;letter-spacing:-.02em}.formgrid{gap:15px}.choice-grid{gap:11px}.choice{min-height:108px;padding:14px;border-radius:13px;transition:.16s}.choice:hover{border-color:#bdcae0;transform:translateY(-1px)}.choice b{font-size:11px}.choice span{font-size:9px}.choice.active{border-color:#6c9cff;background:linear-gradient(180deg,#f4f7ff,#edf4ff);box-shadow:0 0 0 2px rgba(21,93,252,.07)}.placements{gap:11px}.placement-card{padding:15px;border-radius:13px;min-height:122px}.placement-card b{font-size:11px}.placement-card span{font-size:9px}.placement-card small{font-size:7.5px}.notice{margin-top:18px;padding:14px 15px;border-radius:12px}.notice b{font-size:10px}.notice span{font-size:9px}
+.creative-layout{grid-template-columns:minmax(0,1fr) 390px;gap:20px}.upload-zone{min-height:205px;padding:22px;border-radius:15px;border-width:1.5px}.upload-icon{width:48px;height:48px;border-radius:14px;font-size:20px}.upload-zone b{font-size:12px}.upload-zone span{font-size:9px}.upload-zone small{font-size:8px}.media-status{padding:10px 11px;font-size:9px}.preview-card{padding:14px;border-radius:16px;box-shadow:0 18px 44px rgba(5,12,24,.16)}.preview-label{font-size:8.5px}.media-frame{border-radius:11px}.spec-grid{gap:8px}.spec{padding:9px;border-radius:9px}.spec span{font-size:7px}.spec b{font-size:8.5px}.review{margin-top:16px;padding:15px;border-radius:12px;font-size:9.5px}.wizard-footer{position:sticky;bottom:-25px;z-index:4;margin-left:-27px;margin-right:-27px;padding:15px 27px 1px;background:linear-gradient(180deg,rgba(255,255,255,.5),#fff 26%);border-top:1px solid #edf1f5}.wizard-right{gap:8px}
+.empty{padding:44px 18px!important;font-size:10px!important;color:#8c99aa!important}.toast{right:20px;bottom:20px;padding:13px 15px;border-radius:12px;font-size:10px;box-shadow:0 20px 60px rgba(15,23,42,.28)}
+.module-content{display:grid;gap:15px}.module-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.module-card{padding:18px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:var(--shadow-sm)}.module-card>span{display:block;color:#718096;font-size:9px;font-weight:850}.module-card>strong{display:block;margin-top:8px;font-size:24px;letter-spacing:-.035em}.module-card>small{display:block;margin-top:4px;color:#95a1b1;font-size:8.5px}.module-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:15px}.module-list{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden;box-shadow:var(--shadow-sm)}.module-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid #edf1f5}.module-list-head b{font-size:13px}.module-list-head span{font-size:8.5px;color:#8996a8}.module-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(120px,.55fr) minmax(110px,.45fr);gap:12px;align-items:center;padding:13px 18px;border-bottom:1px solid #edf1f5}.module-row:last-child{border-bottom:0}.module-row b,.module-row span,.module-row small{display:block}.module-row b{font-size:10.5px}.module-row span{margin-top:3px;color:#8290a3;font-size:8.5px}.module-row small{font-size:8.5px;color:#69788d;text-align:right}.module-note{padding:17px 18px;border:1px solid #dce6fb;border-radius:16px;background:linear-gradient(180deg,#f7faff,#f1f6ff);color:#4a5e7b}.module-note b{display:block;font-size:11px;color:#2e456a}.module-note p{margin:6px 0 0;font-size:9px;line-height:1.6}.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.setting-card{padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff}.setting-card span,.setting-card b,.setting-card small{display:block}.setting-card span{font-size:8px;color:#8b98a9;text-transform:uppercase;letter-spacing:.08em;font-weight:900}.setting-card b{margin-top:6px;font-size:11px}.setting-card small{margin-top:4px;font-size:8.5px;color:#7a889b}.status-line{display:inline-flex;align-items:center;gap:7px}.status-line i{width:7px;height:7px;border-radius:50%;background:#24ac7c;box-shadow:0 0 0 4px rgba(36,172,124,.10)}
+@media(max-width:1100px){.module-kpis{grid-template-columns:repeat(2,1fr)}.module-grid{grid-template-columns:1fr}.creative-layout{grid-template-columns:1fr}.preview-card{max-width:480px}}
+@media(max-width:820px){.shell{display:block}.sidebar{width:258px}.top-status,.sync{display:none}.view{padding:20px 14px 34px}.modal{padding:8px}.modal-card{max-height:calc(100dvh - 16px);border-radius:16px}.wizard{grid-template-columns:1fr}.steps{grid-template-columns:repeat(4,1fr);padding:9px}.wizard-body{padding:18px 16px}.wizard-footer{bottom:-18px;margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}.auth-hero{padding:44px 24px}.hero-flow{display:none}}
+@media(max-width:600px){.auth-hero{min-height:34vh}.auth-hero h1{font-size:38px}.auth-panel{padding:30px 18px}.metrics,.module-kpis{grid-template-columns:1fr 1fr}.metric,.module-card{padding:14px}.module-card>strong{font-size:20px}.settings-grid{grid-template-columns:1fr}.module-row{grid-template-columns:1fr auto}.module-row small{grid-column:1/-1;text-align:left}.heading h2{font-size:23px}.topbar{height:66px}.top-actions .primary{height:39px}.account{display:none}.choice,.placement-card{min-height:auto}.wizard-body{min-height:560px}.creative-layout{display:block}.preview-card{margin-top:14px}}
+
+</style>
+<style>
+:root{--tf-blue:#0866ff;--tf-green:#15a05c;--tf-ink:#1c1e21;--tf-muted:#65676b;--tf-border:#d8dde5;--tf-soft:#f5f6f7}
+body{background:#f5f6f7;color:var(--tf-ink);font-size:13px}.app-shell{grid-template-columns:72px minmax(0,1fr);background:#f5f6f7}.sidebar{width:72px;padding:10px 8px;background:#fff;border-right:1px solid #dfe3e8;color:#1c1e21;box-shadow:none;overflow:visible}.side-brand{justify-content:center;padding:0 0 14px;border-bottom:1px solid #eceff3;margin-bottom:8px}.side-brand .logo-mark{width:42px;height:42px;border-radius:12px;font-size:14px;box-shadow:none}.side-brand-copy,.nav-section,.side-version{display:none}.nav{gap:7px}.nav+.nav{margin-top:7px}.nav-item{position:relative;width:54px;min-height:48px;margin:0 auto;padding:0;border-radius:10px;justify-content:center;font-size:0;color:#606770}.nav-item>span{width:auto;font-size:20px;color:inherit}.nav-item:hover,.nav-item.active{background:#eaf2ff;color:#0866ff}.nav-item.active:before{content:"";position:absolute;left:-8px;top:9px;bottom:9px;width:3px;border-radius:3px;background:#0866ff}.nav-item:after{position:absolute;left:62px;top:50%;transform:translateY(-50%);z-index:300;display:none;white-space:nowrap;padding:7px 9px;border-radius:7px;background:#1c1e21;color:#fff;font-size:11px;font-weight:700;box-shadow:0 5px 14px rgba(0,0,0,.18)}.nav-item:hover:after{display:block}.nav-item[data-view="overview"]:after{content:"Resumen"}.nav-item[data-view="campaigns"]:after{content:"Administrador de anuncios"}.nav-item[data-view="audiences"]:after{content:"Audiencias"}.nav-item[data-view="creatives"]:after{content:"Creativos"}.nav-item[data-view="reports"]:after{content:"Informes"}.nav-item[data-view="billing"]:after{content:"Facturación"}.nav-item[data-view="settings"]:after{content:"Configuración"}#logoutBtn:after{content:"Cerrar sesión"}.side-foot{margin-top:auto}
+.workspace{min-width:0;background:#f5f6f7}.topbar{height:56px;padding:0 16px 0 18px;background:#fff;border-bottom:1px solid #dfe3e8;box-shadow:none}.top-status{display:none}.sync{background:#f0f2f5;color:#65676b;border:0}.top-actions>.primary{display:none}.account{border:0;background:#f0f2f5;border-radius:999px;padding:4px 9px 4px 4px}.account>span{border-radius:50%;background:#dfe9ff}.view{padding:20px 22px}.ads-manager-view{padding:0 0 28px;background:#f5f6f7;min-height:calc(100vh - 56px)}
+.manager-titlebar{min-height:78px;padding:14px 20px 12px;background:#fff;border-bottom:1px solid #dfe3e8;display:flex;align-items:center;justify-content:space-between;gap:18px}.manager-title-left{display:flex;align-items:center;gap:12px}.manager-app-icon{width:42px;height:42px;border-radius:9px;display:grid;place-items:center;background:#0866ff;color:#fff;font-weight:900;font-size:13px}.manager-titlebar h2{font-size:20px;line-height:1.1;margin:3px 0 5px}.manager-titlebar .eyebrow{font-size:9px;color:#65676b;text-transform:none;letter-spacing:0}.account-context{display:flex;align-items:center;gap:6px;color:#65676b;font-size:10px}.context-dot,.live-dot{width:7px;height:7px;border-radius:50%;background:#20a464;display:inline-block}.manager-title-actions{display:flex;align-items:center;gap:8px}.manager-date{height:40px;display:flex;align-items:center;gap:9px;padding:0 11px;border:1px solid #ccd0d5;border-radius:7px;background:#fff;color:#1c1e21}.manager-date small,.manager-date b{display:block;text-align:left}.manager-date small{font-size:8px;color:#65676b}.manager-date b{font-size:10px}.manager-icon{width:40px;height:40px;border:1px solid #ccd0d5;background:#fff;border-radius:7px;font-size:16px}
+.manager-summary-strip{display:flex;background:#fff;border-bottom:1px solid #dfe3e8;padding:0 20px}.manager-summary-strip>div{min-width:170px;padding:10px 22px 10px 0;margin-right:28px;border-right:1px solid #edf0f3}.manager-summary-strip>div:last-child{border-right:0}.manager-summary-strip span,.manager-summary-strip b{display:block}.manager-summary-strip span{font-size:9px;color:#65676b}.manager-summary-strip b{margin-top:3px;font-size:12px}.manager-summary-strip .live-dot{display:inline-block;margin-right:5px}
+.entity-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px 20px 0;background:#f5f6f7}.entity-tab{min-height:62px;padding:10px 14px;border:1px solid #d8dde5;border-bottom:3px solid transparent;border-radius:8px 8px 0 0;background:#fff;display:flex;align-items:center;gap:11px;text-align:left;color:#4b4f56}.entity-tab.active{border-bottom-color:#0866ff;color:#1c1e21}.entity-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:7px;background:#eef3fb;color:#0866ff;font-size:17px}.entity-tab b,.entity-tab small{display:block}.entity-tab b{font-size:12px}.entity-tab small{margin-top:3px;color:#8a8d91;font-size:8.5px}
+.manager-actionsbar{margin:0 20px;background:#fff;border:1px solid #d8dde5;border-top:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 9px;overflow-x:auto}.action-group{display:flex;align-items:center;gap:6px;white-space:nowrap}.create-green,.manager-action{height:34px;border-radius:6px;font-size:10px;font-weight:700}.create-green{border:0;background:#1a9b55;color:#fff;padding:0 13px}.manager-action{border:1px solid #ccd0d5;background:#fff;color:#3a3d40;padding:0 10px}.manager-action:hover:not(:disabled){background:#f5f6f7}.manager-action:disabled{opacity:.45;cursor:not-allowed}.right-actions{margin-left:auto}
+.filter-row{margin:0 20px;background:#fff;border:1px solid #d8dde5;border-top:0;padding:8px 9px;display:flex;align-items:center;gap:7px;overflow-x:auto}.manager-search{height:34px;min-width:300px;border-radius:6px;border:1px solid #ccd0d5}.manager-search input{font-size:10px}.filter-chip,.clear-filter{height:34px;border-radius:6px;font-size:9.5px;font-weight:700;white-space:nowrap}.filter-chip{border:1px solid #ccd0d5;background:#fff;color:#4b4f56;padding:0 10px}.filter-chip.active-filter{background:#edf4ff;border-color:#b8cff9;color:#0866ff}.status-select{height:34px;border:1px solid #ccd0d5;border-radius:6px;background:#fff;padding:0 26px 0 9px;font-size:9.5px;color:#4b4f56}.clear-filter{border:0;background:transparent;color:#0866ff;padding:0 8px}
+.manager-table-card{margin:0 20px;background:#fff;border:1px solid #d8dde5;border-top:0}.selection-info{min-height:38px;padding:7px 11px;border-bottom:1px solid #e6e9ee;background:#fbfcfd;display:flex;align-items:center;gap:12px}.selection-info span{font-size:10px;font-weight:700}.selection-info small{font-size:8.5px;color:#8a8d91}.meta-table-wrap{border:0;border-radius:0;box-shadow:none;overflow:auto;max-height:calc(100vh - 365px);min-height:280px}.meta-table{min-width:1380px;background:#fff}.meta-table th{position:sticky;top:0;z-index:5;height:38px;padding:0 10px;background:#f5f6f7;border-bottom:1px solid #ccd0d5;border-right:1px solid #e2e5e9;color:#4b4f56;font-size:8.5px;text-transform:none;letter-spacing:0;font-weight:700;white-space:nowrap}.meta-table td{height:54px;padding:7px 10px;border-bottom:1px solid #e7eaee;border-right:1px solid #f0f1f3;color:#4b4f56;font-size:9.5px;white-space:nowrap}.meta-table tbody tr:hover{background:#f7f9fc}.meta-table tbody tr.row-selected{background:#eef5ff}.meta-table .select-col{width:38px;text-align:center}.meta-table input[type="checkbox"]{width:15px;height:15px;accent-color:#0866ff}.delivery-toggle{width:30px;height:16px;border:0;border-radius:999px;background:#bec3c9;position:relative;padding:0;vertical-align:middle}.delivery-toggle:after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3)}.delivery-toggle.on{background:#0866ff}.delivery-toggle.on:after{left:16px}.entity-name-cell{display:flex;align-items:center;gap:8px;min-width:230px}.entity-name-cell .creative-thumb{width:34px;height:34px;border-radius:4px}.entity-name-copy b,.entity-name-copy small{display:block}.entity-name-copy b{font-size:10px;color:#0866ff;font-weight:600;max-width:240px;overflow:hidden;text-overflow:ellipsis}.entity-name-copy small{margin-top:3px;color:#8a8d91;font-size:8px}.delivery-cell b,.delivery-cell small{display:block}.delivery-cell b{font-size:9.5px;color:#1c1e21}.delivery-cell small{font-size:8px;color:#8a8d91;margin-top:2px}.metric-zero{color:#8a8d91}.table-footer{min-height:42px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #dfe3e8;color:#65676b;font-size:8.5px}.manager-empty{padding:55px 18px}.row-actions.meta-row-actions{gap:3px}.row-actions.meta-row-actions button{height:28px;padding:0 8px;border-radius:5px;font-size:8.5px;background:#fff}
+.modal{align-items:stretch;justify-items:stretch;padding:16px;background:rgba(28,30,33,.62)}.modal-card{width:min(1440px,calc(100vw - 32px));height:calc(100vh - 32px);max-height:none;margin:auto;border-radius:8px;display:flex;flex-direction:column;overflow:hidden}.modal-head{min-height:62px;padding:11px 16px;background:#fff;border-bottom:1px solid #d8dde5}.modal-head h2{font-size:17px;margin:2px 0}.wizard{grid-template-columns:220px minmax(0,1fr);min-height:0;flex:1;overflow:hidden}.steps{background:#f5f6f7;border-right:1px solid #d8dde5;padding:12px 9px;overflow:auto}.step{min-height:52px;border-radius:6px;padding:8px 9px}.step.active{background:#e9f2ff}.step>span{width:28px;height:28px;border-radius:50%;background:#fff;border:1px solid #ccd0d5}.step.active>span{background:#0866ff;border-color:#0866ff}.wizard-body{padding:0;min-height:0;overflow:auto;background:#f5f6f7}.wizard-page{max-width:1100px;width:calc(100% - 32px);margin:16px auto;padding:18px 20px;background:#fff;border:1px solid #d8dde5;border-radius:8px}.section-title{padding-bottom:12px;margin-bottom:15px;border-bottom:1px solid #edf0f2}.field input,.field select{height:40px;border-radius:6px;border-color:#ccd0d5}.choice{border-radius:7px}.choice.active{border-color:#0866ff;background:#f2f7ff;box-shadow:0 0 0 1px #0866ff}.placement-card,.upload-zone,.preview-card{border-radius:7px}.wizard-footer{position:sticky;bottom:0;z-index:10;margin:0;padding:10px 16px;background:#fff;border-top:1px solid #d8dde5}.form-message{padding:0 16px 8px;margin:0;background:#fff}
+@media(max-width:980px){.app-shell{grid-template-columns:1fr}.sidebar{position:fixed;width:72px;transform:translateX(-102%);z-index:100}.app-shell.menu-open .sidebar{transform:none}.manager-actionsbar,.filter-row,.manager-table-card{margin-left:10px;margin-right:10px}.entity-tabs{padding-left:10px;padding-right:10px}.right-actions{display:none}.manager-summary-strip{overflow-x:auto}.wizard{grid-template-columns:72px minmax(0,1fr)}.step div{display:none}}
+@media(max-width:680px){.manager-title-actions{display:none}.entity-tab small{display:none}.manager-action:nth-of-type(n+4){display:none}.filter-row{flex-wrap:wrap}.manager-search{min-width:100%;width:100%}.selection-info small{display:none}.modal{padding:0}.modal-card{width:100vw;height:100dvh;border-radius:0}.wizard{grid-template-columns:1fr}.steps{display:grid;grid-template-columns:repeat(4,1fr);border-right:0;border-bottom:1px solid #d8dde5}.wizard-page{width:calc(100% - 16px);margin:8px auto;padding:14px}}
+</style>
+<style id="v7-polish">
+:root{--icon-stroke:1.8}
+.tf-icon{width:18px;height:18px;display:block;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:var(--icon-stroke);stroke-linecap:round;stroke-linejoin:round}
+.tf-icon-sm{width:14px;height:14px}
+.nav-item>.tf-icon{width:22px;height:22px;margin:0}
+.manager-date>.tf-icon:first-child{width:18px;height:18px;color:#5f6368}
+.manager-icon .tf-icon{width:18px;height:18px;margin:auto}
+.entity-icon .tf-icon{width:20px;height:20px}
+.create-green,.manager-action,.filter-chip,.manager-date,.icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.create-green .tf-icon,.manager-action .tf-icon,.filter-chip .tf-icon{width:15px;height:15px}
+.manager-search>.tf-icon{width:17px;height:17px;color:#6b7280;flex:0 0 auto}
+.upload-icon .tf-icon{width:24px;height:24px;margin:auto}
+#closeModal .tf-icon{width:19px;height:19px}
+
+.sidebar{display:flex;align-items:center}
+.side-brand,.nav,.side-foot{width:100%}
+.nav-item{display:flex!important;align-items:center!important;justify-content:center!important}
+.nav-item.active:before{left:-9px}
+.nav-item:after{left:64px}
+.side-foot{margin-top:auto}
+
+.entity-tabs{align-items:stretch}
+.entity-tab{overflow:hidden}
+.entity-tab>div{min-width:0}
+.entity-tab b{line-height:1.2}
+.entity-icon{flex:0 0 36px;width:36px;height:36px}
+.manager-actionsbar{min-height:52px}
+.action-group{min-height:36px}
+.manager-action,.create-green{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.filter-row{min-height:52px}
+.filter-chip{display:inline-flex;align-items:center;gap:7px}
+.manager-search{display:flex;align-items:center;gap:8px}
+
+.menu-scrim{display:none}
+@media(max-width:980px){
+  .sidebar{width:78px;padding:10px 9px}
+  .nav-item{width:56px;height:52px;min-height:52px;border-radius:12px}
+  .nav-item>.tf-icon{width:23px;height:23px}
+  .app-shell.menu-open .sidebar,.shell.menu-open .sidebar{transform:none}
+  .app-shell.menu-open .menu-scrim,.shell.menu-open .menu-scrim{display:block;position:fixed;inset:0;z-index:90;border:0;background:rgba(17,24,39,.24);backdrop-filter:blur(1px)}
+  .sidebar{z-index:100}
+}
+@media(max-width:680px){
+  .manager-titlebar{padding:13px 12px 11px}
+  .manager-title-left{gap:10px}
+  .manager-app-icon{width:40px;height:40px}
+  .manager-titlebar h2{font-size:18px}
+  .manager-summary-strip{padding:0 12px}
+  .manager-summary-strip>div{min-width:145px;margin-right:18px;padding-right:18px}
+  .entity-tabs{padding:10px 10px 0;gap:6px}
+  .entity-tab{min-height:78px;padding:8px 6px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;text-align:center;border-radius:9px 9px 0 0}
+  .entity-icon{width:32px;height:32px;flex-basis:32px;border-radius:8px}
+  .entity-icon .tf-icon{width:18px;height:18px}
+  .entity-tab b{font-size:10px;line-height:1.15;white-space:normal}
+  .entity-tab small{display:none}
+  .manager-actionsbar{margin-left:10px;margin-right:10px;padding:7px;min-height:50px}
+  .left-actions{gap:6px}
+  .create-green,.manager-action{height:36px;padding:0 11px;font-size:10px;border-radius:7px}
+  .create-green .tf-icon,.manager-action .tf-icon{width:15px;height:15px}
+  .manager-action:nth-of-type(n+4){display:none}
+  .filter-row{margin-left:10px;margin-right:10px;padding:8px;gap:6px}
+  .manager-search{height:38px}
+  .filter-chip,.status-select,.clear-filter{height:36px}
+  .manager-table-card{margin-left:10px;margin-right:10px}
+  .selection-info{min-height:42px}
+}
+@media(max-width:430px){
+  .entity-tab{min-height:74px}
+  .entity-tab b{font-size:9.5px}
+  .create-green,.manager-action{padding:0 9px}
+}
+</style>
+
+
+<style id="v8-multi-ad">
+.budget-distribution-block{margin-top:18px;padding-top:17px;border-top:1px solid #e7ebf1}
+.budget-mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.budget-mode{position:relative;display:block;cursor:pointer}
+.budget-mode input{position:absolute;opacity:0;pointer-events:none}
+.budget-mode>span{display:block;min-height:94px;padding:14px;border:1px solid #dce3ed;border-radius:12px;background:#fff;transition:.16s}
+.budget-mode b,.budget-mode small{display:block}
+.budget-mode b{font-size:10px;color:#223048}
+.budget-mode small{margin-top:6px;color:#748398;font-size:8px;line-height:1.5}
+.budget-mode input:checked+span{border-color:#5e91ff;background:#f1f6ff;box-shadow:0 0 0 2px rgba(21,93,252,.07)}
+.budget-allocation-preview{margin-top:10px;padding:12px;border:1px solid #e0e7f0;border-radius:11px;background:#f8fafc}
+.budget-allocation-preview .allocation-head{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.budget-allocation-preview .allocation-head b{font-size:9px}
+.budget-allocation-preview .allocation-head span{font-size:8px;color:#738197}
+.budget-allocation-list{display:grid;gap:6px;margin-top:9px}
+.budget-allocation-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 9px;border-radius:8px;background:#fff;border:1px solid #e7ebf1}
+.budget-allocation-row span{font-size:8px;color:#64748b}.budget-allocation-row b{font-size:9px;color:#243248}
+
+.multi-ad-title{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.multi-ad-title p{margin:5px 0 0;color:#758398;font-size:8.5px;line-height:1.5}
+.compact-primary{min-height:36px;padding:0 12px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.compact-primary .tf-icon{width:15px;height:15px}
+.multi-ad-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:12px;align-items:start}
+.campaign-ad-list{border:1px solid #dfe6ee;border-radius:13px;background:#f8fafc;overflow:hidden;position:sticky;top:0}
+.campaign-ad-list-head{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border-bottom:1px solid #e3e9f1;background:#fff}
+.campaign-ad-list-head b{font-size:9px}.campaign-ad-list-head span{font-size:8px;color:#69778b}.campaign-ad-list-head strong{color:#155dfc}
+#adDraftList{padding:7px;display:grid;gap:5px;max-height:460px;overflow:auto}
+.ad-draft-item{width:100%;border:1px solid transparent;border-radius:10px;background:transparent;padding:9px;text-align:left;display:grid;grid-template-columns:31px minmax(0,1fr) auto;align-items:center;gap:8px;color:#3c4b60}
+.ad-draft-item:hover{background:#fff;border-color:#e2e8f0}
+.ad-draft-item.active{background:#eaf2ff;border-color:#bcd1ff;color:#16489e}
+.ad-draft-num{width:31px;height:31px;border-radius:8px;display:grid;place-items:center;background:#e7edf5;color:#5f6e82;font-size:8px;font-weight:950}
+.ad-draft-item.active .ad-draft-num{background:#155dfc;color:#fff}
+.ad-draft-copy{min-width:0}.ad-draft-copy b,.ad-draft-copy small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ad-draft-copy b{font-size:8.5px}.ad-draft-copy small{margin-top:3px;color:#8793a5;font-size:7px}
+.ad-draft-budget{font-size:7.5px;font-weight:900;color:#1557d5;white-space:nowrap}
+.campaign-ad-editor{min-width:0}
+.campaign-ad-editor-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;padding:10px 12px;border:1px solid #e1e7ef;border-radius:11px;background:#fff}
+.campaign-ad-editor-head .eyebrow{display:block;font-size:6.5px}.campaign-ad-editor-head b{display:block;margin-top:2px;font-size:10px}
+.danger-soft{min-height:33px;border:1px solid #f1ccd3;border-radius:9px;background:#fff5f6;color:#b83249;font-weight:850;font-size:8px;padding:0 10px;display:inline-flex;align-items:center;gap:6px}
+.danger-soft .tf-icon{width:14px;height:14px}
+.ad-budget-summary{margin-top:13px;padding:12px;border:1px solid #dce6f7;border-radius:11px;background:#f5f9ff;color:#4d607a;font-size:8.5px;line-height:1.55}
+.ad-budget-summary b{color:#1d3355}
+.review{margin-top:10px}
+@media(max-width:900px){.multi-ad-layout{grid-template-columns:190px minmax(0,1fr)}}
+@media(max-width:700px){
+ .budget-mode-grid{grid-template-columns:1fr}
+ .multi-ad-title{display:block}.multi-ad-title .compact-primary{margin-top:10px;width:100%}
+ .multi-ad-layout{grid-template-columns:1fr}
+ .campaign-ad-list{position:static}
+ #adDraftList{display:flex;overflow-x:auto;max-height:none}
+ .ad-draft-item{min-width:190px}
+ .campaign-ad-editor-head{margin-top:2px}
+}
+</style>
+
+
+<style id="v9-meta-manager-polish">
+:root{
+  --meta-blue:#0866ff;
+  --meta-blue-hover:#0759dd;
+  --meta-green:#31a24c;
+  --meta-text:#1c1e21;
+  --meta-muted:#65676b;
+  --meta-soft:#f0f2f5;
+  --meta-bg:#f5f6f7;
+  --meta-line:#d8dde5;
+  --meta-line-2:#e4e6eb;
+  --meta-hover:#f2f3f5;
+  --meta-selected:#e7f3ff;
+}
+html,body{background:var(--meta-bg)}
+body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
+.app-shell{grid-template-columns:72px minmax(0,1fr)}
+.sidebar{
+  width:72px!important;padding:10px 8px!important;background:#fff!important;color:#4b4f56!important;
+  border-right:1px solid #dfe3e8!important;box-shadow:none!important;align-items:center!important
+}
+.side-brand{justify-content:center!important;padding:2px 0 14px!important}
+.side-brand>span{
+  width:44px!important;height:44px!important;border-radius:10px!important;background:linear-gradient(145deg,#0866ff,#0aa3ff)!important;
+  box-shadow:none!important;font-size:13px!important
+}
+.side-brand>div{display:none!important}
+.nav{gap:5px!important}
+.nav-item{
+  width:54px!important;height:50px!important;min-height:50px!important;margin:0 auto!important;padding:0!important;
+  justify-content:center!important;border-radius:9px!important;color:#5f6368!important;background:transparent!important
+}
+.nav-item:hover{background:#f0f2f5!important;color:#1c1e21!important}
+.nav-item.active{background:#e7f3ff!important;color:#0866ff!important}
+.nav-item.active:before{
+  content:"";position:absolute!important;left:-9px!important;width:3px!important;height:28px!important;border-radius:0 4px 4px 0!important;background:#0866ff!important
+}
+.nav-item>.tf-icon{width:21px!important;height:21px!important}
+.nav-item::after{
+  left:62px!important;top:50%!important;transform:translateY(-50%)!important;border-radius:6px!important;
+  background:#1c1e21!important;color:#fff!important;padding:6px 8px!important;font-size:10px!important;font-weight:600!important
+}
+.side-foot{gap:5px!important}
+.workspace{background:var(--meta-bg)}
+.topbar{
+  height:54px!important;padding:0 14px!important;background:#fff!important;border-bottom:1px solid #dfe3e8!important;
+  box-shadow:none!important;backdrop-filter:none!important
+}
+.topbar-left small{font-size:8px!important;color:#8a8d91!important;letter-spacing:0!important;text-transform:none!important}
+.topbar-left strong{font-size:12px!important;color:#1c1e21!important}
+.topbar-actions{gap:6px!important}
+.account{background:#f0f2f5!important;border-radius:999px!important}
+.account>span{background:#dbe7ff!important;color:#0866ff!important}
+.ads-manager-view{background:var(--meta-bg)!important;padding:0 0 24px!important}
+.manager-titlebar{
+  min-height:72px!important;padding:12px 16px!important;background:#fff!important;border-bottom:1px solid var(--meta-line)!important
+}
+.manager-title-left{gap:10px!important}
+.manager-app-icon{
+  width:40px!important;height:40px!important;border-radius:8px!important;background:#0866ff!important;
+  font-size:12px!important;box-shadow:none!important
+}
+.manager-titlebar .eyebrow{font-size:9px!important;color:#65676b!important;font-weight:400!important}
+.manager-titlebar h2{font-size:22px!important;letter-spacing:-.02em!important;margin:2px 0 4px!important}
+.account-context{font-size:10px!important;color:#65676b!important}
+.manager-date{
+  height:36px!important;border-radius:6px!important;border:1px solid #ccd0d5!important;padding:0 9px!important;background:#fff!important
+}
+.manager-date b{font-size:9px!important}.manager-date small{font-size:7.5px!important}
+.manager-icon{width:36px!important;height:36px!important;border-radius:6px!important}
+.manager-summary-strip{
+  min-height:52px!important;padding:0 16px!important;background:#fff!important;border-bottom:1px solid #e4e6eb!important;overflow-x:auto!important
+}
+.manager-summary-strip>div{
+  min-width:155px!important;padding:9px 18px 9px 0!important;margin-right:22px!important;border-right:1px solid #edf0f3!important
+}
+.manager-summary-strip span{font-size:8.5px!important}.manager-summary-strip b{font-size:11px!important}
+.entity-tabs{
+  display:flex!important;gap:0!important;padding:12px 16px 0!important;background:var(--meta-bg)!important;overflow-x:auto!important
+}
+.entity-tab{
+  flex:0 0 250px!important;min-height:58px!important;padding:9px 12px!important;border:1px solid #d8dde5!important;
+  border-radius:7px 7px 0 0!important;background:#fff!important;margin-right:6px!important;box-shadow:none!important
+}
+.entity-tab.active{border-color:#cbd2db!important;border-bottom:3px solid #0866ff!important;background:#fff!important}
+.entity-icon{
+  width:34px!important;height:34px!important;flex-basis:34px!important;background:#eef3fb!important;color:#0866ff!important;border-radius:7px!important
+}
+.entity-tab b{font-size:11px!important}.entity-tab small{font-size:8px!important}
+.manager-actionsbar{
+  margin:0 16px!important;min-height:50px!important;padding:7px 8px!important;border:1px solid #d8dde5!important;border-top:0!important;
+  background:#fff!important;box-shadow:none!important
+}
+.action-group{gap:5px!important}
+.create-green{
+  height:34px!important;border-radius:6px!important;background:#31a24c!important;padding:0 12px!important;font-size:10px!important;box-shadow:none!important
+}
+.create-green:hover{background:#2b9143!important}
+.manager-action{
+  height:34px!important;border-radius:6px!important;border:1px solid #ccd0d5!important;background:#fff!important;
+  color:#3a3d40!important;padding:0 9px!important;font-size:9.5px!important;font-weight:600!important
+}
+.manager-action:hover:not(:disabled){background:#f5f6f7!important}
+.filter-row{
+  margin:0 16px!important;min-height:50px!important;padding:7px 8px!important;background:#fff!important;
+  border:1px solid #d8dde5!important;border-top:0!important;gap:6px!important
+}
+.manager-search{
+  min-width:330px!important;height:34px!important;border-radius:6px!important;border:1px solid #ccd0d5!important;background:#fff!important
+}
+.manager-search:focus-within{border-color:#0866ff!important;box-shadow:0 0 0 1px #0866ff!important}
+.manager-search input{font-size:10px!important}
+.filter-chip,.status-select,.clear-filter{height:34px!important;border-radius:6px!important;font-size:9.5px!important}
+.filter-chip{background:#fff!important;border:1px solid #ccd0d5!important}
+.filter-chip.active-filter{background:#e7f3ff!important;border-color:#b6cef7!important;color:#0866ff!important}
+.clear-filter{color:#0866ff!important;font-weight:600!important}
+.manager-table-card{
+  margin:0 16px!important;background:#fff!important;border:1px solid #d8dde5!important;border-top:0!important;box-shadow:none!important;border-radius:0!important
+}
+.selection-info{
+  min-height:38px!important;padding:7px 10px!important;background:#fbfbfc!important;border-bottom:1px solid #e4e6eb!important
+}
+.selection-info span{font-size:9.5px!important}.selection-info small{font-size:8px!important}
+.meta-table-wrap{max-height:calc(100vh - 337px)!important;min-height:320px!important;background:#fff!important}
+.meta-table{min-width:1450px!important}
+.meta-table th{
+  height:36px!important;padding:0 9px!important;background:#f5f6f7!important;color:#4b4f56!important;
+  border-bottom:1px solid #ccd0d5!important;border-right:1px solid #e4e6eb!important;font-size:8px!important;font-weight:600!important
+}
+.meta-table td{
+  height:50px!important;padding:6px 9px!important;border-bottom:1px solid #e4e6eb!important;border-right:1px solid #f0f2f5!important;
+  font-size:9px!important;color:#4b4f56!important
+}
+.meta-table tbody tr:hover{background:#f5f6f7!important}
+.meta-table tbody tr.row-selected{background:#e7f3ff!important}
+.meta-table input[type="checkbox"]{accent-color:#0866ff!important;width:14px!important;height:14px!important}
+.delivery-toggle{width:30px!important;height:16px!important;background:#bec3c9!important}
+.delivery-toggle.on{background:#0866ff!important}
+.delivery-toggle:after{width:12px!important;height:12px!important;top:2px!important;left:2px!important}
+.delivery-toggle.on:after{left:16px!important}
+.entity-name-cell{gap:8px!important}
+.creative-thumb{
+  width:34px!important;height:34px!important;border-radius:6px!important;background:#f0f2f5!important;border:1px solid #e1e4e8!important;
+  font-size:7.5px!important;color:#6b7280!important
+}
+.entity-name-copy b{font-size:9.5px!important;color:#0866ff!important;font-weight:600!important}
+.entity-name-copy small{font-size:7.5px!important;color:#8a8d91!important}
+.delivery-cell b{font-size:8.5px!important;font-weight:600!important}.delivery-cell small{font-size:7.5px!important}
+.meta-row-actions{gap:3px!important}
+.meta-row-actions button{
+  border:0!important;background:transparent!important;color:#0866ff!important;padding:4px 5px!important;font-size:8px!important;font-weight:600!important
+}
+.meta-row-actions button:hover{background:#edf4ff!important;border-radius:4px!important}
+.table-footer{min-height:38px!important;background:#fff!important;border-top:1px solid #e4e6eb!important}
+.table-footer span,.table-footer small{font-size:8px!important}
+.modal{background:rgba(28,30,33,.55)!important;backdrop-filter:none!important}
+.modal-card{
+  border-radius:8px!important;box-shadow:0 12px 36px rgba(0,0,0,.22)!important;border:1px solid #cfd4da!important
+}
+.modal-head{
+  min-height:68px!important;padding:13px 16px!important;border-bottom:1px solid #e4e6eb!important;background:#fff!important
+}
+.modal-head h2{font-size:18px!important}.modal-head p{font-size:9px!important}
+.wizard{grid-template-columns:210px minmax(0,1fr)!important}
+.steps{
+  background:#f5f6f7!important;border-right:1px solid #e4e6eb!important;padding:12px!important
+}
+.step{
+  min-height:46px!important;border-radius:6px!important;padding:8px 9px!important;color:#4b4f56!important
+}
+.step.active{background:#e7f3ff!important;color:#0866ff!important}
+.step>span{background:#e4e6eb!important;color:#65676b!important}
+.step.active>span{background:#0866ff!important;color:#fff!important}
+.wizard-body{padding:16px!important}
+.section-title h3{font-size:16px!important}.section-title .eyebrow{font-size:7.5px!important}
+.field label{font-size:9px!important;color:#4b4f56!important}
+.field input,.field select,.field textarea{
+  height:38px!important;border-radius:6px!important;border:1px solid #ccd0d5!important;background:#fff!important;font-size:10px!important
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#0866ff!important;box-shadow:0 0 0 1px #0866ff!important}
+.choice{
+  border-radius:7px!important;border:1px solid #d8dde5!important;background:#fff!important;box-shadow:none!important
+}
+.choice.active{border-color:#0866ff!important;background:#f5f9ff!important;box-shadow:0 0 0 1px #0866ff!important}
+.budget-mode>span{
+  border-radius:7px!important;border:1px solid #d8dde5!important;background:#fff!important;box-shadow:none!important
+}
+.budget-mode input:checked+span{border-color:#0866ff!important;background:#f5f9ff!important;box-shadow:0 0 0 1px #0866ff!important}
+.campaign-ad-list,.campaign-ad-editor-head,.upload-box,.specs,.review,.ad-budget-summary,.budget-allocation-preview{
+  border-radius:7px!important;box-shadow:none!important
+}
+.campaign-ad-list{background:#f8f9fa!important;border-color:#d8dde5!important}
+.ad-draft-item{border-radius:6px!important}.ad-draft-item.active{background:#e7f3ff!important;border-color:#b6cef7!important}
+.ad-draft-num{border-radius:6px!important}
+.upload-box{border:1px dashed #9aa0a6!important;background:#fafbfc!important}
+.primary{background:#0866ff!important;border-radius:6px!important;box-shadow:none!important}
+.primary:hover{background:#0759dd!important}
+.secondary,.ghost{border-radius:6px!important}
+.wizard-footer{border-top:1px solid #e4e6eb!important;margin-top:18px!important;padding-top:12px!important}
+.toast{border-radius:6px!important;background:#1c1e21!important;font-size:9px!important}
+@media(max-width:980px){
+ .app-shell{grid-template-columns:1fr!important}
+ .sidebar{position:fixed!important;left:0!important;top:0!important;bottom:0!important;transform:translateX(-110%)!important}
+ .app-shell.menu-open .sidebar{transform:none!important}
+ .topbar{height:52px!important}
+ .entity-tab{flex-basis:210px!important}
+}
+@media(max-width:680px){
+ .manager-titlebar{padding:10px 12px!important;min-height:66px!important}
+ .manager-titlebar h2{font-size:19px!important}
+ .manager-title-actions{gap:4px!important}
+ .manager-date{display:none!important}
+ .manager-summary-strip{padding:0 12px!important}
+ .entity-tabs{padding:9px 10px 0!important}
+ .entity-tab{flex:1 0 31%!important;min-width:108px!important;min-height:66px!important;padding:7px 5px!important}
+ .entity-tab b{font-size:9px!important}
+ .entity-tab small{display:none!important}
+ .manager-actionsbar,.filter-row,.manager-table-card{margin-left:10px!important;margin-right:10px!important}
+ .manager-actionsbar{min-height:48px!important}
+ .right-actions{display:none!important}
+ .manager-search{min-width:100%!important;flex:1 0 100%!important}
+ .filter-row{flex-wrap:wrap!important}
+ .meta-table-wrap{max-height:none!important}
+ .meta-table{min-width:1180px!important}
+ .modal{padding:5px!important}
+ .modal-card{max-height:calc(100dvh - 10px)!important;border-radius:8px!important}
+ .wizard{grid-template-columns:1fr!important}
+ .steps{display:grid!important;grid-template-columns:repeat(4,1fr)!important;border-right:0!important;border-bottom:1px solid #e4e6eb!important;padding:6px!important}
+ .step{justify-content:center!important;padding:6px!important;min-height:42px!important}
+ .step div{display:none!important}
+}
+</style>
+
 </head>
 <body>
-  <div id="boot" class="boot">
-    <div class="boot-mark">TF</div>
-    <strong>TaskFlow ADS</strong>
-    <span>Preparando administrador comercial…</span>
-  </div>
 
-  <section id="authView" class="auth-view" hidden>
-    <aside class="auth-brand" data-parallax>
-      <div class="brand-badge">TaskFlow ADS</div>
-      <h1>Publicidad comercial conectada a TaskFlow.</h1>
-      <p>Crea, segmenta y administra campañas desde una cuenta empresarial única.</p>
-      <div class="auth-visual">
-        <div class="visual-card visual-card-a"><span>Campañas activas</span><strong>12</strong><small>Control centralizado</small></div>
-        <div class="visual-card visual-card-b"><span>Ubicaciones</span><strong>5</strong><small>TaskFlow placements</small></div>
-        <div class="visual-card visual-card-c"><span>Audiencia</span><strong>GT</strong><small>Segmentación geográfica</small></div>
-      </div>
-    </aside>
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+<defs>
+<symbol id="i-dashboard" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
+<symbol id="i-campaign" viewBox="0 0 24 24"><path d="M4 6h10l5-3v18l-5-3H4zM4 10H2v4h2M8 18v3"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 6.5a2.5 2.5 0 0 1 0 5M16 14c2.8 0 5 2.2 5 5"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m5 18 5-5 3 3 2-2 4 4"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M3 20h18"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M7 15h4"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.8-1L14.5 3h-5l-.4 3.1a8 8 0 0 0-1.8 1l-2.4-1-2 3.4L5 11a7 7 0 0 0 0 2l-2.1 1.5 2 3.4 2.4-1a8 8 0 0 0 1.8 1L9.5 21h5l.4-3.1a8 8 0 0 0 1.8-1l2.4 1 2-3.4L19 13a7 7 0 0 0 0-1z"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></symbol>
+<symbol id="i-ad" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h6M7 13h10M7 17h7"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="m4 20 4.5-1 10-10-3.5-3.5-10 10zM14 6.5 17.5 10"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 3h6l1 4H8zM7 7l1 14h8l1-14M10 11v6M14 11v6"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 15h8"/></symbol>
+<symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></symbol>
+<symbol id="i-breakdown" viewBox="0 0 24 24"><path d="M4 6h4M4 12h4M4 18h4M11 6h9M11 12h9M11 18h9"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4M5 14v5h14v-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+</defs></svg>
 
-    <main class="auth-panel">
-      <div class="auth-box">
-        <div class="auth-logo"><span>TF</span><div><strong>TaskFlow ADS</strong><small>Administrador comercial</small></div></div>
-        <div class="auth-tabs" role="tablist">
-          <button id="loginTab" class="auth-tab active" type="button">Iniciar sesión</button>
-          <button id="registerTab" class="auth-tab" type="button">Crear cuenta</button>
-        </div>
-        <form id="authForm" novalidate>
-          <div id="nameField" class="field" hidden>
-            <label for="displayName">Nombre completo</label>
-            <input id="displayName" autocomplete="name" maxlength="80" placeholder="Nombre del responsable">
-          </div>
-          <div class="field">
-            <label for="email">Correo electrónico</label>
-            <input id="email" type="email" autocomplete="email" maxlength="160" placeholder="correo@empresa.com" required>
-          </div>
-          <div class="field">
-            <label for="password">Contraseña</label>
-            <input id="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" placeholder="Mínimo 8 caracteres" required>
-          </div>
-          <div id="confirmField" class="field" hidden>
-            <label for="confirmPassword">Confirmar contraseña</label>
-            <input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Repite la contraseña">
-          </div>
-          <button id="authSubmit" class="primary wide" type="submit">Iniciar sesión</button>
-          <p id="authMessage" class="form-message" aria-live="polite"></p>
-        </form>
-        <p class="auth-note">Tu cuenta usa el mismo sistema de autenticación de TaskFlow. No se crean plataformas de usuario independientes.</p>
-      </div>
-    </main>
-  </section>
+<section class="auth" id="authView">
+<div class="auth-hero" id="parallaxHero">
+<span class="brand-pill">TaskFlow ADS · Commercial Control Center</span>
+<h1>Administra campañas publicitarias con control comercial centralizado.</h1>
+<p>Gestiona cuentas, campañas, audiencias, presupuesto y creativos desde un entorno diseñado para la operación publicitaria de TaskFlow.</p>
+<div class="hero-console">
+<div class="hero-console-top"><div><b>Flujo de administración comercial</b><small>Un solo panel para controlar el ciclo completo</small></div><span class="hero-secure"><i></i> Acceso protegido</span></div>
+<div class="hero-kpis">
+<div class="hero-kpi"><span>01 · Cuenta</span><strong>Acceso</strong><small>Credenciales persistentes por anunciante</small></div>
+<div class="hero-kpi"><span>02 · Campaña</span><strong>Control</strong><small>Objetivo, audiencia, presupuesto y estado</small></div>
+<div class="hero-kpi"><span>03 · Creativo</span><strong>Validación</strong><small>Formatos y medidas verificadas antes de guardar</small></div>
+</div>
+<div class="hero-flow"><div class="flow-step active"><i>1</i><span>Campaña</span></div><b>→</b><div class="flow-step"><i>2</i><span>Audiencia</span></div><b>→</b><div class="flow-step"><i>3</i><span>Presupuesto</span></div><b>→</b><div class="flow-step"><i>4</i><span>Creativo</span></div><b>→</b><div class="flow-step ready"><i>✓</i><span>Activación</span></div></div>
+</div>
+</div>
+<main class="auth-panel">
+<div class="auth-box">
+<div class="auth-logo"><span class="logo-mark">TF</span><div><strong>TaskFlow ADS Manager</strong><small>Administrador comercial</small></div></div>
+<div class="auth-tabs"><button class="auth-tab active" id="loginTab" type="button">Iniciar sesión</button><button class="auth-tab" id="registerTab" type="button">Crear cuenta</button></div>
+<form id="authForm" novalidate="">
+<div class="field" hidden="" id="nameField"><label>Nombre completo</label><input autocomplete="name" id="fullName" maxlength="80" placeholder="Nombre del responsable"/></div>
+<div class="field" hidden="" id="companyField"><label>Empresa o marca</label><input id="companyName" maxlength="100" placeholder="Nombre comercial"/></div>
+<div class="field"><label>Correo electrónico</label><input autocomplete="email" id="email" maxlength="160" placeholder="correo@empresa.com" type="email"/></div>
+<div class="field"><label>Contraseña</label><input autocomplete="current-password" id="password" maxlength="128" minlength="8" placeholder="Mínimo 8 caracteres" type="password"/></div>
+<div class="field" hidden="" id="confirmField"><label>Confirmar contraseña</label><input id="confirmPassword" maxlength="128" minlength="8" placeholder="Repite la contraseña" type="password"/></div>
+<div class="auth-actions"><button class="primary wide" id="authSubmit" type="submit">Iniciar sesión</button></div>
+<p aria-live="polite" class="form-message" id="authMessage"></p>
+</form>
+<p class="auth-note">Acceso protegido. Las campañas, creativos y preferencias quedan vinculados a la cuenta registrada.</p>
+</div>
+</main>
+</section>
+<div class="shell" hidden="" id="appView">
+<aside class="sidebar">
+<div class="side-brand"><span class="logo-mark">TF</span><div class="side-brand-copy"><strong>ADS</strong><small>Manager</small></div></div>
+<div class="nav-section">Administración</div>
+<nav class="nav"><button class="nav-item active" data-view="overview"><svg class="tf-icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>Resumen</button><button class="nav-item" data-view="campaigns"><svg class="tf-icon" aria-hidden="true"><use href="#i-campaign"></use></svg>Campañas</button><button class="nav-item" data-view="audiences"><svg class="tf-icon" aria-hidden="true"><use href="#i-users"></use></svg>Audiencias</button><button class="nav-item" data-view="creatives"><svg class="tf-icon" aria-hidden="true"><use href="#i-image"></use></svg>Creativos</button><button class="nav-item" data-view="reports"><svg class="tf-icon" aria-hidden="true"><use href="#i-chart"></use></svg>Informes</button></nav>
+<div class="nav-section">Cuenta</div>
+<nav class="nav"><button class="nav-item" data-view="billing"><svg class="tf-icon" aria-hidden="true"><use href="#i-card"></use></svg>Facturación</button><button class="nav-item admin-only" data-view="admin" hidden title="Control ADS"><svg class="tf-icon" aria-hidden="true"><use href="#i-settings"></use></svg><span class="nav-label">Control ADS</span></button><button class="nav-item" data-view="settings"><svg class="tf-icon" aria-hidden="true"><use href="#i-settings"></use></svg>Configuración</button></nav>
+<div class="side-version"><span>TaskFlow ADS</span><b>Commercial Manager</b></div><div class="side-foot"><button class="nav-item" id="logoutBtn"><svg class="tf-icon" aria-hidden="true"><use href="#i-logout"></use></svg>Cerrar sesión</button></div>
+</aside>
+<button class="menu-scrim" id="menuScrim" type="button" aria-label="Cerrar menú"></button>
+<main class="workspace">
+<header class="topbar">
+<div class="top-left"><button class="icon-btn mobile-only" id="menuBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-menu"></use></svg></button><div><small>Cuenta comercial</small><strong id="topCompany">TaskFlow ADS</strong></div></div>
+<div class="top-actions"><span class="top-status"><i></i>Cuenta operativa</span><span class="sync">Persistencia activa</span><button class="primary" id="topCreate" type="button">+ Crear campaña</button><button class="account" type="button"><span id="accountInitials">TF</span><div><b id="accountName">Cuenta</b><small id="accountEmail"></small></div></button></div>
+</header>
+<section class="view active" id="overviewView">
+<div class="heading"><div><span class="eyebrow">Centro comercial</span><h2>Resumen de publicidad</h2><p>Supervisa campañas, presupuesto, creativos y distribución desde un único centro de control.</p></div><button class="secondary" id="refreshBtn">Actualizar</button></div>
+<div class="metrics"><article class="metric"><span>Campañas</span><strong id="metricCampaigns">0</strong><small>Total guardadas</small></article><article class="metric"><span>Activas</span><strong id="metricActive">0</strong><small>En circulación</small></article><article class="metric"><span>Presupuesto diario</span><strong id="metricBudget">Q0.00</strong><small>Campañas activas</small></article><article class="metric"><span>Formatos</span><strong id="metricFormats">0</strong><small>Tipos utilizados</small></article></div>
+<div class="dashboard">
+<article class="panel"><div class="panel-head"><div><span class="eyebrow">Actividad reciente</span><h3>Campañas</h3></div><button class="secondary" data-view-link="campaigns">Ver todas</button></div><div class="empty" id="recentCampaigns">Aún no hay campañas.</div></article>
+<article class="panel"><div class="panel-head"><div><span class="eyebrow">TaskFlow</span><h3>Formatos publicitarios</h3></div><span class="badge ok">3 tipos</span></div><div class="side-list"><div class="side-row"><div><b>Banner</b><span>Puede aparecer en cualquiera de los 3 banners disponibles</span></div><span class="place-code">1200×180</span></div><div class="side-row"><div><b>Anuncio de ingreso</b><span>Pantalla vertical al abrir TaskFlow</span></div><span class="place-code">1080×1920</span></div><div class="side-row"><div><b>Por interacción</b><span>Después de 10 interacciones acumuladas</span></div><span class="place-code">1080×1920</span></div></div></article>
+</div>
+</section>
+<section class="view ads-manager-view" id="campaignsView">
+<div class="manager-titlebar">
+<div class="manager-title-left"><div class="manager-app-icon">TF</div><div><span class="eyebrow">Administrador de anuncios</span><h2>TaskFlow ADS Manager</h2><div class="account-context"><span class="context-dot"></span><span id="managerAccountLabel">Cuenta publicitaria activa</span><b>·</b><span>GTQ</span></div></div></div>
+<div class="manager-title-actions"><button class="manager-date" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-calendar"></use></svg><div><small>Periodo</small><b>Máximo</b></div><svg class="tf-icon tf-icon-sm" aria-hidden="true"><use href="#i-chevron"></use></svg></button><button class="icon-btn manager-icon" id="managerRefresh" title="Actualizar" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-refresh"></use></svg></button></div>
+</div>
+<div class="manager-summary-strip"><div><span>Campañas</span><b id="stripCampaigns">0</b></div><div><span>Activas</span><b id="stripActive">0</b></div><div><span>Presupuesto diario</span><b id="stripBudget">Q0.00</b></div><div><span>Entrega</span><b><i class="live-dot"></i> Operativa</b></div></div>
+<div class="entity-tabs" role="tablist"><button class="entity-tab active" data-entity-level="campaigns" type="button"><span class="entity-icon"><svg class="tf-icon" aria-hidden="true"><use href="#i-list"></use></svg></span><div><b>Campañas</b><small id="tabCampaignCount">0 seleccionadas</small></div></button><button class="entity-tab" data-entity-level="adsets" type="button"><span class="entity-icon"><svg class="tf-icon" aria-hidden="true"><use href="#i-target"></use></svg></span><div><b>Conjuntos de anuncios</b><small>Audiencia y distribución</small></div></button><button class="entity-tab" data-entity-level="ads" type="button"><span class="entity-icon"><svg class="tf-icon" aria-hidden="true"><use href="#i-ad"></use></svg></span><div><b>Anuncios</b><small>Creativos y destino</small></div></button></div>
+<div class="manager-actionsbar"><div class="action-group left-actions"><button class="create-green" data-new="" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-plus"></use></svg> Crear</button><button class="manager-action" disabled="" id="duplicateBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-copy"></use></svg> Duplicar</button><button class="manager-action" disabled="" id="bulkEditBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-edit"></use></svg> Editar</button><button class="manager-action" disabled="" id="bulkDeleteBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-trash"></use></svg> Eliminar</button><button class="manager-action" id="testBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-flask"></use></svg> Prueba A/B</button><button class="manager-action more-action" id="moreBtn" type="button">Más <svg class="tf-icon tf-icon-sm" aria-hidden="true"><use href="#i-chevron"></use></svg></button></div><div class="action-group right-actions"><button class="manager-action" id="columnsBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-columns"></use></svg> Columnas: Rendimiento <svg class="tf-icon tf-icon-sm" aria-hidden="true"><use href="#i-chevron"></use></svg></button><button class="manager-action" id="breakdownBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-breakdown"></use></svg> Desglose <svg class="tf-icon tf-icon-sm" aria-hidden="true"><use href="#i-chevron"></use></svg></button><button class="manager-action" id="reportsBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-chart"></use></svg> Informes <svg class="tf-icon tf-icon-sm" aria-hidden="true"><use href="#i-chevron"></use></svg></button></div></div>
+<div class="filter-row"><div class="search manager-search"><svg class="tf-icon" aria-hidden="true"><use href="#i-search"></use></svg><input id="search" placeholder="Buscar por nombre, ID o destino"/></div><button class="filter-chip active-filter" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-ad"></use></svg> Todos los anuncios</button><button class="filter-chip" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-filter"></use></svg> Filtros</button><select class="status-select" id="statusFilter"><option value="all">Entrega: todos</option><option value="draft">Borrador</option><option value="active">Activa</option><option value="paused">Pausada</option></select><button class="clear-filter" id="clearFilters" type="button">Borrar</button></div>
+<div class="manager-table-card"><div class="selection-info" id="selectionInfo"><span>0 elementos seleccionados</span><small>Selecciona una fila para editar, duplicar o eliminar.</small></div><div class="table-wrap meta-table-wrap"><table class="meta-table"><thead id="campaignHead"></thead><tbody id="campaignBody"></tbody></table><div class="empty manager-empty" id="campaignEmpty">No hay campañas para mostrar.</div></div><div class="table-footer"><span id="tableSummary">0 resultados</span><span>Los datos de rendimiento aparecerán cuando TaskFlow registre entrega real.</span></div></div>
+</section>
+<section class="view" id="placeholderView"><div class="heading"><div><span class="eyebrow">TaskFlow ADS</span><h2 id="placeholderTitle">Módulo</h2><p id="placeholderText">Módulo comercial.</p></div></div><div class="module-content" id="moduleContent"></div></section>
+</main>
+</div>
+<div class="modal" hidden="" id="campaignModal">
+<div class="modal-card">
+<header class="modal-head"><div><span class="eyebrow" id="modalEyebrow">Nueva campaña</span><h2 id="modalTitle">Crear campaña</h2><p id="wizardSubtitle">Configuración de campaña</p></div><button class="icon-btn" id="closeModal" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-x"></use></svg></button></header>
+<div class="wizard">
+<aside class="steps"><button class="step active" data-step="1"><span>1</span><div><b>Campaña</b><small>Objetivo y nombre</small></div></button><button class="step" data-step="2"><span>2</span><div><b>Conjunto</b><small>Audiencia y ubicación</small></div></button><button class="step" data-step="3"><span>3</span><div><b>Presupuesto</b><small>Calendario y gasto</small></div></button><button class="step" data-step="4"><span>4</span><div><b>Anuncio</b><small>Creativo y destino</small></div></button></aside>
+<form class="wizard-body" id="campaignForm" novalidate="">
+<section class="wizard-page active" data-page="1">
+<div class="section-title"><span class="eyebrow">Configuración</span><h3>Objetivo de la campaña</h3></div>
+<div class="field"><label>Nombre de campaña</label><input id="campaignName" maxlength="120" placeholder="Ej. Lanzamiento noviembre"/></div>
+<div class="field"><label>Objetivo</label><div class="choice-grid" id="objectiveGrid"><button class="choice active" data-objective="awareness" type="button"><b>Reconocimiento</b><span>Dar visibilidad a una marca o servicio.</span></button><button class="choice" data-objective="traffic" type="button"><b>Tráfico</b><span>Llevar personas a una página o destino.</span></button><button class="choice" data-objective="engagement" type="button"><b>Interacción</b><span>Impulsar acciones sobre el anuncio.</span></button><button class="choice" data-objective="leads" type="button"><b>Clientes potenciales</b><span>Captar interés comercial.</span></button><button class="choice" data-objective="sales" type="button"><b>Ventas</b><span>Promover compras o conversiones.</span></button><button class="choice" data-objective="app" type="button"><b>Aplicación</b><span>Promover descargas o uso.</span></button></div></div>
+</section>
+<section class="wizard-page" data-page="2">
+<div class="section-title"><span class="eyebrow">Distribución</span><h3>Tipo de anuncio y audiencia</h3></div>
+<div class="field full"><label>Tipo de anuncio</label><div class="placements" id="placements"><label class="placement"><input checked="" name="placement" type="radio" value="banner"/><span class="placement-card"><b>Banner</b><span>El sistema puede mostrarlo en cualquiera de los 3 espacios de banner disponibles.</span><small>1200 × 180 · imagen o GIF</small></span></label><label class="placement"><input name="placement" type="radio" value="entry"/><span class="placement-card"><b>Anuncio de ingreso</b><span>Formato vertical mostrado al ingresar a TaskFlow.</span><small>1080 × 1920 · imagen, GIF o video</small></span></label><label class="placement"><input name="placement" type="radio" value="interaction"/><span class="placement-card"><b>Por interacción</b><span>Formato vertical mostrado después de 10 interacciones acumuladas.</span><small>1080 × 1920 · imagen, GIF o video</small></span></label></div></div>
+<div class="formgrid" style="margin-top:14px"><div class="field"><label>País</label><select id="country"><option value="GT">Guatemala</option><option value="SV">El Salvador</option><option value="HN">Honduras</option><option value="MX">México</option><option value="US">Estados Unidos</option></select></div><div class="field"><label>Departamento / región</label><input id="region" maxlength="100" placeholder="Ej. Huehuetenango"/></div><div class="field"><label>Ciudad / municipio</label><input id="city" maxlength="100" placeholder="Ej. Huehuetenango"/></div><div class="field"><label>Radio aproximado</label><select id="radius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select></div><div class="field"><label>Edad mínima</label><input id="ageMin" max="65" min="13" type="number" value="18"/></div><div class="field"><label>Edad máxima</label><input id="ageMax" max="65" min="13" type="number" value="65"/></div></div>
+</section>
+<section class="wizard-page" data-page="3">
+<div class="section-title"><span class="eyebrow">Control de gasto</span><h3>Presupuesto y calendario</h3></div>
+<div class="formgrid"><div class="field"><label>Tipo de presupuesto</label><select id="budgetType"><option value="daily">Diario</option><option value="total">Total</option></select></div><div class="field"><label>Monto (GTQ)</label><input id="budgetAmount" min="1" step="0.01" type="number" value="75"/></div><div class="field"><label>Fecha de inicio</label><input id="startDate" type="date"/></div><div class="field"><label>Fecha de finalización</label><input id="endDate" type="date"/></div></div>
+<div class="budget-distribution-block">
+<div class="field"><label>Distribución del presupuesto entre anuncios</label>
+<div class="budget-mode-grid" id="budgetModeGrid">
+<label class="budget-mode"><input checked name="budgetDistribution" type="radio" value="system"><span><b>Optimización automática</b><small>TaskFlow distribuye el presupuesto dinámicamente entre los anuncios de la campaña según su rendimiento.</small></span></label>
+<label class="budget-mode"><input name="budgetDistribution" type="radio" value="equal"><span><b>Partes iguales</b><small>El presupuesto se divide exactamente entre todos los anuncios creados dentro de la campaña.</small></span></label>
+</div></div>
+<div class="budget-allocation-preview" id="budgetAllocationPreview"></div>
+</div>
+<div class="notice"><b>Activación controlada</b><span>La campaña se guarda como borrador. Puedes revisarla, editarla y luego activarla desde la tabla de campañas.</span></div>
+</section>
+<section class="wizard-page" data-page="4">
+<div class="section-title multi-ad-title"><div><span class="eyebrow">Anuncios de la campaña</span><h3>Crea y administra hasta 12 anuncios</h3><p>Cada anuncio tiene su propio creativo y destino. Todos pertenecen a esta misma campaña.</p></div><button class="primary compact-primary" id="addAdBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-plus"></use></svg> Añadir anuncio</button></div>
+<div class="multi-ad-layout">
+<aside class="campaign-ad-list">
+<div class="campaign-ad-list-head"><b>Anuncios</b><span><strong id="adCountLabel">1</strong> / 12</span></div>
+<div id="adDraftList"></div>
+</aside>
+<div class="campaign-ad-editor">
+<div class="campaign-ad-editor-head"><div><span class="eyebrow">Editando</span><b id="currentAdLabel">Anuncio 1</b></div><button class="danger-soft" id="removeAdBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-trash"></use></svg> Eliminar anuncio</button></div>
+<div class="creative-layout">
+<div>
+<div class="field"><label>Nombre del anuncio</label><input id="adName" maxlength="120" placeholder="Ej. Creativo principal"/></div>
+<div class="field"><label>URL de destino</label><input id="destination" maxlength="500" placeholder="https://tuempresa.com" type="url"/></div>
+<div class="field"><label>Archivo publicitario</label>
+<div class="upload-zone" id="uploadZone"><input accept="image/jpeg,image/png,image/webp,image/gif" id="creativeFile" type="file"/><div><div class="upload-icon"><svg class="tf-icon" aria-hidden="true"><use href="#i-upload"></use></svg></div><b>Sube el creativo de la campaña</b><span id="uploadHelp">Banner: 1200 × 180 exactos.</span><small id="uploadFormats">JPG · PNG · WEBP · GIF</small></div></div>
+<div class="media-status" id="mediaStatus">No se ha seleccionado un archivo.</div>
+</div>
+<div class="field" hidden="" id="soundField"><label>Audio del video</label><select id="sound"><option value="false">Sin audio</option><option value="true">Con audio</option></select></div>
+</div>
+<aside class="preview-card"><div class="preview-label"><b>Vista previa</b><span id="previewType">Banner · 1200×180</span></div><div class="media-frame banner" id="mediaFrame"><div class="media-placeholder">Vista previa del creativo.<br/>El sistema valida formato, dimensiones y duración antes de guardar.</div></div><div class="spec-grid"><div class="spec"><span>Medida</span><b id="specSize">1200×180</b></div><div class="spec"><span>Formatos</span><b id="specFormat">Imagen / GIF</b></div><div class="spec"><span>Duración</span><b id="specDuration">No aplica</b></div></div></aside>
+</div>
+</div>
+</div>
+<div class="ad-budget-summary" id="adBudgetSummary"></div>
+<div class="review" id="review"></div>
+</section>
+<footer class="wizard-footer"><button class="secondary" disabled="" id="backBtn" type="button">Atrás</button><div class="wizard-right"><button class="ghost" id="draftBtn" type="button">Guardar borrador</button><button class="primary" id="nextBtn" type="button">Continuar</button></div></footer>
+<p class="form-message" id="campaignMessage"></p>
+</form>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-storage-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const FIREBASE_CONFIG=Object.freeze({apiKey:'AIzaSyAswSpJcc1oEy93DFcKZ-9RBfszuGJJbKQ',authDomain:'taskflow-b0ece.firebaseapp.com',projectId:'taskflow-b0ece',storageBucket:'taskflow-b0ece.firebasestorage.app',messagingSenderId:'1015897402601',appId:'1:1015897402601:web:68350cebb63c52d72c1478'});
+const CAMPAIGN_CACHE_KEY='tf_ads_manager_campaigns_prod_';
+let fbApp=null,fbAuth=null,fbDb=null,fbStorage=null,currentUser=null,campaigns=[],step=1,objective='awareness',editingId=null,pendingMedia=null,existingMediaMeta=null,currentPreviewUrl=null,managerLevel='campaigns',selectedCampaignIds=new Set(),adDrafts=[],currentAdDraftId=null,isAdsAdmin=false,authReady=false;
+const placementSpecs={banner:{label:'Banner',width:1200,height:180,accept:'image/jpeg,image/png,image/webp,image/gif',formats:'JPG · PNG · WEBP · GIF',specFormat:'Imagen / GIF',duration:'No aplica',frame:'banner'},entry:{label:'Anuncio de ingreso',width:1080,height:1920,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'10 s si es video',frame:'vertical'},interaction:{label:'Por interacción',width:1080,height:1920,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'10 s si es video',frame:'vertical'}};
+function clean(v){return String(v==null?'':v).trim()}function money(v){return new Intl.NumberFormat('es-GT',{style:'currency',currency:'GTQ'}).format(Number(v)||0)}function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function now(){return new Date().toISOString()}function makeId(){return 'cmp_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9)}function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2300)}function msg(text,type=''){const e=$('campaignMessage');e.textContent=text||'';e.className='form-message'+(type?' '+type:'')}function authMsg(text,type=''){const e=$('authMessage');e.textContent=text||'';e.className='form-message'+(type?' '+type:'')}
+function readJSON(key,fallback){try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback}catch(_){return fallback}}function writeJSON(key,v){try{localStorage.setItem(key,JSON.stringify(v));return true}catch(_){return false}}
+function hashFallback(str){let h1=0x811c9dc5,h2=0x811c9dc5;for(let i=0;i<str.length;i++){h1=Math.imul(h1^str.charCodeAt(i),16777619);h2=Math.imul(h2^(str.charCodeAt(i)+i),2246822519)}return (h1>>>0).toString(16)+(h2>>>0).toString(16)}
+async function hashPassword(password,salt){const input=salt+'|'+password;if(window.crypto&&crypto.subtle){const data=new TextEncoder().encode(input);const digest=await crypto.subtle.digest('SHA-256',data);return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('')}return hashFallback(input)}
+function randomSalt(){const a=new Uint8Array(16);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(let i=0;i<a.length;i++)a[i]=Math.floor(Math.random()*256);return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join('')}
+function initials(n,e){const p=(clean(n)||clean(e)||'TF').split(/\s+/).filter(Boolean).slice(0,2);return p.map(x=>x[0]).join('').toUpperCase()||'TF'}
 
-  <div id="appView" class="app-shell" hidden>
-    <aside class="sidebar">
-      <div class="side-brand"><span>TF</span><div><strong>ADS</strong><small>Manager</small></div></div>
-      <nav id="mainNav" class="nav">
-        <button class="nav-item active" data-view="overview"><span>◫</span>Resumen</button>
-        <button class="nav-item" data-view="campaigns"><span>▤</span>Campañas</button>
-        <button class="nav-item" data-view="adsets"><span>◎</span>Conjuntos</button>
-        <button class="nav-item" data-view="ads"><span>▣</span>Anuncios</button>
-        <button class="nav-item" data-view="audiences"><span>◉</span>Audiencias</button>
-        <button class="nav-item" data-view="reports"><span>⌁</span>Informes</button>
-        <button class="nav-item" data-view="billing"><span>◈</span>Facturación</button>
-      </nav>
-      <div class="side-footer">
-        <button class="nav-item" data-view="settings"><span>⚙</span>Configuración</button>
-        <button id="logoutBtn" class="nav-item danger"><span>↪</span>Cerrar sesión</button>
-      </div>
-    </aside>
+function initFirebase(){
+ if(fbAuth)return;
+ if(!window.firebase)throw new Error('Firebase no está disponible.');
+ if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
+ fbApp=firebase.app();fbAuth=firebase.auth();fbDb=firebase.firestore();fbStorage=firebase.storage();
+ fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+ try{fbDb.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(_){}
+}
+function businessRef(uid){return fbDb.collection('users').doc(uid).collection('adsManager').doc('business')}
+function campaignsRef(uid){return fbDb.collection('users').doc(uid).collection('adsCampaigns')}
+function publicCampaignRef(id){return fbDb.collection('adsPublicCampaigns').doc(id)}
+async function getBusiness(uid){try{const snap=await businessRef(uid).get();return snap.exists?snap.data():null}catch(e){console.warn('ADS business load:',e);return null}}
+async function getAdminClaim(user){try{const t=await user.getIdTokenResult();return t&&t.claims&&t.claims.taskflowAdsAdmin===true}catch(_){return false}}
+function setAuthMode(mode){const reg=mode==='register';$('loginTab').classList.toggle('active',!reg);$('registerTab').classList.toggle('active',reg);$('nameField').hidden=!reg;$('companyField').hidden=!reg;$('confirmField').hidden=!reg;$('authSubmit').textContent=reg?'Crear cuenta':'Iniciar sesión';$('authForm').dataset.mode=reg?'register':'login';$('password').autocomplete=reg?'new-password':'current-password';authMsg('')}
+function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'auth/email-already-in-use':'Ese correo ya está registrado.','auth/invalid-email':'El correo electrónico no es válido.','auth/weak-password':'La contraseña debe tener al menos 8 caracteres.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Intenta nuevamente más tarde.','auth/network-request-failed':'No hay conexión con el servicio de cuentas.','auth/unauthorized-domain':'Este dominio todavía no está autorizado en Firebase.'};return map[c]||'No fue posible completar el acceso.'}
+async function handleAuth(e){
+ e.preventDefault();authMsg('');const mode=$('authForm').dataset.mode||'login';const email=clean($('email').value).toLowerCase(),pass=$('password').value||'';
+ if(!email||!/^\S+@\S+\.\S+$/.test(email)){authMsg('Ingresa un correo válido.','error');return}
+ if(pass.length<8){authMsg('La contraseña debe tener al menos 8 caracteres.','error');return}
+ $('authSubmit').disabled=true;
+ try{
+  if(mode==='register'){
+   const name=clean($('fullName').value),company=clean($('companyName').value),confirm=$('confirmPassword').value||'';
+   if(!name||!company){authMsg('Completa el nombre y la empresa.','error');return}
+   if(pass!==confirm){authMsg('Las contraseñas no coinciden.','error');return}
+   const cred=await fbAuth.createUserWithEmailAndPassword(email,pass);
+   if(name)await cred.user.updateProfile({displayName:name});
+   await businessRef(cred.user.uid).set({ownerUid:cred.user.uid,ownerName:name,ownerEmail:email,businessName:company,country:'GT',accountStatus:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  }else await fbAuth.signInWithEmailAndPassword(email,pass);
+ }catch(err){authMsg(friendlyAuthError(err),'error')}
+ finally{$('authSubmit').disabled=false}
+}
+async function loadCampaigns(){
+ const cache=readJSON(CAMPAIGN_CACHE_KEY+(currentUser?.id||''),[]);
+ campaigns=Array.isArray(cache)?cache.map(normalizeCampaign):[];campaigns.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));renderAll();
+ if(!currentUser||!fbDb)return campaigns;
+ try{
+  const snap=await campaignsRef(currentUser.id).get(),remote=[];snap.forEach(doc=>remote.push(normalizeCampaign({...doc.data(),id:doc.id})));
+  campaigns=remote.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns);renderAll();
+ }catch(e){console.warn('ADS campaigns load:',e);toast('Sincronización remota no disponible; se muestra la copia local.')}
+ return campaigns
+}
+function saveCampaigns(){if(currentUser)writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns)}
+async function syncCampaignDoc(c){
+ if(!currentUser||!fbDb)return false;
+ const payload=JSON.parse(JSON.stringify(c));payload.ownerUid=currentUser.id;payload.businessName=currentUser.company||'';payload.updatedAtServer=firebase.firestore.FieldValue.serverTimestamp();
+ await campaignsRef(currentUser.id).doc(c.id).set(payload,{merge:true});return true
+}
+function toPublicCampaign(c){
+ const n=normalizeCampaign(c);
+ return {campaignId:c.id,status:c.status,approvalStatus:c.approvalStatus||'pending',placement:c.placement,country:c.country||'',region:c.region||'',city:c.city||'',radius:Number(c.radius)||0,ageMin:Number(c.ageMin)||18,ageMax:Number(c.ageMax)||65,start:c.start||'',end:c.end||'',budgetDistribution:c.budgetDistribution||'system',ads:n.ads.filter(a=>a.src&&a.mediaMeta).map(a=>({id:a.id,name:a.name||'',src:a.src,type:a.mediaMeta?.kind==='video'?'video':(String(a.mediaMeta?.mime||'').toLowerCase()==='image/gif'?'gif':'image'),destination:a.destination||'',sound:!!a.sound,width:Number(a.mediaMeta?.width)||0,height:Number(a.mediaMeta?.height)||0,duration:Number(a.mediaMeta?.duration)||0})),updatedAt:now()}
+}
+async function syncPublicCampaign(c){
+ if(!fbDb||!c)return;const allowed=c.status==='active'&&c.approvalStatus==='approved'&&normalizeCampaign(c).ads.some(a=>a.src&&a.mediaMeta);
+ try{if(allowed)await publicCampaignRef(c.id).set(toPublicCampaign(c),{merge:false});else await publicCampaignRef(c.id).delete().catch(()=>{})}catch(e){console.warn('ADS public mirror:',e)}
+}
+async function enterApp(){
+ $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);qa('.admin-only').forEach(el=>el.hidden=!isAdsAdmin);await loadCampaigns();renderAll();animateApp()
+}
+async function logout(){try{await fbAuth.signOut()}catch(_){}}
+async function handleAuthState(user){
+ authReady=true;
+ if(!user){currentUser=null;campaigns=[];$('appView').hidden=true;$('authView').hidden=false;$('authForm').reset();setAuthMode('login');animateAuth();return}
+ const business=await getBusiness(user.uid);
+ if(business&&business.accountStatus==='suspended'){authMsg('Esta cuenta comercial está suspendida.','error');await fbAuth.signOut();return}
+ isAdsAdmin=await getAdminClaim(user);
+ currentUser={id:user.uid,uid:user.uid,name:user.displayName||business?.ownerName||user.email||'Usuario',company:business?.businessName||'Cuenta comercial',email:user.email||'',accountStatus:business?.accountStatus||'active'};
+ await enterApp()
+}
+function objectiveLabel(v){return {awareness:'Reconocimiento',traffic:'Tráfico',engagement:'Interacción',leads:'Clientes potenciales',sales:'Ventas',app:'Aplicación'}[v]||v}function approvalLabel(v){return {pending:'En revisión',approved:'Aprobada',rejected:'Rechazada'}[v]||'En revisión'}function statusLabel(v){return {draft:'Borrador',active:'Activa',paused:'Pausada'}[v]||v}function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
+function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary()}
+function renderMetrics(){const active=campaigns.filter(c=>c.status==='active'),budget=active.filter(c=>c.budgetType==='daily').reduce((s,c)=>s+Number(c.budget||0),0),formats=new Set(campaigns.map(c=>c.placement));$('metricCampaigns').textContent=campaigns.length;$('metricActive').textContent=active.length;$('metricBudget').textContent=money(budget);$('metricFormats').textContent=formats.size}
+function renderRecent(){const list=campaigns.slice(0,5);const e=$('recentCampaigns');if(!list.length){e.className='empty';e.textContent='Aún no hay campañas.';return}e.className='activity-list';e.innerHTML=list.map(c=>'<div class="activity"><div class="activity-icon">AD</div><div><b>'+escapeHtml(c.name)+'</b><span>'+escapeHtml(placementLabel(c.placement))+' · '+escapeHtml(locationLabel(c))+'</span></div><small>'+escapeHtml(statusLabel(c.status))+'</small></div>').join('')}
+function renderManagerSummary(){const active=campaigns.filter(c=>c.status==='active').length;const daily=campaigns.filter(c=>c.status==='active'&&c.budgetType==='daily').reduce((s,c)=>s+Number(c.budget||0),0);const set=(id,val)=>{const el=$(id);if(el)el.textContent=val};set('stripCampaigns',String(campaigns.length));set('stripActive',String(active));set('stripBudget',money(daily));set('tabCampaignCount',selectedCampaignIds.size+' seleccionadas');set('managerAccountLabel',currentUser?.company||currentUser?.name||'Cuenta publicitaria activa');updateBulkActions()}
+function updateBulkActions(){const n=selectedCampaignIds.size;['duplicateBtn','bulkEditBtn','bulkDeleteBtn'].forEach(id=>{const el=$(id);if(el)el.disabled=n===0||(id==='bulkEditBtn'&&n!==1)});const info=$('selectionInfo');if(info){const s=info.querySelector('span');if(s)s.textContent=n+' '+(n===1?'elemento seleccionado':'elementos seleccionados')}const master=$('masterSelect');if(master){const visible=qa('#campaignBody [data-select-id]');master.checked=visible.length>0&&visible.every(x=>x.checked);master.indeterminate=visible.some(x=>x.checked)&&!master.checked}const c=$('tabCampaignCount');if(c)c.textContent=n+' seleccionadas'}
+function renderTable(){
+ const term=clean($('search').value).toLowerCase(),filter=$('statusFilter').value;
+ const list=campaigns.filter(c=>(filter==='all'||c.status===filter)&&(!term||(c.name+' '+normalizeCampaign(c).ads.map(a=>a.name+' '+a.destination).join(' ')+' '+objectiveLabel(c.objective)+' '+locationLabel(c)).toLowerCase().includes(term)));
+ const head=$('campaignHead');
+ if(managerLevel==='campaigns')head.innerHTML='<tr><th class="select-col"><input id="masterSelect" type="checkbox"></th><th>Desactivado/Activado</th><th>Campaña</th><th>Entrega</th><th>Anuncios</th><th>Presupuesto</th><th>Distribución</th><th>Importe gastado</th><th>Impresiones</th><th>Finalización</th><th></th></tr>';
+ else if(managerLevel==='adsets')head.innerHTML='<tr><th class="select-col"><input id="masterSelect" type="checkbox"></th><th>Desactivado/Activado</th><th>Conjunto de anuncios</th><th>Entrega</th><th>Audiencia</th><th>Ubicación</th><th>Presupuesto</th><th>Anuncios</th><th>Resultados</th><th>Finalización</th><th></th></tr>';
+ else head.innerHTML='<tr><th class="select-col"><input id="masterSelect" type="checkbox"></th><th>Estado</th><th>Anuncio</th><th>Campaña</th><th>Formato</th><th>Destino</th><th>Presupuesto asignado</th><th>Resultados</th><th>Impresiones</th><th>Importe gastado</th><th></th></tr>';
+ const rows=[];
+ if(managerLevel==='ads'){
+   list.forEach(c=>{
+     const n=normalizeCampaign(c),on=c.status==='active',delivery=on?'Activo':c.status==='paused'?'Pausado':'Borrador',shares=equalBudgetShares(c.budget,n.ads.length||1);
+     n.ads.forEach((a,i)=>{
+       const selected=selectedCampaignIds.has(c.id),select='<input type="checkbox" data-select-id="'+c.id+'" '+(selected?'checked':'')+'>',toggle='<button class="delivery-toggle '+(on?'on':'')+'" data-toggle="'+c.id+'"></button>',thumb=a.mediaMeta?(a.mediaMeta.kind==='video'?'VID':'IMG'):'AD',allocation=c.budgetDistribution==='equal'?money(shares[i]||0):'Automático';
+       const actions='<div class="row-actions meta-row-actions"><button data-edit="'+c.id+'">Editar campaña</button><button data-duplicate="'+c.id+'">Duplicar</button><button data-delete="'+c.id+'">Eliminar</button></div>';
+       rows.push('<tr class="'+(selected?'row-selected':'')+'"><td class="select-col">'+select+'</td><td>'+toggle+'</td><td><div class="entity-name-cell"><span class="creative-thumb">'+thumb+'</span><span class="entity-name-copy"><b>'+escapeHtml(a.name)+'</b><small>ID '+escapeHtml(a.id.slice(0,12))+'</small></span></div></td><td>'+escapeHtml(c.name)+'</td><td>'+escapeHtml(placementLabel(c.placement))+'</td><td>'+(a.destination?'<span title="'+escapeHtml(a.destination)+'">'+escapeHtml(a.destination.replace(/^https?:\/\//,'').slice(0,28))+'</span>':'—')+'</td><td><b>'+escapeHtml(allocation)+'</b><br><small>'+(c.budgetType==='daily'?'por día':'total')+'</small></td><td class="metric-zero">—</td><td class="metric-zero">—</td><td class="metric-zero">Q0.00</td><td>'+actions+'</td></tr>');
+     });
+   });
+ }else{
+   list.forEach(c=>{
+     const n=normalizeCampaign(c),selected=selectedCampaignIds.has(c.id),on=c.status==='active',delivery=on?'Activa':c.status==='paused'?'Pausada':'Borrador',toggle='<button class="delivery-toggle '+(on?'on':'')+'" data-toggle="'+c.id+'"></button>',select='<input type="checkbox" data-select-id="'+c.id+'" '+(selected?'checked':'')+'>',thumb=n.ads.some(a=>a.mediaMeta)?'ADS':'AD',actions='<div class="row-actions meta-row-actions"><button data-edit="'+c.id+'">Editar</button><button data-duplicate="'+c.id+'">Duplicar</button><button data-delete="'+c.id+'">Eliminar</button></div>';
+     if(managerLevel==='campaigns')rows.push('<tr class="'+(selected?'row-selected':'')+'"><td class="select-col">'+select+'</td><td>'+toggle+'</td><td><div class="entity-name-cell"><span class="creative-thumb">'+thumb+'</span><span class="entity-name-copy"><b>'+escapeHtml(c.name)+'</b><small>ID '+escapeHtml(c.id.slice(0,12))+'</small></span></div></td><td><div class="delivery-cell"><b>'+delivery+'</b><small>'+(on?'En circulación':'Sin entrega')+'</small></div></td><td><b>'+n.ads.length+'</b> anuncio'+(n.ads.length===1?'':'s')+'</td><td>'+escapeHtml(money(c.budget))+(c.budgetType==='daily'?' diario':' total')+'</td><td>'+(c.budgetDistribution==='equal'?'Partes iguales':'Optimización automática')+'</td><td class="metric-zero">Q0.00</td><td class="metric-zero">—</td><td>'+escapeHtml(c.end||'Sin fecha')+'</td><td>'+actions+'</td></tr>');
+     else rows.push('<tr class="'+(selected?'row-selected':'')+'"><td class="select-col">'+select+'</td><td>'+toggle+'</td><td><div class="entity-name-cell"><span class="creative-thumb">SET</span><span class="entity-name-copy"><b>Conjunto · '+escapeHtml(c.name)+'</b><small>'+escapeHtml(objectiveLabel(c.objective))+'</small></span></div></td><td><div class="delivery-cell"><b>'+delivery+'</b><small>'+(on?'En circulación':'Sin entrega')+'</small></div></td><td>'+escapeHtml(c.ageMin+'–'+c.ageMax+' años')+'</td><td>'+escapeHtml(locationLabel(c))+'</td><td>'+escapeHtml(money(c.budget))+(c.budgetType==='daily'?' diario':' total')+'</td><td>'+n.ads.length+'</td><td class="metric-zero">—</td><td>'+escapeHtml(c.end||'Sin fecha')+'</td><td>'+actions+'</td></tr>');
+   });
+ }
+ $('campaignEmpty').hidden=!!rows.length;$('tableSummary').textContent=rows.length+' '+(rows.length===1?'resultado':'resultados');$('campaignBody').innerHTML=rows.join('');
+ const master=$('masterSelect');if(master)master.addEventListener('change',()=>{qa('#campaignBody [data-select-id]').forEach(x=>{x.checked=master.checked;if(master.checked)selectedCampaignIds.add(x.dataset.selectId);else selectedCampaignIds.delete(x.dataset.selectId)});renderTable();renderManagerSummary()});updateBulkActions()
+}
+function fmtBytes(v){const n=Number(v)||0;if(!n)return '—';if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(1)+' MB'}
+function moduleEmpty(title,text){return '<div class="module-note"><b>'+escapeHtml(title)+'</b><p>'+escapeHtml(text)+'</p></div>'}
+function renderModule(name){const root=$('moduleContent');if(!root)return;const active=campaigns.filter(c=>c.status==='active'),draft=campaigns.filter(c=>c.status==='draft'),paused=campaigns.filter(c=>c.status==='paused');const daily=active.filter(c=>c.budgetType==='daily').reduce((s,c)=>s+(Number(c.budget)||0),0);const configured=campaigns.reduce((s,c)=>s+(Number(c.budget)||0),0);const formats=new Set(campaigns.map(c=>c.placement).filter(Boolean));
+ if(name==='audiences'){
+   const locMap=new Map();campaigns.forEach(c=>{const k=locationLabel(c);locMap.set(k,(locMap.get(k)||0)+1)});const ages=campaigns.length?campaigns.reduce((a,c)=>[Math.min(a[0],Number(c.ageMin)||18),Math.max(a[1],Number(c.ageMax)||65)],[99,0]):[0,0];const rows=[...locMap.entries()].sort((a,b)=>b[1]-a[1]).map(([loc,count])=>'<div class="module-row"><div><b>'+escapeHtml(loc)+'</b><span>Segmentación geográfica utilizada</span></div><small>'+count+' campaña'+(count===1?'':'s')+'</small><small>Audiencia configurada</small></div>').join('');
+   root.innerHTML='<div class="module-kpis"><article class="module-card"><span>Audiencias utilizadas</span><strong>'+locMap.size+'</strong><small>Segmentaciones distintas</small></article><article class="module-card"><span>Campañas segmentadas</span><strong>'+campaigns.length+'</strong><small>Total configurado</small></article><article class="module-card"><span>Rango de edad</span><strong>'+(campaigns.length?ages[0]+'–'+ages[1]:'—')+'</strong><small>Según campañas guardadas</small></article><article class="module-card"><span>Campañas activas</span><strong>'+active.length+'</strong><small>Con distribución habilitada</small></article></div><div class="module-list"><div class="module-list-head"><b>Segmentaciones geográficas</b><span>Datos derivados de tus campañas</span></div>'+(rows||'<div class="empty">Aún no hay audiencias configuradas.</div>')+'</div>';
+ }else if(name==='creatives'){
+   const list=[];campaigns.forEach(c=>normalizeCampaign(c).ads.forEach(a=>{if(a.mediaMeta)list.push({c,a})}));
+   const rows=list.map(({c,a})=>{const m=a.mediaMeta||{},s=placementSpecs[c.placement]||placementSpecs.banner;return '<div class="module-row"><div><b>'+escapeHtml(a.name||c.name)+'</b><span>'+escapeHtml(m.name||'Creativo guardado')+' · '+escapeHtml(c.name)+'</span></div><small>'+escapeHtml(s.label)+' · '+escapeHtml((m.width||s.width)+'×'+(m.height||s.height))+'</small><small>'+escapeHtml((m.kind==='video'?'Video':'Imagen/GIF')+' · '+fmtBytes(m.size))+'</small></div>'}).join('');
+   root.innerHTML='<div class="module-kpis"><article class="module-card"><span>Creativos guardados</span><strong>'+list.length+'</strong><small>Archivos vinculados</small></article><article class="module-card"><span>Banner</span><strong>'+list.filter(x=>x.c.placement==='banner').length+'</strong><small>1200×180</small></article><article class="module-card"><span>Verticales</span><strong>'+list.filter(x=>x.c.placement==='entry'||x.c.placement==='interaction').length+'</strong><small>1080×1920</small></article><article class="module-card"><span>Campañas con anuncios</span><strong>'+campaigns.filter(c=>normalizeCampaign(c).ads.length).length+'</strong><small>Hasta 12 anuncios por campaña</small></article></div><div class="module-list"><div class="module-list-head"><b>Biblioteca de creativos</b><span>Todos los anuncios guardados</span></div>'+(rows||'<div class="empty">Aún no hay creativos guardados.</div>')+'</div>';
+ }else if(name==='reports'){
+   const rows=campaigns.map(c=>'<div class="module-row"><div><b>'+escapeHtml(c.name)+'</b><span>'+escapeHtml(objectiveLabel(c.objective))+' · '+escapeHtml(placementLabel(c.placement))+'</span></div><small>'+escapeHtml(statusLabel(c.status))+'</small><small>'+escapeHtml(money(c.budget))+' '+(c.budgetType==='daily'?'diario':'total')+'</small></div>').join('');
+   root.innerHTML='<div class="module-kpis"><article class="module-card"><span>Campañas activas</span><strong>'+active.length+'</strong><small>En circulación</small></article><article class="module-card"><span>Borradores</span><strong>'+draft.length+'</strong><small>Pendientes de activación</small></article><article class="module-card"><span>Pausadas</span><strong>'+paused.length+'</strong><small>Detenidas temporalmente</small></article><article class="module-card"><span>Presupuesto diario activo</span><strong>'+escapeHtml(money(daily))+'</strong><small>Configuración actual</small></article></div><div class="module-grid"><div class="module-list"><div class="module-list-head"><b>Estado de campañas</b><span>Resumen operativo</span></div>'+(rows||'<div class="empty">Aún no hay campañas para analizar.</div>')+'</div>'+moduleEmpty('Métricas de entrega','Impresiones, clics, alcance, CTR y conversiones aparecerán cuando el motor de entrega publicitaria de TaskFlow esté conectado al administrador.')+'</div>';
+ }else if(name==='billing'){
+   root.innerHTML='<div class="module-kpis"><article class="module-card"><span>Presupuesto configurado</span><strong>'+escapeHtml(money(configured))+'</strong><small>Suma de campañas</small></article><article class="module-card"><span>Presupuesto diario activo</span><strong>'+escapeHtml(money(daily))+'</strong><small>Campañas activas</small></article><article class="module-card"><span>Moneda</span><strong>GTQ</strong><small>Quetzal guatemalteco</small></article><article class="module-card"><span>Movimientos</span><strong>0</strong><small>Sin cobros procesados aquí</small></article></div><div class="module-grid"><div class="module-list"><div class="module-list-head"><b>Control presupuestario</b><span>Configuración por campaña</span></div>'+(campaigns.map(c=>'<div class="module-row"><div><b>'+escapeHtml(c.name)+'</b><span>'+escapeHtml(c.budgetType==='daily'?'Presupuesto diario':'Presupuesto total')+'</span></div><small>'+escapeHtml(money(c.budget))+'</small><small>'+escapeHtml(statusLabel(c.status))+'</small></div>').join('')||'<div class="empty">Aún no hay presupuestos configurados.</div>')+'</div>'+moduleEmpty('Facturación externa','Los métodos de pago, cargos, facturas fiscales y conciliación deben conectarse a un servicio de pagos antes de operar públicamente.')+'</div>';
+ }else if(name==='settings'){
+   root.innerHTML='<div class="module-grid"><div class="module-list"><div class="module-list-head"><b>Cuenta comercial</b><span>Información de acceso</span></div><div class="settings-grid" style="padding:16px"><div class="setting-card"><span>Responsable</span><b>'+escapeHtml(currentUser?.name||'—')+'</b><small>Usuario autenticado</small></div><div class="setting-card"><span>Empresa / marca</span><b>'+escapeHtml(currentUser?.company||'—')+'</b><small>Cuenta comercial</small></div><div class="setting-card"><span>Correo</span><b>'+escapeHtml(currentUser?.email||'—')+'</b><small>Credencial principal</small></div><div class="setting-card"><span>Estado</span><b class="status-line"><i></i> Operativa</b><small>Sesión y persistencia activas</small></div></div></div><div class="module-content">'+moduleEmpty('Protección de interfaz','El sistema bloquea zoom, selección general, copiar, guardar, imprimir, menú contextual y accesos comunes de extracción desde la interfaz.')+moduleEmpty('Persistencia','Las cuentas usan Firebase Authentication; las campañas se sincronizan con Cloud Firestore y los creativos con Firebase Storage.')+'</div></div>';
+ }else if(name==='admin'){
+   if(!isAdsAdmin){root.innerHTML=moduleEmpty('Acceso restringido','Este módulo requiere autorización administrativa de TaskFlow ADS.');return}
+   root.innerHTML='<div class="module-kpis"><article class="module-card"><span>Control</span><strong>ADS</strong><small>Revisión comercial</small></article><article class="module-card"><span>Estado</span><strong>Administrador</strong><small>Claim verificado</small></article><article class="module-card"><span>Entrega</span><strong>TaskFlow</strong><small>Espejo público protegido</small></article><article class="module-card"><span>Acción</span><strong>Revisar</strong><small>Campañas de anunciantes</small></article></div><div class="module-list"><div class="module-list-head"><b>Campañas pendientes de aprobación</b><span>Control central de TaskFlow ADS</span></div><div id="adminReviewList" class="empty">Cargando campañas...</div></div>';loadAdminReview();
+ }else root.innerHTML='';
+}
 
-    <main class="workspace">
-      <header class="topbar">
-        <div class="topbar-left">
-          <button id="mobileMenuBtn" class="icon-btn mobile-only" type="button" aria-label="Abrir menú">☰</button>
-          <div>
-            <small id="businessLabel">Cuenta comercial</small>
-            <strong id="businessNameTop">TaskFlow ADS</strong>
-          </div>
-        </div>
-        <div class="topbar-actions">
-          <span id="syncBadge" class="sync-badge">Local</span>
-          <button id="createCampaignBtn" class="primary" type="button">+ Crear campaña</button>
-          <button id="accountBtn" class="account-chip" type="button"><span id="accountInitials">TF</span><div><strong id="accountName">Cuenta</strong><small id="accountEmail"></small></div></button>
-        </div>
-      </header>
+async function loadAdminReview(){
+ const root=$('adminReviewList');if(!root||!isAdsAdmin)return;
+ try{
+  const snap=await fbDb.collectionGroup('adsCampaigns').get(),rows=[];snap.forEach(doc=>{const c=normalizeCampaign({...doc.data(),id:doc.id});if(c.approvalStatus!=='approved'||c.status==='active')rows.push(c)});
+  root.className='';root.innerHTML=rows.length?rows.map(c=>'<div class="module-row"><div><b>'+escapeHtml(c.name)+'</b><span>'+escapeHtml(c.businessName||c.ownerUid||'Anunciante')+' · '+escapeHtml(placementLabel(c.placement))+' · '+normalizeCampaign(c).ads.length+' anuncios</span></div><small>'+escapeHtml(approvalLabel(c.approvalStatus))+'</small><div class="row-actions"><button data-admin-approve="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Aprobar</button><button data-admin-reject="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Rechazar</button></div></div>').join(''):'<div class="empty">No hay campañas pendientes.</div>';
+  root.onclick=async e=>{const a=e.target.closest('[data-admin-approve]'),r=e.target.closest('[data-admin-reject]');if(!a&&!r)return;const raw=(a?.dataset.adminApprove||r?.dataset.adminReject||'').split('|'),ownerUid=raw[0],id=raw[1];if(!ownerUid||!id)return;await adminReviewCampaign(ownerUid,id,!!a);await loadAdminReview()}
+ }catch(e){console.error(e);root.className='empty';root.textContent='No fue posible cargar el control administrativo.'}
+}
+async function adminReviewCampaign(ownerUid,id,approve){
+ if(!isAdsAdmin)return;const ref=fbDb.collection('users').doc(ownerUid).collection('adsCampaigns').doc(id),snap=await ref.get();if(!snap.exists)return;
+ const c=normalizeCampaign({...snap.data(),id,ownerUid});c.approvalStatus=approve?'approved':'rejected';c.reviewedAt=now();c.reviewedBy=currentUser.id;
+ await ref.set({approvalStatus:c.approvalStatus,reviewedAt:c.reviewedAt,reviewedBy:c.reviewedBy},{merge:true});
+ if(approve&&c.status==='active'&&campaignReady(c))await publicCampaignRef(id).set(toPublicCampaign(c),{merge:false});else await publicCampaignRef(id).delete().catch(()=>{});
+ toast(approve?'Campaña aprobada.':'Campaña rechazada.')
+}
+function showView(name){qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={audiences:['Audiencias','Segmentación y públicos comerciales utilizados por tus campañas.'],creatives:['Creativos','Biblioteca de archivos publicitarios validados y vinculados.'],reports:['Informes','Resumen operativo de campañas, estados y presupuesto configurado.'],billing:['Facturación','Control presupuestario y preparación de operaciones comerciales.'],settings:['Configuración','Estado y datos de la cuenta comercial.'],admin:['Control ADS','Revisión y aprobación central de campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp()}
 
-      <section id="overviewView" class="view active">
-        <div class="page-heading">
-          <div><small>Centro comercial</small><h2>Resumen de publicidad</h2><p>Rendimiento y estructura de tus campañas conectadas a TaskFlow.</p></div>
-          <button class="secondary" data-action="refresh">Actualizar</button>
-        </div>
-        <div class="metric-grid">
-          <article class="metric-card"><span>Campañas</span><strong id="metricCampaigns">0</strong><small>Total guardadas</small></article>
-          <article class="metric-card"><span>Activas</span><strong id="metricActive">0</strong><small>En circulación</small></article>
-          <article class="metric-card"><span>Presupuesto</span><strong id="metricBudget">Q0.00</strong><small>Presupuesto diario</small></article>
-          <article class="metric-card"><span>Ubicaciones</span><strong id="metricPlacements">0</strong><small>Placements utilizados</small></article>
-        </div>
-        <div class="dashboard-grid">
-          <article class="panel">
-            <div class="panel-head"><div><small>Actividad</small><h3>Campañas recientes</h3></div><button class="link-btn" data-view-link="campaigns">Ver todas</button></div>
-            <div id="recentCampaigns" class="empty-state">Aún no hay campañas.</div>
-          </article>
-          <article class="panel compact">
-            <div class="panel-head"><div><small>TaskFlow</small><h3>Ubicaciones disponibles</h3></div></div>
-            <div class="placement-list">
-              <div><b>Banner 1</b><span>Debajo del temporizador · 1200×180</span></div>
-              <div><b>Banner 2</b><span>Entre Hábitos y Tareas · 1200×180</span></div>
-              <div><b>Banner 3</b><span>Final de página · 1200×180</span></div>
-              <div><b>Ingreso</b><span>Pantalla vertical · 1080×1920</span></div>
-              <div><b>Interacción</b><span>Cada 10 interacciones · 1080×1920</span></div>
-            </div>
-          </article>
-        </div>
-      </section>
+function currentBudgetMode(){return qa('input[name="budgetDistribution"]').find(x=>x.checked)?.value||'system'}
+function equalBudgetShares(total,count){
+ const n=Math.max(1,Number(count)||1),cents=Math.max(0,Math.round((Number(total)||0)*100)),base=Math.floor(cents/n),rem=cents-(base*n);
+ return Array.from({length:n},(_,i)=>(base+(i<rem?1:0))/100);
+}
+function allocationForIndex(total,count,index,mode){
+ if(mode!=='equal')return null;
+ return equalBudgetShares(total,count)[index]||0;
+}
+function newAdDraft(index=0){return {id:makeAdId(),name:'Anuncio '+(index+1),destination:'',sound:false,mediaMeta:null,src:'',storagePath:'',_blob:null,createdAt:now(),updatedAt:now()}}
+function currentAdDraft(){return adDrafts.find(a=>a.id===currentAdDraftId)||null}
+function commitCurrentAd(){
+ const a=currentAdDraft();if(!a)return;
+ a.name=clean($('adName').value)||a.name||'Anuncio';
+ a.destination=clean($('destination').value);
+ a.sound=$('sound').value==='true';
+ a.mediaMeta=pendingMedia?.meta||existingMediaMeta||a.mediaMeta||null;
+ if(pendingMedia?.blob)a._blob=pendingMedia.blob;
+ a.updatedAt=now();
+}
+function budgetTextForDraft(index){
+ const mode=currentBudgetMode(),amount=Number($('budgetAmount').value)||0;
+ if(mode==='system')return 'Automático';
+ return money(allocationForIndex(amount,adDrafts.length,index,mode));
+}
+function renderBudgetAllocation(){
+ const box=$('budgetAllocationPreview');if(!box)return;
+ const mode=currentBudgetMode(),amount=Number($('budgetAmount').value)||0,count=Math.max(1,adDrafts.length);
+ if(mode==='system'){
+   box.innerHTML='<div class="allocation-head"><b>Optimización automática de TaskFlow</b><span>'+count+' anuncio'+(count===1?'':'s')+'</span></div><div class="budget-allocation-list"><div class="budget-allocation-row"><span>Presupuesto de campaña</span><b>'+escapeHtml(money(amount))+' '+($('budgetType').value==='daily'?'diario':'total')+'</b></div><div class="budget-allocation-row"><span>Distribución por anuncio</span><b>Dinámica según rendimiento</b></div></div>';
+ }else{
+   const shares=equalBudgetShares(amount,count);
+   box.innerHTML='<div class="allocation-head"><b>Presupuesto dividido en partes iguales</b><span>'+count+' anuncio'+(count===1?'':'s')+'</span></div><div class="budget-allocation-list">'+shares.map((v,i)=>'<div class="budget-allocation-row"><span>'+escapeHtml(adDrafts[i]?.name||('Anuncio '+(i+1)))+'</span><b>'+escapeHtml(money(v))+' '+($('budgetType').value==='daily'?'por día':'total')+'</b></div>').join('')+'</div>';
+ }
+ const s=$('adBudgetSummary');if(s)s.innerHTML=mode==='system'?'<b>Distribución automática:</b> TaskFlow podrá mover presupuesto entre los '+count+' anuncios de la campaña para priorizar los que obtengan mejor rendimiento.':'<b>Distribución igual:</b> '+escapeHtml(money(amount))+' se divide entre '+count+' anuncios. Cada anuncio recibe su parte calculada de forma exacta.';
+}
+function renderAdDraftList(){
+ const root=$('adDraftList');if(!root)return;
+ $('adCountLabel').textContent=String(adDrafts.length);
+ $('addAdBtn').disabled=adDrafts.length>=12;
+ $('removeAdBtn').disabled=adDrafts.length<=1;
+ root.innerHTML=adDrafts.map((a,i)=>'<button type="button" class="ad-draft-item '+(a.id===currentAdDraftId?'active':'')+'" data-ad-draft="'+escapeHtml(a.id)+'"><span class="ad-draft-num">'+(i+1)+'</span><span class="ad-draft-copy"><b>'+escapeHtml(a.name||('Anuncio '+(i+1)))+'</b><small>'+(a.mediaMeta?escapeHtml(a.mediaMeta.name||'Creativo validado'):'Creativo pendiente')+'</small></span><span class="ad-draft-budget">'+escapeHtml(budgetTextForDraft(i))+'</span></button>').join('');
+ const idx=Math.max(0,adDrafts.findIndex(a=>a.id===currentAdDraftId));$('currentAdLabel').textContent='Anuncio '+(idx+1)+' de '+adDrafts.length;
+ renderBudgetAllocation();
+}
+async function loadAdDraftEditor(id){
+ if(currentAdDraftId&&currentAdDraftId!==id)commitCurrentAd();const a=adDrafts.find(x=>x.id===id);if(!a)return;
+ currentAdDraftId=id;$('adName').value=a.name||'';$('destination').value=a.destination||'';$('sound').value=String(!!a.sound);pendingMedia=a._blob?{blob:a._blob,meta:a.mediaMeta}:null;existingMediaMeta=a.mediaMeta||null;updateCreativeRules(false);
+ if(a._blob){showPreviewBlob(a._blob,a.mediaMeta);setMediaStatus('Archivo listo · '+(a.mediaMeta?.name||'Creativo'),'ok')}
+ else if(a.src&&a.mediaMeta){showPreviewUrl(a.src,a.mediaMeta);setMediaStatus('Creativo sincronizado · '+(a.mediaMeta?.name||'Archivo'),'ok')}
+ else{clearPreview();setMediaStatus('No se ha seleccionado un archivo.','')}
+ updateSoundVisibility();renderAdDraftList();review()
+}
+async function addCampaignAd(){
+ commitCurrentAd();
+ if(adDrafts.length>=12){toast('Una campaña admite un máximo de 12 anuncios.');return}
+ const a=newAdDraft(adDrafts.length);adDrafts.push(a);await loadAdDraftEditor(a.id);toast('Anuncio añadido a la campaña.');
+}
+async function removeCampaignAd(){
+ if(adDrafts.length<=1){toast('La campaña debe conservar al menos un anuncio.');return}
+ const a=currentAdDraft();if(!a)return;
+ const idx=adDrafts.findIndex(x=>x.id===a.id);
+ if(editingId)await deleteCreative(editingId,a)
+ adDrafts.splice(idx,1);
+ const next=adDrafts[Math.min(idx,adDrafts.length-1)];
+ currentAdDraftId=null;await loadAdDraftEditor(next.id);toast('Anuncio eliminado de la campaña.');
+}
 
-      <section id="campaignsView" class="view">
-        <div class="page-heading">
-          <div><small>Administrador</small><h2>Campañas</h2><p>Organiza objetivos, presupuesto, segmentación y ubicaciones.</p></div>
-          <button class="primary" data-action="new-campaign">+ Crear campaña</button>
-        </div>
-        <div class="table-toolbar">
-          <div class="searchbox"><span>⌕</span><input id="campaignSearch" placeholder="Buscar campañas"></div>
-          <select id="statusFilter"><option value="all">Todos los estados</option><option value="draft">Borrador</option><option value="active">Activa</option><option value="paused">Pausada</option></select>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Campaña</th><th>Objetivo</th><th>Estado</th><th>Ubicación</th><th>Presupuesto</th><th>Fechas</th><th></th></tr></thead>
-            <tbody id="campaignTableBody"></tbody>
-          </table>
-          <div id="campaignEmpty" class="empty-state">No hay campañas para mostrar.</div>
-        </div>
-      </section>
+function selectedPlacement(){return qa('input[name="placement"]',$('placements')).find(x=>x.checked)?.value||'banner'}
+function updateCreativeRules(resetFile=false){
+ const p=selectedPlacement(),s=placementSpecs[p];$('creativeFile').accept=s.accept;$('uploadHelp').textContent=s.label+': '+s.width+' × '+s.height+' píxeles exactos.';$('uploadFormats').textContent=s.formats;$('previewType').textContent=s.label+' · '+s.width+'×'+s.height;$('specSize').textContent=s.width+'×'+s.height;$('specFormat').textContent=s.specFormat;$('specDuration').textContent=s.duration;$('mediaFrame').className='media-frame '+s.frame;
+ if(resetFile){pendingMedia=null;existingMediaMeta=null;$('creativeFile').value='';clearPreview();setMediaStatus('No se ha seleccionado un archivo.','')}
+ updateSoundVisibility()
+}
+function updateSoundVisibility(){const meta=pendingMedia?.meta||existingMediaMeta;$('soundField').hidden=!(meta&&meta.kind==='video')}
+function setMediaStatus(text,type=''){$('mediaStatus').textContent=text;$('mediaStatus').className='media-status'+(type?' '+type:'')}
+function clearPreview(){if(currentPreviewUrl){URL.revokeObjectURL(currentPreviewUrl);currentPreviewUrl=null}$('mediaFrame').innerHTML='<div class="media-placeholder">Vista previa del creativo.<br>El sistema valida formato, dimensiones y duración antes de guardar.</div>'}
+async function inspectMedia(file){const p=selectedPlacement(),spec=placementSpecs[p],type=file.type||'';const isVideo=type.startsWith('video/'),isImage=type.startsWith('image/');if(!isVideo&&!isImage)throw new Error('Formato no permitido.');if(p==='banner'&&isVideo)throw new Error('Banner no acepta videos. Solo imagen o GIF.');const allowed=spec.accept.split(',');if(!allowed.includes(type))throw new Error('Formato no permitido para este tipo de anuncio.');const url=URL.createObjectURL(file);try{if(isVideo){const info=await new Promise((resolve,reject)=>{const v=document.createElement('video');v.preload='metadata';v.src=url;v.onloadedmetadata=()=>resolve({width:v.videoWidth,height:v.videoHeight,duration:v.duration});v.onerror=()=>reject(new Error('No fue posible leer el video.'))});if(info.width!==spec.width||info.height!==spec.height)throw new Error('Medida inválida: debe ser exactamente '+spec.width+' × '+spec.height+' px.');if(Math.abs(info.duration-10)>.08)throw new Error('Duración inválida: el video debe durar exactamente 10 segundos.');return {kind:'video',mime:type,name:file.name,width:info.width,height:info.height,duration:info.duration,size:file.size}}else{const info=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve({width:img.naturalWidth,height:img.naturalHeight});img.onerror=()=>reject(new Error('No fue posible leer la imagen.'));img.src=url});if(info.width!==spec.width||info.height!==spec.height)throw new Error('Medida inválida: debe ser exactamente '+spec.width+' × '+spec.height+' px.');return {kind:'image',mime:type,name:file.name,width:info.width,height:info.height,duration:null,size:file.size}}}finally{URL.revokeObjectURL(url)}}
+async function handleCreativeFile(file){
+ if(!file)return;setMediaStatus('Validando archivo...','');
+ try{
+   const meta=await inspectMedia(file);pendingMedia={blob:file,meta};existingMediaMeta=null;
+   const a=currentAdDraft();if(a){a.mediaMeta=meta;a._blob=file;a.updatedAt=now()}
+   showPreviewBlob(file,meta);setMediaStatus('Archivo válido · '+meta.width+'×'+meta.height+(meta.kind==='video'?' · '+meta.duration.toFixed(2)+' s':'')+' · '+meta.name,'ok');updateSoundVisibility();renderAdDraftList();review()
+ }catch(err){pendingMedia=null;$('creativeFile').value='';clearPreview();setMediaStatus(err.message||'Archivo inválido.','error');updateSoundVisibility()}
+}
+function showPreviewBlob(blob,meta){clearPreview();currentPreviewUrl=URL.createObjectURL(blob);const el=document.createElement(meta.kind==='video'?'video':'img');el.src=currentPreviewUrl;if(meta.kind==='video'){el.muted=true;el.loop=true;el.playsInline=true;el.autoplay=true;el.controls=false}el.draggable=false;$('mediaFrame').innerHTML='';$('mediaFrame').appendChild(el)}function showPreviewUrl(url,meta){clearPreview();const el=document.createElement(meta.kind==='video'?'video':'img');el.src=url;if(meta.kind==='video'){el.muted=true;el.loop=true;el.playsInline=true;el.autoplay=true;el.controls=false}el.draggable=false;$('mediaFrame').innerHTML='';$('mediaFrame').appendChild(el)}
 
-      <section id="placeholderView" class="view">
-        <div class="page-heading"><div><small>TaskFlow ADS</small><h2 id="placeholderTitle">Módulo</h2><p id="placeholderText">Este módulo queda preparado para la siguiente etapa.</p></div></div>
-        <article class="panel placeholder-panel"><strong>Arquitectura preparada</strong><p>La primera versión prioriza cuentas, campañas, segmentación, presupuesto y persistencia.</p></article>
-      </section>
-    </main>
-  </div>
-
-  <div id="onboardingModal" class="modal" hidden>
-    <div class="modal-card narrow">
-      <div class="modal-head"><div><small>Configuración obligatoria</small><h2>Crea tu cuenta comercial</h2><p>Esta información identifica al anunciante y queda vinculada a tu cuenta TaskFlow.</p></div></div>
-      <form id="businessForm" class="form-grid">
-        <div class="field full"><label for="businessName">Nombre comercial</label><input id="businessName" maxlength="100" required placeholder="Nombre de empresa o marca"></div>
-        <div class="field"><label for="businessCountry">País principal</label><select id="businessCountry" required><option value="GT">Guatemala</option><option value="SV">El Salvador</option><option value="HN">Honduras</option><option value="MX">México</option><option value="US">Estados Unidos</option><option value="OTHER">Otro</option></select></div>
-        <div class="field"><label for="businessPhone">Teléfono</label><input id="businessPhone" maxlength="30" placeholder="+502 0000 0000"></div>
-        <div class="field full"><label for="businessWebsite">Sitio web</label><input id="businessWebsite" type="url" maxlength="220" placeholder="https://..."></div>
-        <button class="primary full wide" type="submit">Guardar y entrar</button>
-        <p id="businessMessage" class="form-message full"></p>
-      </form>
-    </div>
-  </div>
-
-  <div id="campaignModal" class="modal" hidden>
-    <div class="modal-card campaign-modal-card">
-      <header class="modal-head row">
-        <div><small>Nueva campaña</small><h2>Crear campaña publicitaria</h2><p id="wizardSubtitle">Objetivo y estructura</p></div>
-        <button id="closeCampaignModal" class="icon-btn" type="button" aria-label="Cerrar">×</button>
-      </header>
-      <div class="wizard-layout">
-        <aside class="wizard-steps">
-          <button class="wizard-step active" data-step="1"><span>1</span><div><strong>Campaña</strong><small>Objetivo</small></div></button>
-          <button class="wizard-step" data-step="2"><span>2</span><div><strong>Audiencia</strong><small>Ubicación</small></div></button>
-          <button class="wizard-step" data-step="3"><span>3</span><div><strong>Presupuesto</strong><small>Fechas</small></div></button>
-          <button class="wizard-step" data-step="4"><span>4</span><div><strong>Anuncio</strong><small>Creativo</small></div></button>
-        </aside>
-
-        <form id="campaignForm" class="wizard-body">
-          <section class="wizard-page active" data-page="1">
-            <div class="field"><label for="campaignName">Nombre de campaña</label><input id="campaignName" maxlength="120" required placeholder="Ej. Lanzamiento noviembre"></div>
-            <div class="field"><label>Objetivo</label><div id="objectiveGrid" class="choice-grid">
-              <button type="button" class="choice active" data-objective="awareness"><b>Reconocimiento</b><span>Mostrar tu marca a más personas.</span></button>
-              <button type="button" class="choice" data-objective="traffic"><b>Tráfico</b><span>Llevar personas a un sitio o enlace.</span></button>
-              <button type="button" class="choice" data-objective="engagement"><b>Interacción</b><span>Generar acciones sobre tu anuncio.</span></button>
-              <button type="button" class="choice" data-objective="leads"><b>Clientes potenciales</b><span>Captar interés comercial.</span></button>
-              <button type="button" class="choice" data-objective="sales"><b>Ventas</b><span>Impulsar conversiones.</span></button>
-              <button type="button" class="choice" data-objective="app"><b>Aplicación</b><span>Promover descargas o uso.</span></button>
-            </div></div>
-          </section>
-
-          <section class="wizard-page" data-page="2">
-            <div class="section-title"><small>Segmentación</small><h3>Ubicación y audiencia</h3></div>
-            <div class="form-grid">
-              <div class="field"><label for="targetCountry">País</label><select id="targetCountry"><option value="GT">Guatemala</option><option value="SV">El Salvador</option><option value="HN">Honduras</option><option value="MX">México</option><option value="US">Estados Unidos</option><option value="ALL">Todos</option></select></div>
-              <div class="field"><label for="targetRegion">Departamento / región</label><input id="targetRegion" maxlength="100" placeholder="Ej. Huehuetenango"></div>
-              <div class="field"><label for="targetCity">Ciudad / municipio</label><input id="targetCity" maxlength="100" placeholder="Ej. Huehuetenango"></div>
-              <div class="field"><label for="targetRadius">Radio aproximado</label><select id="targetRadius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select></div>
-              <div class="field"><label for="ageMin">Edad mínima</label><input id="ageMin" type="number" min="13" max="65" value="18"></div>
-              <div class="field"><label for="ageMax">Edad máxima</label><input id="ageMax" type="number" min="13" max="65" value="65"></div>
-            </div>
-            <div class="field"><label>Ubicaciones dentro de TaskFlow</label><div id="placementsGrid" class="placement-choice-grid">
-              <label><input type="checkbox" value="banner_timer" checked><span><b>Banner — Temporizador</b><small>1200 × 180</small></span></label>
-              <label><input type="checkbox" value="banner_middle"><span><b>Banner — Hábitos/Tareas</b><small>1200 × 180</small></span></label>
-              <label><input type="checkbox" value="banner_footer"><span><b>Banner — Final</b><small>1200 × 180</small></span></label>
-              <label><input type="checkbox" value="entry"><span><b>Anuncio de ingreso</b><small>1080 × 1920 · 10 s</small></span></label>
-              <label><input type="checkbox" value="interaction"><span><b>Por interacción</b><small>1080 × 1920 · cada 10 acciones</small></span></label>
-            </div></div>
-          </section>
-
-          <section class="wizard-page" data-page="3">
-            <div class="section-title"><small>Control de gasto</small><h3>Presupuesto y calendario</h3></div>
-            <div class="form-grid">
-              <div class="field"><label for="budgetType">Tipo de presupuesto</label><select id="budgetType"><option value="daily">Diario</option><option value="total">Total</option></select></div>
-              <div class="field"><label for="budgetAmount">Monto (GTQ)</label><input id="budgetAmount" type="number" min="1" step="0.01" value="50" required></div>
-              <div class="field"><label for="startDate">Fecha de inicio</label><input id="startDate" type="date" required></div>
-              <div class="field"><label for="endDate">Fecha de finalización</label><input id="endDate" type="date"></div>
-            </div>
-            <div class="notice"><b>Control comercial</b><span>La campaña se guarda primero como borrador. Publicarla quedará separada del proceso de creación para evitar activaciones accidentales.</span></div>
-          </section>
-
-          <section class="wizard-page" data-page="4">
-            <div class="section-title"><small>Creativo</small><h3>Contenido del anuncio</h3></div>
-            <div class="form-grid">
-              <div class="field full"><label for="adName">Nombre del anuncio</label><input id="adName" maxlength="120" placeholder="Ej. Creativo principal"></div>
-              <div class="field full"><label for="destinationUrl">URL de destino</label><input id="destinationUrl" type="url" maxlength="500" placeholder="https://tuempresa.com"></div>
-              <div class="field full"><label for="creativeUrl">URL del creativo</label><input id="creativeUrl" type="url" maxlength="1000" placeholder="https://.../imagen.jpg o video.mp4"></div>
-              <div class="field"><label for="creativeType">Tipo</label><select id="creativeType"><option value="image">Imagen</option><option value="gif">GIF</option><option value="video">Video</option></select></div>
-              <div class="field"><label for="videoSound">Audio del video</label><select id="videoSound"><option value="false">Sin audio</option><option value="true">Con audio</option></select></div>
-            </div>
-            <div id="campaignReview" class="review-card"></div>
-          </section>
-
-          <footer class="wizard-footer">
-            <button id="wizardBack" class="secondary" type="button" disabled>Atrás</button>
-            <div class="wizard-footer-right">
-              <button id="saveDraftBtn" class="ghost" type="button">Guardar borrador</button>
-              <button id="wizardNext" class="primary" type="button">Continuar</button>
-            </div>
-          </footer>
-          <p id="campaignMessage" class="form-message"></p>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-  <script src="./firebase-config.js"></script>
-  <script src="./app.js"></script>
+function safeFileName(name){return String(name||'creative').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(-120)||'creative'}
+function storagePath(campaignId,adId,meta){return 'ads/'+currentUser.id+'/'+campaignId+'/'+adId+'/'+safeFileName(meta?.name||'creative')}
+async function uploadCreative(campaignId,ad){
+ if(!ad._blob)return ad.src||'';
+ const path=storagePath(campaignId,ad.id,ad.mediaMeta),ref=fbStorage.ref(path),snap=await ref.put(ad._blob,{contentType:ad.mediaMeta?.mime||ad._blob.type||'application/octet-stream',customMetadata:{ownerUid:currentUser.id,campaignId,adId:ad.id}});
+ ad.src=await snap.ref.getDownloadURL();ad.storagePath=path;return ad.src
+}
+async function deleteCreative(campaignId,ad){try{if(ad?.storagePath)await fbStorage.ref(ad.storagePath).delete();else if(ad?.src)await fbStorage.refFromURL(ad.src).delete()}catch(_){}}
+function mediaKey(campaignId,adId){return currentUser.id+'|'+campaignId+(adId?'|'+adId:'')}
+function setStep(n){
+ const next=Math.max(1,Math.min(4,Number(n)||1));
+ if(step===4&&next!==4)commitCurrentAd();
+ step=next;
+ qa('.step').forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===step));
+ qa('.wizard-page').forEach(p=>p.classList.toggle('active',Number(p.dataset.page)===step));
+ $('backBtn').disabled=step===1;
+ $('nextBtn').textContent=step===4?(editingId?'Guardar cambios':'Guardar campaña'):'Continuar';
+ $('wizardSubtitle').textContent={1:'Objetivo y estructura',2:'Tipo de anuncio, ubicación y audiencia',3:'Presupuesto, calendario y distribución',4:'Anuncios, creativos y revisión'}[step];
+ if(step===3)renderBudgetAllocation();
+ if(step===4){renderAdDraftList();review()}
+}
+function resetForm(){
+ editingId=null;objective='awareness';pendingMedia=null;existingMediaMeta=null;adDrafts=[];currentAdDraftId=null;
+ $('campaignForm').reset();$('campaignName').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';
+ qa('.choice').forEach(x=>x.classList.toggle('active',x.dataset.objective==='awareness'));
+ qa('input[name="placement"]').forEach((x,i)=>x.checked=i===0);
+ const sys=qa('input[name="budgetDistribution"]').find(x=>x.value==='system');if(sys)sys.checked=true;
+ adDrafts=[newAdDraft(0)];currentAdDraftId=adDrafts[0].id;
+ $('adName').value=adDrafts[0].name;$('destination').value='';$('sound').value='false';
+ updateCreativeRules(true);renderAdDraftList();renderBudgetAllocation();msg('');
+ $('modalEyebrow').textContent='Nueva campaña';$('modalTitle').textContent='Crear campaña publicitaria';setStep(1);
+}
+function openNew(){resetForm();$('campaignModal').hidden=false}
+async function openEdit(id){
+ const c=campaigns.find(x=>x.id===id);if(!c)return;
+ resetForm();editingId=id;objective=c.objective||'awareness';
+ $('modalEyebrow').textContent='Editar campaña';$('modalTitle').textContent='Editar campaña publicitaria';$('campaignName').value=c.name||'';
+ qa('.choice').forEach(x=>x.classList.toggle('active',x.dataset.objective===objective));
+ qa('input[name="placement"]').forEach(x=>x.checked=x.value===(c.placement||'banner'));
+ $('country').value=c.country||'GT';$('region').value=c.region||'';$('city').value=c.city||'';$('radius').value=String(c.radius||0);$('ageMin').value=String(c.ageMin||18);$('ageMax').value=String(c.ageMax||65);
+ $('budgetType').value=c.budgetType||'daily';$('budgetAmount').value=String(c.budget||0);$('startDate').value=c.start||'';$('endDate').value=c.end||'';
+ const mode=qa('input[name="budgetDistribution"]').find(x=>x.value===(c.budgetDistribution||'system'));if(mode)mode.checked=true;
+ const normalized=normalizeCampaign(c);adDrafts=normalized.ads.length?normalized.ads.map((a,i)=>({...normalizeAd(a,i),_blob:null})):[newAdDraft(0)];
+ currentAdDraftId=null;updateCreativeRules(false);setStep(1);$('campaignModal').hidden=false;
+ await loadAdDraftEditor(adDrafts[0].id);
+ setStep(1);renderBudgetAllocation();
+}
+function closeModal(){if(currentPreviewUrl){URL.revokeObjectURL(currentPreviewUrl);currentPreviewUrl=null}$('campaignModal').hidden=true}
+function validateStep(){
+ msg('');
+ if(step===1&&!clean($('campaignName').value)){msg('Escribe el nombre de la campaña.','error');return false}
+ if(step===2){const min=Number($('ageMin').value),max=Number($('ageMax').value);if(min<13||max>65||min>max){msg('Revisa el rango de edad.','error');return false}}
+ if(step===3){
+   if(Number($('budgetAmount').value)<=0){msg('El presupuesto debe ser mayor que cero.','error');return false}
+   if(!$('startDate').value){msg('Selecciona la fecha de inicio.','error');return false}
+   if($('endDate').value&&$('endDate').value<$('startDate').value){msg('La fecha final no puede ser anterior al inicio.','error');return false}
+ }
+ if(step===4){
+   commitCurrentAd();
+   if(!adDrafts.length||adDrafts.length>12){msg('La campaña debe tener entre 1 y 12 anuncios.','error');return false}
+   for(let i=0;i<adDrafts.length;i++){
+     const a=adDrafts[i],dest=clean(a.destination);
+     if(!clean(a.name)){msg('El anuncio '+(i+1)+' necesita un nombre.','error');return false}
+     if(!dest){msg('El anuncio '+(i+1)+' necesita una URL de destino HTTPS.','error');return false}
+     if(dest&&!/^https:\/\//i.test(dest)){msg('La URL de destino del anuncio '+(i+1)+' debe comenzar con https://','error');return false}
+     if(!a.mediaMeta){msg('El anuncio '+(i+1)+' necesita un archivo publicitario válido.','error');return false}
+   }
+ }
+ return true;
+}
+function review(){
+ commitCurrentAd();
+ const p=selectedPlacement(),spec=placementSpecs[p],mode=currentBudgetMode(),count=adDrafts.length;
+ const ready=adDrafts.filter(a=>a.mediaMeta).length;
+ $('review').innerHTML='<b>'+escapeHtml(clean($('campaignName').value)||'Campaña sin nombre')+'</b><br>Objetivo: '+escapeHtml(objectiveLabel(objective))+'<br>Formato de la campaña: '+escapeHtml(spec.label)+' · '+spec.width+'×'+spec.height+'<br>Audiencia: '+escapeHtml(locationLabel({city:$('city').value,region:$('region').value,country:$('country').value}))+' · '+escapeHtml($('ageMin').value)+'–'+escapeHtml($('ageMax').value)+' años<br>Presupuesto: '+escapeHtml(money($('budgetAmount').value))+' '+($('budgetType').value==='daily'?'diario':'total')+'<br>Distribución: '+(mode==='system'?'Optimización automática de TaskFlow':'Partes iguales')+'<br>Anuncios: '+count+' creados · '+ready+' con creativo validado<br>Estado al guardar: Borrador';
+ renderAdDraftList();
+}
+async function saveCampaign(){
+ if(step===4)commitCurrentAd();if(!validateStep())return;const existing=editingId?campaigns.find(c=>c.id===editingId):null,id=editingId||makeId(),mode=currentBudgetMode();const previousAds=normalizeCampaign(existing||{}).ads||[];
+ $('nextBtn').disabled=true;$('draftBtn').disabled=true;msg('Guardando y sincronizando campaña...');
+ try{
+  const cleanAds=[];
+  for(let i=0;i<adDrafts.length;i++){const a=adDrafts[i];await uploadCreative(id,a);cleanAds.push({id:a.id,name:clean(a.name)||('Anuncio '+(i+1)),destination:clean(a.destination),sound:!!a.sound,mediaMeta:a.mediaMeta||null,src:a.src||'',storagePath:a.storagePath||'',createdAt:a.createdAt||now(),updatedAt:now()})}
+  const first=cleanAds[0]||{},approvalStatus=existing?.approvalStatus==='approved'?'pending':(existing?.approvalStatus||'pending');
+  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
+  const keep=new Set(cleanAds.map(a=>a.id));for(const old of previousAds){if(!keep.has(old.id))await deleteCreative(id,old)}
+  await syncCampaignDoc(c);await syncPublicCampaign(c);const idx=campaigns.findIndex(x=>x.id===id);if(idx>=0)campaigns[idx]=c;else campaigns.unshift(c);campaigns.sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));saveCampaigns();renderAll();closeModal();showView('campaigns');toast(existing?'Campaña actualizada y enviada nuevamente a revisión.':'Campaña guardada y enviada a revisión.');editingId=null
+ }catch(e){console.error(e);msg('No fue posible guardar completamente la campaña. Revisa la conexión y las reglas de Firebase.','error')}
+ finally{$('nextBtn').disabled=false;$('draftBtn').disabled=false}
+}
+async function saveDraft(){if(!clean($('campaignName').value)){msg('Escribe el nombre de la campaña antes de guardar.','error');setStep(1);return}if(step===4){commitCurrentAd();const missing=adDrafts.findIndex(a=>!a.mediaMeta);if(missing>=0){msg('El anuncio '+(missing+1)+' necesita un creativo válido antes de guardar.','error');return}}await saveCampaign()}
+async function duplicateCampaign(id){
+ const source=campaigns.find(c=>c.id===id);if(!source)return;const sourceNorm=normalizeCampaign(source),newId=makeId(),ads=sourceNorm.ads.map(a=>({...a,id:makeAdId(),createdAt:now(),updatedAt:now()}));
+ const copy={...sourceNorm,id:newId,name:source.name+' - copia',status:'draft',approvalStatus:'pending',ads,adCount:ads.length,createdAt:now(),updatedAt:now(),ownerUid:currentUser.id};
+ try{await syncCampaignDoc(copy);campaigns.unshift(copy);saveCampaigns();renderAll();toast('Campaña duplicada. La copia queda como borrador pendiente de revisión.')}catch(e){console.error(e);toast('No fue posible duplicar la campaña.')}
+}
+function campaignReady(c){const n=normalizeCampaign(c);return n.ads.length>0&&n.ads.every(a=>a.mediaMeta&&a.src)}
+async function toggleCampaign(id){
+ const c=campaigns.find(x=>x.id===id);if(!c)return;if(c.status!=='active'&&!campaignReady(c)){toast('Todos los anuncios necesitan un creativo sincronizado antes de activar.');return}
+ c.status=c.status==='active'?'paused':'active';if(c.status==='active'&&c.approvalStatus!=='approved')c.approvalStatus='pending';c.updatedAt=now();
+ try{await syncCampaignDoc(c);await syncPublicCampaign(c);saveCampaigns();renderAll();toast(c.status==='active'?(c.approvalStatus==='approved'?'Campaña activada.':'Campaña activada y pendiente de aprobación.'):'Campaña pausada.')}catch(e){console.error(e);toast('No se pudo actualizar el estado remoto.')}
+}
+async function deleteCampaign(id){
+ const c=campaigns.find(x=>x.id===id);if(!c)return;if(!confirm('¿Eliminar la campaña "'+c.name+'"?'))return;
+ try{for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete();await publicCampaignRef(id).delete().catch(()=>{});campaigns=campaigns.filter(x=>x.id!==id);saveCampaigns();renderAll();toast('Campaña eliminada.')}catch(e){console.error(e);toast('No fue posible eliminar la campaña.')}
+}
+function animateAuth(){if(!window.gsap)return;try{if(window.ScrollTrigger)gsap.registerPlugin(ScrollTrigger);gsap.from('.brand-pill,.auth-hero h1,.auth-hero>p',{opacity:0,y:18,duration:.65,stagger:.08,ease:'power3.out'});gsap.from('.hero-console',{opacity:0,y:18,duration:.7,delay:.15,ease:'power3.out'});gsap.from('.auth-logo,.auth-tabs,#authForm',{opacity:0,y:12,duration:.5,stagger:.05,ease:'power2.out'});if(window.ScrollTrigger)gsap.to('#parallaxHero',{backgroundPositionY:'18%',ease:'none',scrollTrigger:{trigger:'#parallaxHero',start:'top top',end:'bottom top',scrub:true}})}catch(_){}}
+function animateApp(){if(!window.gsap)return;try{gsap.from('.view.active .heading,.view.active .metric,.view.active .panel,.view.active .table-wrap',{opacity:0,y:9,duration:.3,stagger:.03,ease:'power2.out'})}catch(_){}}
+function blockExtraction(){
+ const editable=t=>!!(t&&t.closest&&t.closest('input,textarea,[contenteditable="true"]'));
+ document.addEventListener('contextmenu',e=>e.preventDefault());
+ document.addEventListener('copy',e=>e.preventDefault());
+ document.addEventListener('cut',e=>e.preventDefault());
+ document.addEventListener('dragstart',e=>e.preventDefault());
+ document.addEventListener('selectstart',e=>{if(!editable(e.target))e.preventDefault()});
+ document.addEventListener('paste',e=>{if(!editable(e.target))e.preventDefault()},true);
+ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[download]');if(a)e.preventDefault()},true);
+ document.addEventListener('keydown',e=>{
+   const k=e.key.toLowerCase(),mod=e.ctrlKey||e.metaKey;
+   if(mod&&['c','s','p','u'].includes(k))e.preventDefault();
+   if(mod&&k==='a'&&!editable(e.target))e.preventDefault();
+   if(mod&&(k==='+'||k==='-'||k==='0'))e.preventDefault();
+   if(e.key==='F12')e.preventDefault();
+   /* Ctrl/Cmd+V queda permitido en campos editables para pegar/autorrellenar. */
+ });
+ document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});
+ document.addEventListener('gesturestart',e=>e.preventDefault());
+}
+function bind(){setAuthMode('login');$('loginTab').addEventListener('click',()=>setAuthMode('login'));$('registerTab').addEventListener('click',()=>setAuthMode('register'));$('authForm').addEventListener('submit',handleAuth);$('logoutBtn').addEventListener('click',logout);$('menuBtn').addEventListener('click',()=>$('appView').classList.toggle('menu-open'));const scrim=$('menuScrim');if(scrim)scrim.addEventListener('click',()=>$('appView').classList.remove('menu-open'));qa('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));qa('[data-view-link]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewLink)));qa('[data-new]').forEach(b=>b.addEventListener('click',openNew));$('topCreate').addEventListener('click',openNew);$('closeModal').addEventListener('click',closeModal);$('campaignModal').addEventListener('click',e=>{if(e.target===$('campaignModal'))closeModal()});$('objectiveGrid').addEventListener('click',e=>{const c=e.target.closest('.choice');if(!c)return;objective=c.dataset.objective;qa('.choice').forEach(x=>x.classList.toggle('active',x===c));review()});$('placements').addEventListener('change',()=>{commitCurrentAd();adDrafts.forEach(a=>{a.mediaMeta=null;a._blob=null});pendingMedia=null;existingMediaMeta=null;updateCreativeRules(true);renderAdDraftList();review()});qa('.step').forEach(s=>s.addEventListener('click',()=>{const n=Number(s.dataset.step);if(n<=step||validateStep())setStep(n)}));$('backBtn').addEventListener('click',()=>setStep(step-1));$('nextBtn').addEventListener('click',async()=>{if(!validateStep())return;if(step<4)setStep(step+1);else await saveCampaign()});$('draftBtn').addEventListener('click',saveDraft);$('campaignForm').addEventListener('input',e=>{if(['budgetAmount','budgetType'].includes(e.target.id)||e.target.name==='budgetDistribution'){renderBudgetAllocation();renderAdDraftList()}if(step===4){commitCurrentAd();review()}});$('search').addEventListener('input',renderTable);$('statusFilter').addEventListener('change',renderTable);$('creativeFile').addEventListener('change',e=>handleCreativeFile(e.target.files&&e.target.files[0]));$('addAdBtn').addEventListener('click',addCampaignAd);$('removeAdBtn').addEventListener('click',removeCampaignAd);$('adDraftList').addEventListener('click',e=>{const b=e.target.closest('[data-ad-draft]');if(b)loadAdDraftEditor(b.dataset.adDraft)});qa('input[name="budgetDistribution"]').forEach(x=>x.addEventListener('change',()=>{renderBudgetAllocation();renderAdDraftList();if(step===4)review()}));const zone=$('uploadZone');['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('drag')}));['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('drag')}));zone.addEventListener('drop',e=>{const f=e.dataTransfer?.files?.[0];if(f)handleCreativeFile(f)});$('campaignBody').addEventListener('click',e=>{const sel=e.target.closest('[data-select-id]');if(sel){if(sel.checked)selectedCampaignIds.add(sel.dataset.selectId);else selectedCampaignIds.delete(sel.dataset.selectId);renderTable();renderManagerSummary();return}const edit=e.target.closest('[data-edit]');if(edit){openEdit(edit.dataset.edit);return}const dup=e.target.closest('[data-duplicate]');if(dup){duplicateCampaign(dup.dataset.duplicate);return}const t=e.target.closest('[data-toggle]');if(t){toggleCampaign(t.dataset.toggle);return}const d=e.target.closest('[data-delete]');if(d)deleteCampaign(d.dataset.delete)});$('refreshBtn').addEventListener('click',async()=>{await loadCampaigns();renderAll();toast('Datos actualizados.')});qa('[data-entity-level]').forEach(btn=>btn.addEventListener('click',()=>{managerLevel=btn.dataset.entityLevel;qa('[data-entity-level]').forEach(x=>x.classList.toggle('active',x===btn));selectedCampaignIds.clear();renderTable();renderManagerSummary()}));const mgrRefresh=$('managerRefresh');if(mgrRefresh)mgrRefresh.addEventListener('click',async()=>{await loadCampaigns();renderAll();toast('Administrador actualizado.')});const clear=$('clearFilters');if(clear)clear.addEventListener('click',()=>{$('search').value='';$('statusFilter').value='all';renderTable()});const dupBtn=$('duplicateBtn');if(dupBtn)dupBtn.addEventListener('click',()=>{[...selectedCampaignIds].forEach(id=>duplicateCampaign(id));selectedCampaignIds.clear();renderAll()});const editBtn=$('bulkEditBtn');if(editBtn)editBtn.addEventListener('click',()=>{const id=[...selectedCampaignIds][0];if(id)openEdit(id)});const delBtn=$('bulkDeleteBtn');if(delBtn)delBtn.addEventListener('click',async()=>{const ids=[...selectedCampaignIds];if(!ids.length)return;if(confirm('¿Eliminar '+ids.length+' elemento(s) seleccionado(s)?')){for(const id of ids){const c=campaigns.find(x=>x.id===id);if(c){for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete().catch(()=>{});await publicCampaignRef(id).delete().catch(()=>{})}}campaigns=campaigns.filter(c=>!selectedCampaignIds.has(c.id));selectedCampaignIds.clear();saveCampaigns();renderAll();toast('Elementos eliminados.')}});['columnsBtn','breakdownBtn','reportsBtn','testBtn','moreBtn'].forEach(id=>{const el=$(id);if(el)el.addEventListener('click',()=>toast('Control preparado para métricas reales.'))});blockExtraction()}
+document.addEventListener('DOMContentLoaded',()=>{bind();try{initFirebase();fbAuth.onAuthStateChanged(u=>handleAuthState(u).catch(e=>{console.error(e);authMsg('No fue posible cargar la cuenta comercial.','error')}))}catch(e){console.error(e);authMsg('No fue posible iniciar Firebase.','error');animateAuth()}});
+})();
+</script>
 </body>
 </html>
