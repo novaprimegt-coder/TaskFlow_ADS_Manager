@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1220">
+  <title>TaskFlow ADS Manager</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="boot" class="boot">
+    <div class="boot-mark">TF</div>
+    <strong>TaskFlow ADS</strong>
+    <span>Preparando administrador comercial…</span>
+  </div>
+
+  <section id="authView" class="auth-view" hidden>
+    <aside class="auth-brand" data-parallax>
+      <div class="brand-badge">TaskFlow ADS</div>
+      <h1>Publicidad comercial conectada a TaskFlow.</h1>
+      <p>Crea, segmenta y administra campañas desde una cuenta empresarial única.</p>
+      <div class="auth-visual">
+        <div class="visual-card visual-card-a"><span>Campañas activas</span><strong>12</strong><small>Control centralizado</small></div>
+        <div class="visual-card visual-card-b"><span>Ubicaciones</span><strong>5</strong><small>TaskFlow placements</small></div>
+        <div class="visual-card visual-card-c"><span>Audiencia</span><strong>GT</strong><small>Segmentación geográfica</small></div>
+      </div>
+    </aside>
+
+    <main class="auth-panel">
+      <div class="auth-box">
+        <div class="auth-logo"><span>TF</span><div><strong>TaskFlow ADS</strong><small>Administrador comercial</small></div></div>
+        <div class="auth-tabs" role="tablist">
+          <button id="loginTab" class="auth-tab active" type="button">Iniciar sesión</button>
+          <button id="registerTab" class="auth-tab" type="button">Crear cuenta</button>
+        </div>
+        <form id="authForm" novalidate>
+          <div id="nameField" class="field" hidden>
+            <label for="displayName">Nombre completo</label>
+            <input id="displayName" autocomplete="name" maxlength="80" placeholder="Nombre del responsable">
+          </div>
+          <div class="field">
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" autocomplete="email" maxlength="160" placeholder="correo@empresa.com" required>
+          </div>
+          <div class="field">
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" placeholder="Mínimo 8 caracteres" required>
+          </div>
+          <div id="confirmField" class="field" hidden>
+            <label for="confirmPassword">Confirmar contraseña</label>
+            <input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Repite la contraseña">
+          </div>
+          <button id="authSubmit" class="primary wide" type="submit">Iniciar sesión</button>
+          <p id="authMessage" class="form-message" aria-live="polite"></p>
+        </form>
+        <p class="auth-note">Tu cuenta usa el mismo sistema de autenticación de TaskFlow. No se crean plataformas de usuario independientes.</p>
+      </div>
+    </main>
+  </section>
+
+  <div id="appView" class="app-shell" hidden>
+    <aside class="sidebar">
+      <div class="side-brand"><span>TF</span><div><strong>ADS</strong><small>Manager</small></div></div>
+      <nav id="mainNav" class="nav">
+        <button class="nav-item active" data-view="overview"><span>◫</span>Resumen</button>
+        <button class="nav-item" data-view="campaigns"><span>▤</span>Campañas</button>
+        <button class="nav-item" data-view="adsets"><span>◎</span>Conjuntos</button>
+        <button class="nav-item" data-view="ads"><span>▣</span>Anuncios</button>
+        <button class="nav-item" data-view="audiences"><span>◉</span>Audiencias</button>
+        <button class="nav-item" data-view="reports"><span>⌁</span>Informes</button>
+        <button class="nav-item" data-view="billing"><span>◈</span>Facturación</button>
+      </nav>
+      <div class="side-footer">
+        <button class="nav-item" data-view="settings"><span>⚙</span>Configuración</button>
+        <button id="logoutBtn" class="nav-item danger"><span>↪</span>Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="mobileMenuBtn" class="icon-btn mobile-only" type="button" aria-label="Abrir menú">☰</button>
+          <div>
+            <small id="businessLabel">Cuenta comercial</small>
+            <strong id="businessNameTop">TaskFlow ADS</strong>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <span id="syncBadge" class="sync-badge">Local</span>
+          <button id="createCampaignBtn" class="primary" type="button">+ Crear campaña</button>
+          <button id="accountBtn" class="account-chip" type="button"><span id="accountInitials">TF</span><div><strong id="accountName">Cuenta</strong><small id="accountEmail"></small></div></button>
+        </div>
+      </header>
+
+      <section id="overviewView" class="view active">
+        <div class="page-heading">
+          <div><small>Centro comercial</small><h2>Resumen de publicidad</h2><p>Rendimiento y estructura de tus campañas conectadas a TaskFlow.</p></div>
+          <button class="secondary" data-action="refresh">Actualizar</button>
+        </div>
+        <div class="metric-grid">
+          <article class="metric-card"><span>Campañas</span><strong id="metricCampaigns">0</strong><small>Total guardadas</small></article>
+          <article class="metric-card"><span>Activas</span><strong id="metricActive">0</strong><small>En circulación</small></article>
+          <article class="metric-card"><span>Presupuesto</span><strong id="metricBudget">Q0.00</strong><small>Presupuesto diario</small></article>
+          <article class="metric-card"><span>Ubicaciones</span><strong id="metricPlacements">0</strong><small>Placements utilizados</small></article>
+        </div>
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-head"><div><small>Actividad</small><h3>Campañas recientes</h3></div><button class="link-btn" data-view-link="campaigns">Ver todas</button></div>
+            <div id="recentCampaigns" class="empty-state">Aún no hay campañas.</div>
+          </article>
+          <article class="panel compact">
+            <div class="panel-head"><div><small>TaskFlow</small><h3>Ubicaciones disponibles</h3></div></div>
+            <div class="placement-list">
+              <div><b>Banner 1</b><span>Debajo del temporizador · 1200×180</span></div>
+              <div><b>Banner 2</b><span>Entre Hábitos y Tareas · 1200×180</span></div>
+              <div><b>Banner 3</b><span>Final de página · 1200×180</span></div>
+              <div><b>Ingreso</b><span>Pantalla vertical · 1080×1920</span></div>
+              <div><b>Interacción</b><span>Cada 10 interacciones · 1080×1920</span></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="campaignsView" class="view">
+        <div class="page-heading">
+          <div><small>Administrador</small><h2>Campañas</h2><p>Organiza objetivos, presupuesto, segmentación y ubicaciones.</p></div>
+          <button class="primary" data-action="new-campaign">+ Crear campaña</button>
+        </div>
+        <div class="table-toolbar">
+          <div class="searchbox"><span>⌕</span><input id="campaignSearch" placeholder="Buscar campañas"></div>
+          <select id="statusFilter"><option value="all">Todos los estados</option><option value="draft">Borrador</option><option value="active">Activa</option><option value="paused">Pausada</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Campaña</th><th>Objetivo</th><th>Estado</th><th>Ubicación</th><th>Presupuesto</th><th>Fechas</th><th></th></tr></thead>
+            <tbody id="campaignTableBody"></tbody>
+          </table>
+          <div id="campaignEmpty" class="empty-state">No hay campañas para mostrar.</div>
+        </div>
+      </section>
+
+      <section id="placeholderView" class="view">
+        <div class="page-heading"><div><small>TaskFlow ADS</small><h2 id="placeholderTitle">Módulo</h2><p id="placeholderText">Este módulo queda preparado para la siguiente etapa.</p></div></div>
+        <article class="panel placeholder-panel"><strong>Arquitectura preparada</strong><p>La primera versión prioriza cuentas, campañas, segmentación, presupuesto y persistencia.</p></article>
+      </section>
+    </main>
+  </div>
+
+  <div id="onboardingModal" class="modal" hidden>
+    <div class="modal-card narrow">
+      <div class="modal-head"><div><small>Configuración obligatoria</small><h2>Crea tu cuenta comercial</h2><p>Esta información identifica al anunciante y queda vinculada a tu cuenta TaskFlow.</p></div></div>
+      <form id="businessForm" class="form-grid">
+        <div class="field full"><label for="businessName">Nombre comercial</label><input id="businessName" maxlength="100" required placeholder="Nombre de empresa o marca"></div>
+        <div class="field"><label for="businessCountry">País principal</label><select id="businessCountry" required><option value="GT">Guatemala</option><option value="SV">El Salvador</option><option value="HN">Honduras</option><option value="MX">México</option><option value="US">Estados Unidos</option><option value="OTHER">Otro</option></select></div>
+        <div class="field"><label for="businessPhone">Teléfono</label><input id="businessPhone" maxlength="30" placeholder="+502 0000 0000"></div>
+        <div class="field full"><label for="businessWebsite">Sitio web</label><input id="businessWebsite" type="url" maxlength="220" placeholder="https://..."></div>
+        <button class="primary full wide" type="submit">Guardar y entrar</button>
+        <p id="businessMessage" class="form-message full"></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="campaignModal" class="modal" hidden>
+    <div class="modal-card campaign-modal-card">
+      <header class="modal-head row">
+        <div><small>Nueva campaña</small><h2>Crear campaña publicitaria</h2><p id="wizardSubtitle">Objetivo y estructura</p></div>
+        <button id="closeCampaignModal" class="icon-btn" type="button" aria-label="Cerrar">×</button>
+      </header>
+      <div class="wizard-layout">
+        <aside class="wizard-steps">
+          <button class="wizard-step active" data-step="1"><span>1</span><div><strong>Campaña</strong><small>Objetivo</small></div></button>
+          <button class="wizard-step" data-step="2"><span>2</span><div><strong>Audiencia</strong><small>Ubicación</small></div></button>
+          <button class="wizard-step" data-step="3"><span>3</span><div><strong>Presupuesto</strong><small>Fechas</small></div></button>
+          <button class="wizard-step" data-step="4"><span>4</span><div><strong>Anuncio</strong><small>Creativo</small></div></button>
+        </aside>
+
+        <form id="campaignForm" class="wizard-body">
+          <section class="wizard-page active" data-page="1">
+            <div class="field"><label for="campaignName">Nombre de campaña</label><input id="campaignName" maxlength="120" required placeholder="Ej. Lanzamiento noviembre"></div>
+            <div class="field"><label>Objetivo</label><div id="objectiveGrid" class="choice-grid">
+              <button type="button" class="choice active" data-objective="awareness"><b>Reconocimiento</b><span>Mostrar tu marca a más personas.</span></button>
+              <button type="button" class="choice" data-objective="traffic"><b>Tráfico</b><span>Llevar personas a un sitio o enlace.</span></button>
+              <button type="button" class="choice" data-objective="engagement"><b>Interacción</b><span>Generar acciones sobre tu anuncio.</span></button>
+              <button type="button" class="choice" data-objective="leads"><b>Clientes potenciales</b><span>Captar interés comercial.</span></button>
+              <button type="button" class="choice" data-objective="sales"><b>Ventas</b><span>Impulsar conversiones.</span></button>
+              <button type="button" class="choice" data-objective="app"><b>Aplicación</b><span>Promover descargas o uso.</span></button>
+            </div></div>
+          </section>
+
+          <section class="wizard-page" data-page="2">
+            <div class="section-title"><small>Segmentación</small><h3>Ubicación y audiencia</h3></div>
+            <div class="form-grid">
+              <div class="field"><label for="targetCountry">País</label><select id="targetCountry"><option value="GT">Guatemala</option><option value="SV">El Salvador</option><option value="HN">Honduras</option><option value="MX">México</option><option value="US">Estados Unidos</option><option value="ALL">Todos</option></select></div>
+              <div class="field"><label for="targetRegion">Departamento / región</label><input id="targetRegion" maxlength="100" placeholder="Ej. Huehuetenango"></div>
+              <div class="field"><label for="targetCity">Ciudad / municipio</label><input id="targetCity" maxlength="100" placeholder="Ej. Huehuetenango"></div>
+              <div class="field"><label for="targetRadius">Radio aproximado</label><select id="targetRadius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select></div>
+              <div class="field"><label for="ageMin">Edad mínima</label><input id="ageMin" type="number" min="13" max="65" value="18"></div>
+              <div class="field"><label for="ageMax">Edad máxima</label><input id="ageMax" type="number" min="13" max="65" value="65"></div>
+            </div>
+            <div class="field"><label>Ubicaciones dentro de TaskFlow</label><div id="placementsGrid" class="placement-choice-grid">
+              <label><input type="checkbox" value="banner_timer" checked><span><b>Banner — Temporizador</b><small>1200 × 180</small></span></label>
+              <label><input type="checkbox" value="banner_middle"><span><b>Banner — Hábitos/Tareas</b><small>1200 × 180</small></span></label>
+              <label><input type="checkbox" value="banner_footer"><span><b>Banner — Final</b><small>1200 × 180</small></span></label>
+              <label><input type="checkbox" value="entry"><span><b>Anuncio de ingreso</b><small>1080 × 1920 · 10 s</small></span></label>
+              <label><input type="checkbox" value="interaction"><span><b>Por interacción</b><small>1080 × 1920 · cada 10 acciones</small></span></label>
+            </div></div>
+          </section>
+
+          <section class="wizard-page" data-page="3">
+            <div class="section-title"><small>Control de gasto</small><h3>Presupuesto y calendario</h3></div>
+            <div class="form-grid">
+              <div class="field"><label for="budgetType">Tipo de presupuesto</label><select id="budgetType"><option value="daily">Diario</option><option value="total">Total</option></select></div>
+              <div class="field"><label for="budgetAmount">Monto (GTQ)</label><input id="budgetAmount" type="number" min="1" step="0.01" value="50" required></div>
+              <div class="field"><label for="startDate">Fecha de inicio</label><input id="startDate" type="date" required></div>
+              <div class="field"><label for="endDate">Fecha de finalización</label><input id="endDate" type="date"></div>
+            </div>
+            <div class="notice"><b>Control comercial</b><span>La campaña se guarda primero como borrador. Publicarla quedará separada del proceso de creación para evitar activaciones accidentales.</span></div>
+          </section>
+
+          <section class="wizard-page" data-page="4">
+            <div class="section-title"><small>Creativo</small><h3>Contenido del anuncio</h3></div>
+            <div class="form-grid">
+              <div class="field full"><label for="adName">Nombre del anuncio</label><input id="adName" maxlength="120" placeholder="Ej. Creativo principal"></div>
+              <div class="field full"><label for="destinationUrl">URL de destino</label><input id="destinationUrl" type="url" maxlength="500" placeholder="https://tuempresa.com"></div>
+              <div class="field full"><label for="creativeUrl">URL del creativo</label><input id="creativeUrl" type="url" maxlength="1000" placeholder="https://.../imagen.jpg o video.mp4"></div>
+              <div class="field"><label for="creativeType">Tipo</label><select id="creativeType"><option value="image">Imagen</option><option value="gif">GIF</option><option value="video">Video</option></select></div>
+              <div class="field"><label for="videoSound">Audio del video</label><select id="videoSound"><option value="false">Sin audio</option><option value="true">Con audio</option></select></div>
+            </div>
+            <div id="campaignReview" class="review-card"></div>
+          </section>
+
+          <footer class="wizard-footer">
+            <button id="wizardBack" class="secondary" type="button" disabled>Atrás</button>
+            <div class="wizard-footer-right">
+              <button id="saveDraftBtn" class="ghost" type="button">Guardar borrador</button>
+              <button id="wizardNext" class="primary" type="button">Continuar</button>
+            </div>
+          </footer>
+          <p id="campaignMessage" class="form-message"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script src="./firebase-config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
