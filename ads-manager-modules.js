@@ -10,6 +10,7 @@ const objective={awareness:'Reconocimiento',traffic:'Tráfico',engagement:'Inter
 const cta={awareness:'Conocer la marca',traffic:'Visitar sitio web',engagement:'Participar',leads:'Solicitar información',sales:'Comprar ahora',app:'Descargar aplicación'};
 const specs={banner:'1200×180 / 2400×360',entry:'1080×1920 / 2160×3840',interaction:'1080×1920 / 2160×3840'};
 let current=null,view='',metricCache=null,metricOwner='',metricAt=0,pendingMetrics=null,revision=0;
+let audiencePresets=[],audienceOwner='',audienceLoaded=false;
 const mounted=new WeakSet();
 function section(title,body){return '<section class="tf-tool-panel"><div class="tf-tool-heading"><h3>'+esc(title)+'</h3></div>'+body+'</section>'}
 function mini(value,label,small){return '<article class="tf-tool-kpi"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong>'+(small?'<small>'+esc(small)+'</small>':'')+'</article>'}
@@ -76,9 +77,74 @@ function audiences(api){
  const overlap=api.campaigns.reduce((n,c,i)=>n+api.campaigns.slice(i+1).filter(p=>p.country===c.country&&p.region===c.region&&p.city===c.city&&Math.max(Number(p.ageMin)||18,Number(c.ageMin)||18)<=Math.min(Number(p.ageMax)||65,Number(c.ageMax)||65)).length,0);
  return wrap('Editor de audiencias','Compara zonas, edades y posibles solapamientos. Modifica la segmentación de una campaña desde este módulo.',
  '<div class="tf-tool-kpis">'+mini(api.campaigns.length,'Campañas segmentadas')+mini(locs.size,'Zonas configuradas')+mini(overlap,'Cruces de segmentación','Coincidencias de ubicación y edades')+'</div>'+
+ section('Audiencias guardadas','<div id="tfAdsAudiencePresets"><p class="tf-tool-loading">Consultando audiencias guardadas…</p></div>')+
  section('Segmentación por campaña','<label class="tf-tool-search">Buscar campaña o ubicación<input type="search" data-tf-search="audiences" placeholder="Nombre, departamento o municipio" autocomplete="off"></label><div data-tf-results="audiences">'+audienceRows(api,'')+'</div>')+
  '<p class="tf-tool-note">Las coincidencias son una comparación de configuración, no un cálculo de tamaño de audiencia ni de personas únicas.</p>');
 }
+
+function presetRef(api){return api.fbDb.collection('users').doc(api.currentUser.id).collection('adsManager').doc('business')}
+function presetMarkup(api){
+ const choices=api.campaigns.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('');
+ const rows=audiencePresets.map(p=>'<article class="tf-tool-row"><div><b>'+esc(p.name)+'</b><span>'+esc([p.city,p.region,p.country].filter(Boolean).join(', ')||'Ubicación general')+' · Edades '+esc(p.ageMin+'–'+p.ageMax)+'</span><small>Audiencia guardada y disponible para reutilizar</small></div><div class="tf-tool-budget-edit"><label>Campaña destinataria<select data-tf-preset-target="'+esc(p.id)+'"><option value="">Seleccionar campaña</option>'+choices+'</select></label><button type="button" data-tf-action="audience-apply" data-id="'+esc(p.id)+'" '+(!api.campaigns.length?'disabled':'')+'>Aplicar segmentación</button><button type="button" data-tf-action="audience-delete" data-id="'+esc(p.id)+'">Eliminar plantilla</button></div></article>').join('');
+ return '<div class="tf-tool-kpis">'+mini(audiencePresets.length,'Audiencias guardadas','Se sincronizan en esta cuenta')+'</div>'+
+ '<form class="tf-tool-form tf-tool-audience-form" id="tfAudiencePresetForm"><label>Nombre de audiencia<input name="presetName" maxlength="80" required placeholder="Ej. Huehuetenango · 18–35"></label><div class="tf-tool-form-grid"><label>País<input name="country" value="GT" maxlength="40" required></label><label>Departamento<input name="region" maxlength="90" placeholder="Huehuetenango"></label><label>Ciudad o municipio<input name="city" maxlength="90" placeholder="Huehuetenango"></label><label>Edad mínima<input name="ageMin" type="number" min="18" max="65" value="18" required></label><label>Edad máxima<input name="ageMax" type="number" min="18" max="65" value="65" required></label></div><button type="submit">Guardar nueva audiencia</button><p role="status" id="tfAudiencePresetMessage" class="tf-tool-note"></p></form>'+
+ '<div class="tf-tool-preset-list">'+(rows||'<p class="tf-tool-empty">No hay audiencias guardadas. Crea una para reutilizar su segmentación.</p>')+'</div>';
+}
+async function loadAudiencePresets(api,force){
+ const uid=api.currentUser.id;
+ if(audienceOwner!==uid){audienceOwner=uid;audiencePresets=[];audienceLoaded=false}
+ if(!audienceLoaded||force){
+  try{
+   const snap=await api.withDeadline(presetRef(api).get({source:'server'}),14000,'No se pudo consultar las audiencias.');
+   if(audienceOwner!==uid)return;
+   const rows=snap.data()?.audiencePresets;
+   audiencePresets=Array.isArray(rows)?rows.filter(x=>x&&/^[a-zA-Z0-9_-]{3,128}$/.test(String(x.id||''))).slice(0,50):[];
+   audienceLoaded=true;
+  }catch(e){
+   console.warn('ADS audiencias guardadas:',e);
+   const target=api.root.querySelector('#tfAdsAudiencePresets');
+   if(target){target.innerHTML='<p class="tf-tool-warning">No se pudieron consultar las plantillas. '+esc(e.message||'Comprueba tu conexión.')+'</p>'}
+   return;
+  }
+ }
+ const target=api.root.querySelector('#tfAdsAudiencePresets');
+ if(target&&view==='audiences'&&current?.currentUser.id===uid)target.innerHTML=presetMarkup(api);
+}
+async function saveAudiencePreset(){
+ const api=current,form=api.root.querySelector('#tfAudiencePresetForm'),label=api.root.querySelector('#tfAudiencePresetMessage');
+ if(!form)return;
+ const d=new FormData(form),name=String(d.get('presetName')||'').trim(),country=String(d.get('country')||'').trim(),region=String(d.get('region')||'').trim(),city=String(d.get('city')||'').trim(),ageMin=Number(d.get('ageMin')),ageMax=Number(d.get('ageMax'));
+ if(name.length<3||!country||country.length>40||!Number.isInteger(ageMin)||!Number.isInteger(ageMax)||ageMin<18||ageMax>65||ageMin>ageMax){label.textContent='Revisa el nombre, el país y las edades de 18 a 65 años.';return}
+ if(audiencePresets.length>=50){label.textContent='Se alcanzó el máximo de 50 audiencias guardadas.';return}
+ const btn=form.querySelector('[type="submit"]');btn.disabled=true;label.textContent='Guardando audiencia…';
+ const next=[...audiencePresets,{id:'aud_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9),name,country,region,city,ageMin,ageMax}];
+ try{await api.withDeadline(presetRef(api).update({audiencePresets:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),20000,'No se confirmó el guardado.');audiencePresets=next;api.root.querySelector('#tfAdsAudiencePresets').innerHTML=presetMarkup(api);api.toast('Audiencia guardada y disponible para otras campañas.')}
+ catch(e){label.textContent='No se pudo guardar la audiencia: '+(e.message||'Error de conexión');btn.disabled=false}
+}
+async function deleteAudiencePreset(button,id){
+ const api=current,p=audiencePresets.find(x=>x.id===id);if(!p)return;
+ if(button.dataset.confirm!=='true'){button.dataset.confirm='true';button.textContent='Confirmar eliminación';return}
+ button.disabled=true;const next=audiencePresets.filter(x=>x.id!==id);
+ try{await api.withDeadline(presetRef(api).update({audiencePresets:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),20000,'No se confirmó la eliminación.');audiencePresets=next;api.root.querySelector('#tfAdsAudiencePresets').innerHTML=presetMarkup(api);api.toast('Plantilla de audiencia eliminada.')}
+ catch(e){api.toast('No se pudo eliminar: '+(e.message||'Error de conexión'));button.disabled=false;button.dataset.confirm='false';button.textContent='Eliminar plantilla'}
+}
+async function applyAudiencePreset(button,id){
+ const api=current,p=audiencePresets.find(x=>x.id===id);
+ const select=api.root.querySelector('[data-tf-preset-target="'+id+'"]'),c=api.campaigns.find(x=>x.id===select?.value);
+ if(!p||!c){api.toast('Selecciona una campaña para aplicar la audiencia.');return}
+ button.disabled=true;button.textContent='Aplicando…';
+ const data={country:p.country,region:p.region,city:p.city,ageMin:p.ageMin,ageMax:p.ageMax,updatedAt:new Date().toISOString()};
+ if(c.approvalStatus==='approved')data.approvalStatus='pending';
+ try{
+  const ref=api.fbDb.collection('users').doc(api.currentUser.id).collection('adsCampaigns').doc(c.id);
+  const batch=api.fbDb.batch();batch.update(ref,data);
+  if(c.approvalStatus==='approved')batch.delete(api.fbDb.collection('adsPublicCampaigns').doc(c.id));
+  await api.withDeadline(batch.commit(),20000,'La segmentación no pudo confirmarse.');
+  Object.assign(c,data);api.saveCampaigns();api.renderAll();api.toast('Audiencia aplicada. '+(data.approvalStatus==='pending'?'La campaña requiere nueva aprobación.':'Configuración actualizada.'));
+  if(view==='audiences'){api.root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
+ }catch(e){api.toast('No se pudo aplicar: '+(e.message||'Comprueba la conexión.'));button.disabled=false;button.textContent='Aplicar segmentación'}
+}
+
 function creativeData(api){const arr=[];api.campaigns.forEach(c=>(c.ads||[]).forEach(a=>arr.push({campaign:c,ad:a,media:a.mediaMeta||{}})));return arr}
 function creativeRows(api,filter){
  const entries=creativeData(api).filter(x=>([x.ad.name,x.campaign.name,x.campaign.placement,x.media.kind].join(' ')).toLowerCase().includes(filter.toLowerCase()));
@@ -177,7 +243,7 @@ async function saveSettings(){
 }
 function wire(root){
  if(mounted.has(root))return;mounted.add(root);
- root.addEventListener('submit',e=>{if(e.target.id==='tfAdsSettingsForm'){e.preventDefault();void saveSettings()}});
+ root.addEventListener('submit',e=>{if(e.target.id==='tfAdsSettingsForm'){e.preventDefault();void saveSettings()}else if(e.target.id==='tfAudiencePresetForm'){e.preventDefault();void saveAudiencePreset()}});
  root.addEventListener('input',e=>{
   const kind=e.target.dataset.tfSearch;
   if(kind==='audiences'){const el=root.querySelector('[data-tf-results="audiences"]');if(el)el.innerHTML=audienceRows(current,e.target.value)}
@@ -188,6 +254,8 @@ function wire(root){
   const btn=e.target.closest('[data-tf-action]');if(!btn||!root.contains(btn))return;
   const action=btn.dataset.tfAction,id=btn.dataset.id;
   if(action==='audience-edit')void current.openEdit(id).then(()=>current.setStep(2));
+  else if(action==='audience-apply')void applyAudiencePreset(btn,id);
+  else if(action==='audience-delete')void deleteAudiencePreset(btn,id);
   else if(action==='creative-edit')void current.openEdit(id).then(async()=>{await current.loadAdDraftEditor(btn.dataset.ad);current.setStep(4)});
   else if(action==='creative-preview')previewCreative(id,btn.dataset.ad);
   else if(action==='preview-close'){const d=btn.closest('dialog');if(d){if(d.close)d.close();else d.remove()}}
@@ -218,7 +286,7 @@ function wire(root){
 function render(name,api){
  const root=api.root;if(!root||!api.currentUser)return false;
  current=api;view=name;wire(root);
- if(name==='audiences')root.innerHTML=audiences(api);
+ if(name==='audiences'){root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
  else if(name==='creatives')root.innerHTML=creatives(api);
  else if(name==='reports'){root.innerHTML=wrap('Informes de rendimiento','Impresiones, clics, CTR y desglose de los eventos registrados, sin estimaciones ni compras inventadas.','<div class="tf-tool-buttons"><button type="button" data-tf-action="report-refresh">Actualizar métricas</button><button type="button" data-tf-action="report-csv">Exportar CSV</button></div><div id="tfAdsReportsPayload"></div>');void reports(api,false)}
  else if(name==='billing')root.innerHTML=budgets(api);
