@@ -569,6 +569,27 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
  .tf-ads-admin-feedback{padding:30px 16px}
 }
 </style>
+
+<style id="tfAdsSummaryNumbersFix">
+/* Solo las cuatro cantidades del resumen. Nunca cambiar los valores mostrados. */
+.metrics > .metric { min-width: 0; }
+.metrics > .metric > strong {
+  display: block;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: none;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  font-size: 18px;
+  line-height: 1.28;
+  font-variant-numeric: tabular-nums;
+  transform-origin: left center;
+}
+@media (max-width: 600px) {
+  .metrics > .metric > strong { font-size: 16px; }
+}
+</style>
 <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
 <defs>
 <symbol id="i-dashboard" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
@@ -1385,7 +1406,36 @@ function publicationState(c){
  return 'Aprobada · habilitada según audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
 function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary()}
-function renderMetrics(){const active=campaigns.filter(c=>c.status==='active'),budget=active.filter(c=>c.budgetType==='daily').reduce((s,c)=>s+Number(c.budget||0),0),formats=new Set(campaigns.map(c=>c.placement));$('metricCampaigns').textContent=campaigns.length;$('metricActive').textContent=active.length;$('metricBudget').textContent=money(budget);$('metricFormats').textContent=formats.size}
+function fitSummaryMetricValues(){
+ // Un solo renglón: reducir primero el tamaño y, para cantidades excepcionalmente largas, ajustar el ancho visual.
+ const ids=['metricCampaigns','metricActive','metricBudget','metricFormats'];
+ const maxFont=window.innerWidth<=600?16:18;
+ for(const id of ids){
+  const el=$(id);if(!el||!el.parentElement)continue;
+  el.style.transform='none';
+  el.style.fontSize=maxFont+'px';
+  const parent=el.parentElement,cs=getComputedStyle(parent);
+  const available=Math.max(0,parent.clientWidth-parseFloat(cs.paddingLeft||0)-parseFloat(cs.paddingRight||0)-2);
+  if(!available)continue;
+  let font=maxFont,width=el.getBoundingClientRect().width;
+  while(width>available&&font>11){
+   font--;el.style.fontSize=font+'px';width=el.getBoundingClientRect().width;
+  }
+  if(width>available)el.style.transform='scaleX('+Math.min(1,available/width)+')';
+ }
+}
+function renderMetrics(){const active=campaigns.filter(c=>c.status==='active'),budget=active.filter(c=>c.budgetType==='daily').reduce((s,c)=>s+Number(c.budget||0),0),formats=new Set(campaigns.map(c=>c.placement));$('metricCampaigns').textContent=campaigns.length;$('metricActive').textContent=active.length;$('metricBudget').textContent=money(budget);$('metricFormats').textContent=formats.size;fitSummaryMetricValues()}
+let summaryMetricsObserver=null;
+function observeSummaryMetricWidth(){
+ if(summaryMetricsObserver||typeof ResizeObserver!=='function')return;
+ const metrics=document.querySelector('#dashboardView .metrics')||document.querySelector('.metrics');
+ if(!metrics)return;
+ summaryMetricsObserver=new ResizeObserver(()=>fitSummaryMetricValues());
+ summaryMetricsObserver.observe(metrics);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',observeSummaryMetricWidth,{once:true});
+else observeSummaryMetricWidth();
+window.addEventListener('resize',fitSummaryMetricValues,{passive:true});
 function renderRecent(){const list=campaigns.slice(0,5);const e=$('recentCampaigns');if(!list.length){e.className='empty';e.textContent='Aún no hay campañas.';return}e.className='activity-list';e.innerHTML=list.map(c=>'<div class="activity"><div class="activity-icon">AD</div><div><b>'+escapeHtml(c.name)+'</b><span>'+escapeHtml(placementLabel(c.placement))+' · '+escapeHtml(locationLabel(c))+'</span></div><small>'+escapeHtml(statusLabel(c.status))+'</small></div>').join('')}
 function renderManagerSummary(){const active=campaigns.filter(c=>c.status==='active').length;const daily=campaigns.filter(c=>c.status==='active'&&c.budgetType==='daily').reduce((s,c)=>s+Number(c.budget||0),0);const set=(id,val)=>{const el=$(id);if(el)el.textContent=val};set('stripCampaigns',String(campaigns.length));set('stripActive',String(active));set('stripBudget',money(daily));set('tabCampaignCount',selectedCampaignIds.size+' seleccionadas');set('managerAccountLabel',currentUser?.company||currentUser?.name||'Cuenta publicitaria activa');updateBulkActions()}
 function updateBulkActions(){const n=selectedCampaignIds.size;['duplicateBtn','bulkEditBtn','bulkDeleteBtn'].forEach(id=>{const el=$(id);if(el)el.disabled=n===0||(id==='bulkEditBtn'&&n!==1)});const info=$('selectionInfo');if(info){const s=info.querySelector('span');if(s)s.textContent=n+' '+(n===1?'elemento seleccionado':'elementos seleccionados')}const master=$('masterSelect');if(master){const visible=qa('#campaignBody [data-select-id]');master.checked=visible.length>0&&visible.every(x=>x.checked);master.indeterminate=visible.some(x=>x.checked)&&!master.checked}const c=$('tabCampaignCount');if(c)c.textContent=n+' seleccionadas'}
