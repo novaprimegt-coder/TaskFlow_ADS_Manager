@@ -507,6 +507,16 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 #uploadZone #creativeFile:focus-visible{outline:none!important}
 </style>
 <script src="https://taskflow-ads-media.vercel.app/blob-client.js" defer></script>
+<style id="tfAdsNoOverflowMetric">
+#overviewView .metric{min-width:0;overflow:hidden;padding:14px 15px;border:1px solid #dfe5ed;border-radius:12px;box-shadow:0 3px 10px rgba(25,45,75,.035)}
+#overviewView .metric:before{width:3px;background:#1478eb}
+#overviewView .metric strong,#campaignsView .manager-summary-strip b{display:block;min-width:0;max-width:100%;width:100%;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;letter-spacing:-.015em;font-variant-numeric:tabular-nums;transform:none!important;line-height:1.3}
+#overviewView .metric strong{font-size:18px;margin:8px 0 5px;font-weight:800}
+#overviewView .metric span{font-size:11px;font-weight:750;color:#69798e}
+#overviewView .metric small{font-size:10px}
+#campaignsView .manager-summary-strip b{font-size:12px}
+@media(max-width:700px){#overviewView .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}#overviewView .metric{padding:13px 12px}#overviewView .metric strong{font-size:16px}}
+</style>
 </head>
 <body>
 
@@ -1407,21 +1417,35 @@ function publicationState(c){
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
 function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary()}
 function fitSummaryMetricValues(){
- // Un solo renglón: reducir primero el tamaño y, para cantidades excepcionalmente largas, ajustar el ancho visual.
- const ids=['metricCampaigns','metricActive','metricBudget','metricFormats'];
- const maxFont=window.innerWidth<=600?16:18;
+ // Mantiene las cifras completas cuando caben; usa formato compacto solo si es necesario.
+ // No estira ni deforma números y conserva el dato íntegro en título accesible.
+ const ids=['metricCampaigns','metricActive','metricBudget','metricFormats','stripCampaigns','stripActive','stripBudget'];
+ const formatter=new Intl.NumberFormat('es-GT',{notation:'compact',maximumFractionDigits:2});
  for(const id of ids){
-  const el=$(id);if(!el||!el.parentElement)continue;
+  const el=$(id);if(!el||!el.parentElement||!el.clientWidth)continue;
+  const visible=el.textContent||'';
+  const full=el.dataset.lastMetricDisplay===visible&&el.dataset.fullMetricValue?el.dataset.fullMetricValue:visible;
+  el.dataset.fullMetricValue=full;
+  el.textContent=full;
   el.style.transform='none';
-  el.style.fontSize=maxFont+'px';
-  const parent=el.parentElement,cs=getComputedStyle(parent);
-  const available=Math.max(0,parent.clientWidth-parseFloat(cs.paddingLeft||0)-parseFloat(cs.paddingRight||0)-2);
-  if(!available)continue;
-  let font=maxFont,width=el.getBoundingClientRect().width;
-  while(width>available&&font>11){
-   font--;el.style.fontSize=font+'px';width=el.getBoundingClientRect().width;
+  el.style.whiteSpace='nowrap';
+  const base=id.startsWith('metric')?(window.innerWidth<=700?16:18):12;
+  el.style.fontSize=base+'px';
+  const fits=()=>el.clientWidth>0&&el.scrollWidth<=el.clientWidth+1;
+  for(let f=base;f>11&&!fits();f--)el.style.fontSize=(f-1)+'px';
+  if(!fits()){
+   const raw=Number(full.replace(/,/g,'').replace(/[^\d.eE+-]/g,''));
+   if(Number.isFinite(raw)){
+    const currency=id.toLowerCase().includes('budget');
+    el.textContent=(currency?'GTQ ':'')+formatter.format(raw);
+    el.style.fontSize=base+'px';
+    for(let f=base;f>11&&!fits();f--)el.style.fontSize=(f-1)+'px';
+    if(!fits()){el.textContent=(currency?'GTQ ':'')+raw.toExponential(1);el.style.fontSize='11px'}
+   }
   }
-  if(width>available)el.style.transform='scaleX('+Math.min(1,available/width)+')';
+  el.title=full;
+  el.setAttribute('aria-label',full);
+  el.dataset.lastMetricDisplay=el.textContent||'';
  }
 }
 function renderMetrics(){const active=campaigns.filter(c=>c.status==='active'),budget=active.filter(c=>c.budgetType==='daily').reduce((s,c)=>s+Number(c.budget||0),0),formats=new Set(campaigns.map(c=>c.placement));$('metricCampaigns').textContent=campaigns.length;$('metricActive').textContent=active.length;$('metricBudget').textContent=money(budget);$('metricFormats').textContent=formats.size;fitSummaryMetricValues()}
