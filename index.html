@@ -1010,8 +1010,9 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
  opacity:1;filter:brightness(1.48) saturate(1.55) drop-shadow(0 0 42px rgba(9,113,238,.22));
 }
 #authView #tfCrystalCanvas{opacity:1;filter:saturate(1.4) contrast(1.2)}
+#authView .tf-crystal-scene #tfCrystalCanvas{z-index:1}
 #authView .tf-crystal-fallback{
- inset:17.4%;z-index:-1;opacity:.94;
+ inset:17.4%;z-index:0;opacity:.94;
  background:
   radial-gradient(ellipse at 35% 27%,rgba(99,218,255,.30),transparent 37%),
   radial-gradient(circle at 60% 78%,rgba(4,87,227,.4),transparent 60%),
