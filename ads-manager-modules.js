@@ -68,7 +68,7 @@ function audienceRows(api,filter){
  return list.map(c=>{
   const peers=api.campaigns.filter(p=>p.id!==c.id&&p.country===c.country&&p.region===c.region&&p.city===c.city&&Math.max(Number(p.ageMin)||18,Number(c.ageMin)||18)<=Math.min(Number(p.ageMax)||65,Number(c.ageMax)||65));
   const geo=[c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin región';
-  return '<article class="tf-tool-row"><div><b>'+esc(c.name)+'</b><span>'+esc(geo)+' · Edades '+esc((c.ageMin||18)+'–'+(c.ageMax||65))+'</span><small>'+esc(c.status)+' · '+esc(objective[c.objective]||c.objective||'')+'</small>'+(peers.length?'<small class="tf-tool-warning">Coincide en zona y edades con '+peers.length+' campaña(s); revisa si compiten por el mismo público.</small>':'')+'</div><button type="button" data-tf-action="audience-edit" data-id="'+esc(c.id)+'">Ajustar segmentación</button></article>'
+  return '<article class="tf-tool-row"><div><b>'+esc(c.name)+'</b><span>'+esc(geo)+' · Edades '+esc((c.ageMin||18)+'–'+(c.ageMax||65))+'</span><small>'+esc(c.status)+' · '+esc(c.approvalStatus==='approved'?'Aprobada':c.approvalStatus==='rejected'?'Rechazada':'Pendiente de aprobación')+' · '+esc(objective[c.objective]||c.objective||'')+'</small>'+(peers.length?'<small class="tf-tool-warning">Coincide en zona y edades con '+peers.length+' campaña(s); revisa si compiten por el mismo público.</small>':'')+'</div><button type="button" data-tf-action="audience-edit" data-id="'+esc(c.id)+'">Ajustar segmentación</button></article>'
  }).join('')||'<p class="tf-tool-empty">No hay campañas para este filtro.</p>';
 }
 function audiences(api){
@@ -101,7 +101,7 @@ function reportContent(api,data){
  const days=Object.keys(daily).sort().slice(-14),max=Math.max(1,...days.map(d=>daily[d].impressions));
  const bars=days.map(day=>'<div class="tf-tool-bar-item" title="'+esc(day)+' · '+esc(number(daily[day].impressions))+' impresiones / '+esc(number(daily[day].clicks))+' clics"><i style="height:'+Math.max(2,Math.round(daily[day].impressions/max*100))+'%"></i><small>'+day.slice(6,8)+'/'+day.slice(4,6)+'</small></div>').join('');
  const rows=api.campaigns.map(c=>{const m=data.campaigns[c.id];return '<tr><td><b>'+esc(c.name)+'</b><small>'+esc(objective[c.objective]||c.objective||'')+'</small></td><td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td><td>'+(m?esc((Number(m.ctr)||0).toFixed(2))+' %':'—')+'</td><td>'+esc(c.placement||'—')+'</td></tr>'}).join('');
- const perAd=api.campaigns.flatMap(c=>{const m=data.campaigns[c.id];return (c.ads||[]).map(a=>({c,a,m:m?.byAd?.[a.id]}))}).map(({c,a,m})=>'<tr><td>'+esc(a.name||'Anuncio')+'<small>'+esc(c.name)+'</small></td><td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td><td>'+(m&&Number(m.impressions)?(100*Number(m.clicks||0)/Number(m.impressions)).toFixed(2)+' %':m?'0.00 %':'—')+'</td></tr>').join('');
+ const perAd=api.campaigns.flatMap(c=>{const m=data.campaigns[c.id];return (c.ads||[]).map(a=>({c,a,m:m?(m.byAd?.[a.id]||{impressions:0,clicks:0}):null}))}).map(({c,a,m})=>'<tr><td>'+esc(a.name||'Anuncio')+'<small>'+esc(c.name)+'</small></td><td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td><td>'+(m&&Number(m.impressions)?(100*Number(m.clicks||0)/Number(m.impressions)).toFixed(2)+' %':m?'0.00 %':'—')+'</td></tr>').join('');
  return '<div class="tf-tool-kpis">'+mini(hasAny&&!t.known?'—':number(t.impressions),'Impresiones','Anuncios visibles')+mini(hasAny&&!t.known?'—':number(t.clicks),'Clics','Clics registrados')+mini(hasAny&&!t.known?'—':t.ctr.toFixed(2)+' %','CTR','Clics / impresiones')+mini(t.known+'/'+api.campaigns.length,'Campañas medidas')+'</div>'+
  (data.failed.length?'<p class="tf-tool-warning">'+data.failed.length+' campaña(s) con métricas no disponibles. No se muestran datos estimados.</p>':'')+
  (t.partial?'<p class="tf-tool-warning">La consulta de eventos llegó al límite de paginación; algunas cifras pueden ser parciales.</p>':'')+
@@ -137,7 +137,7 @@ async function changeBudget(button,id){
  if(!c||!api.fbDb||!api.currentUser)return;
  const input=root.querySelector('[data-tf-budget="'+CSS.escape(id)+'"]');
  const amount=Number(input?.value);
- if(!Number.isFinite(amount)||amount<1||amount>10000000||Math.round(amount*100)!==amount*100){api.toast('Introduce un presupuesto válido de Q1.00 a Q10,000,000.00, con máximo dos decimales.');return}
+ if(!Number.isFinite(amount)||amount<1||amount>10000000||Math.abs(Math.round(amount*100)-amount*100)>0.000001){api.toast('Introduce un presupuesto válido de Q1.00 a Q10,000,000.00, con máximo dos decimales.');return}
  if(amount===Number(c.budget)){api.toast('El presupuesto ya tiene ese valor.');return}
  button.disabled=true;button.textContent='Guardando…';
  try{
