@@ -510,6 +510,65 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 </head>
 <body>
 
+
+<style id="tfAdsAdminConsoleStyle">
+/* Vista de administración: alcance exclusivo a Control ADS. */
+#tfAdsAdminNav{font-size:0!important;letter-spacing:0!important}
+#tfAdsAdminNav .tf-icon{width:22px!important;height:22px!important;flex:0 0 22px}
+#tfAdsAdminNav::after{content:"Control ADS"!important}
+.tf-ads-admin{width:100%;min-width:0;display:grid;gap:18px;color:#182236}
+.tf-ads-admin-intro{padding:22px 24px;border-radius:17px;background:linear-gradient(120deg,#0b1c38,#123768 75%,#16447a);color:#fff;box-shadow:0 10px 28px rgba(7,29,65,.13)}
+.tf-ads-admin-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tf-ads-admin-kicker{font-size:10px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:#9ddaf5}
+.tf-ads-admin-status{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(131,239,204,.34);background:rgba(39,192,139,.12);border-radius:999px;padding:7px 11px;color:#c6f9e4;font-size:10px;font-weight:750}
+.tf-ads-admin-status::before{content:"";width:7px;height:7px;border-radius:50%;background:#49dbab;flex:0 0 7px}
+.tf-ads-admin-intro h3{margin:15px 0 7px!important;font-size:clamp(22px,3.5vw,29px)!important;line-height:1.16!important;letter-spacing:-.03em}
+.tf-ads-admin-intro p{max-width:610px;margin:0!important;font-size:12px!important;line-height:1.65;color:#c9d8eb}
+.tf-ads-admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.tf-ads-admin-stat{min-width:0;padding:17px 18px;border:1px solid #e1e8f1;background:#fff;border-radius:14px;box-shadow:0 5px 19px rgba(21,42,70,.035)}
+.tf-ads-admin-stat span{display:block;font-size:11px;font-weight:700;color:#697b91}
+.tf-ads-admin-stat strong{display:block;margin:6px 0 3px;font-size:26px;font-weight:850;line-height:1.1;letter-spacing:-.03em;color:#17243a}
+.tf-ads-admin-stat small{display:block;font-size:10px;color:#8492a5;line-height:1.4}
+.tf-ads-admin-review{min-width:0;background:#fff;border:1px solid #e0e6ef;border-radius:17px;overflow:hidden;box-shadow:0 7px 26px rgba(23,42,71,.04)}
+.tf-ads-admin-review-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:19px 20px;border-bottom:1px solid #ebeff4}
+.tf-ads-admin-review-head h3{margin:0 0 5px;font-size:16px;line-height:1.25;color:#1b2638}
+.tf-ads-admin-review-head p{margin:0;font-size:11px;line-height:1.45;color:#8794a5}
+.tf-ads-admin-refresh{height:38px;min-width:96px;display:inline-flex;justify-content:center;align-items:center;gap:7px;padding:0 12px;border:1px solid #d5e1ef;border-radius:9px;background:#f8fbff;color:#18549f;font-size:11px;font-weight:800}
+.tf-ads-admin-refresh:hover{background:#eaf3ff}
+.tf-ads-admin-refresh .tf-icon{width:15px;height:15px}
+.tf-ads-admin-feedback{padding:35px 22px;text-align:center;font-size:12px;line-height:1.65;color:#718198}
+.tf-ads-admin-feedback strong{display:block;margin:0 0 7px;font-size:13px;color:#27354b}
+.tf-ads-admin-feedback p{margin:0 auto 12px;max-width:490px}
+.tf-ads-admin-error{color:#86522b;background:#fffbf6}
+.tf-ads-campaign-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;padding:17px 20px;border-top:1px solid #edf1f5}
+.tf-ads-campaign-row:first-child{border-top:0}
+.tf-ads-campaign-title{min-width:0}
+.tf-ads-campaign-title b{display:block;font-size:14px;color:#1f2d41;line-height:1.3;overflow-wrap:anywhere}
+.tf-ads-campaign-title span{display:block;margin-top:5px;font-size:11px;line-height:1.45;color:#6b7d91;overflow-wrap:anywhere}
+.tf-ads-campaign-status{display:inline-flex!important;width:max-content;margin-top:9px!important;padding:5px 8px;border-radius:7px;background:#fff6df;color:#91621d!important;font-weight:750}
+.tf-ads-review-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.tf-ads-review-actions button{min-height:38px;padding:8px 13px;border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;border:1px solid #d2dce9}
+.tf-ads-approve{background:#0866ff;border-color:#0866ff!important;color:#fff}
+.tf-ads-approve:hover{background:#0756d5}
+.tf-ads-reject{background:#fff;color:#aa3651;border-color:#e8c3cc!important}
+.tf-ads-reject:hover{background:#fff3f5}
+.tf-ads-review-actions button:disabled{opacity:.5;cursor:wait}
+@media(max-width:700px){
+ .tf-ads-admin{gap:14px}
+ .tf-ads-admin-intro{padding:19px 17px;border-radius:15px}
+ .tf-ads-admin-intro p{font-size:11px!important}
+ .tf-ads-admin-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .tf-ads-admin-stat{padding:14px 13px}
+ .tf-ads-admin-stat strong{font-size:22px}
+ .tf-ads-admin-review-head{padding:15px 14px;align-items:flex-start}
+ .tf-ads-admin-review-head h3{font-size:14px}
+ .tf-ads-admin-refresh{min-width:0;padding:0 10px}
+ .tf-ads-campaign-row{grid-template-columns:minmax(0,1fr);gap:12px;padding:15px 14px}
+ .tf-ads-review-actions{justify-content:stretch}
+ .tf-ads-review-actions button{flex:1 1 120px}
+ .tf-ads-admin-feedback{padding:30px 16px}
+}
+</style>
 <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
 <defs>
 <symbol id="i-dashboard" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
@@ -519,6 +578,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M3 20h18"/></symbol>
 <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M7 15h4"/></symbol>
 <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.8-1L14.5 3h-5l-.4 3.1a8 8 0 0 0-1.8 1l-2.4-1-2 3.4L5 11a7 7 0 0 0 0 2l-2.1 1.5 2 3.4 2.4-1a8 8 0 0 0 1.8 1L9.5 21h5l.4-3.1a8 8 0 0 0 1.8-1l2.4 1 2-3.4L19 13a7 7 0 0 0 0-1z"/></symbol>
+<symbol id="i-admin-shield" viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5-3.3 8.5-8 11-4.7-2.5-8-6-8-11V5zM8.5 12l2.5 2.5 4.5-5"/></symbol>
 <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
 <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol>
@@ -1276,7 +1336,7 @@ function syncAdminNavigation(){
  button.dataset.view='admin';
  button.title='Control ADS';
  button.setAttribute('aria-label','Control ADS');
- button.innerHTML='<svg class="tf-icon" aria-hidden="true"><use href="#i-settings"></use></svg><span class="nav-label">Control ADS</span>';
+ button.innerHTML='<svg class="tf-icon" aria-hidden="true"><use href="#i-admin-shield"></use></svg>';
  button.addEventListener('click',()=>{if(isAdsAdmin&&currentUser)showView('admin')});
  settings.parentElement.insertBefore(button,settings);
 }
@@ -1376,37 +1436,67 @@ function renderModule(name){const root=$('moduleContent');if(!root)return;const 
    root.innerHTML='<div class="module-grid"><div class="module-list"><div class="module-list-head"><b>Cuenta comercial</b><span>Información de acceso</span></div><div class="settings-grid" style="padding:16px"><div class="setting-card"><span>Responsable</span><b>'+escapeHtml(currentUser?.name||'—')+'</b><small>Usuario autenticado</small></div><div class="setting-card"><span>Empresa / marca</span><b>'+escapeHtml(currentUser?.company||'—')+'</b><small>Cuenta comercial</small></div><div class="setting-card"><span>Correo</span><b>'+escapeHtml(currentUser?.email||'—')+'</b><small>Credencial principal</small></div><div class="setting-card"><span>Estado</span><b class="status-line"><i></i> Operativa</b><small>Sesión y persistencia activas</small></div></div></div><div class="module-content">'+moduleEmpty('Protección de interfaz','El sistema bloquea zoom, selección general, copiar, guardar, imprimir, menú contextual y accesos comunes de extracción desde la interfaz.')+moduleEmpty('Persistencia','La sesión, las campañas y los archivos se administran mediante servicios seguros de almacenamiento y sincronización.')+'</div></div>'+adminOptions+'<div class="module-list" style="margin-top:16px"><div class="module-list-head"><b>Sesión</b><span>Control de acceso</span></div><div class="settings-session"><p>Finaliza la sesión de esta cuenta en el dispositivo actual.</p><button type="button" class="secondary settings-logout-action" data-settings-logout><svg class="tf-icon" aria-hidden="true"><use href="#i-logout"></use></svg><span>Cerrar sesión</span></button></div></div>';
  }else if(name==='admin'){
    if(!isAdsAdmin){root.innerHTML=moduleEmpty('Acceso restringido','Este módulo requiere autorización administrativa de TaskFlow ADS.');return}
-   root.innerHTML='<div class="module-kpis"><article class="module-card"><span>Control</span><strong>ADS</strong><small>Revisión comercial</small></article><article class="module-card"><span>Estado</span><strong>Administrador</strong><small>Claim verificado</small></article><article class="module-card"><span>Entrega</span><strong>TaskFlow</strong><small>Espejo público protegido</small></article><article class="module-card"><span>Acción</span><strong>Revisar</strong><small>Campañas de anunciantes</small></article></div><div class="module-list"><div class="module-list-head"><b>Campañas pendientes de aprobación</b><span>Control central de TaskFlow ADS</span></div><div id="adminReviewList" class="empty">Cargando campañas...</div></div>';loadAdminReview();
+   root.innerHTML='<section class="tf-ads-admin" aria-label="Control ADS">'
+  +'<div class="tf-ads-admin-intro"><div class="tf-ads-admin-topline"><span class="tf-ads-admin-kicker">TaskFlow ADS · Administración</span><span class="tf-ads-admin-status">Administrador autorizado</span></div><h3>Centro de aprobación</h3><p>Revisa las campañas de los anunciantes y autoriza su publicación en TaskFlow.</p></div>'
+  +'<div class="tf-ads-admin-stats"><article class="tf-ads-admin-stat"><span>Pendientes</span><strong id="adminPendingCount">—</strong><small>Por revisar</small></article><article class="tf-ads-admin-stat"><span>Aprobadas</span><strong id="adminApprovedCount">—</strong><small>Revisadas</small></article><article class="tf-ads-admin-stat"><span>Rechazadas</span><strong id="adminRejectedCount">—</strong><small>Revisadas</small></article><article class="tf-ads-admin-stat"><span>Campañas</span><strong id="adminCampaignTotal">—</strong><small>Total registradas</small></article></div>'
+  +'<div class="tf-ads-admin-review"><div class="tf-ads-admin-review-head"><div><h3>Campañas pendientes de aprobación</h3><p>Solo se muestran solicitudes que necesitan una decisión.</p></div><button type="button" class="tf-ads-admin-refresh" id="adminReviewRefresh"><svg class="tf-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>Actualizar</button></div><div id="adminReviewList" class="tf-ads-admin-feedback" role="status" aria-live="polite">Consultando campañas...</div></div></section>';
+   $('adminReviewRefresh').addEventListener('click',()=>{void loadAdminReview()});
+   void loadAdminReview();
  }else root.innerHTML='';
 }
 
 async function loadAdminReview(){
- const root=$('adminReviewList');
+ const root=$('adminReviewList'),refresh=$('adminReviewRefresh');
  if(!root||!isAdsAdmin||!currentUser||!fbDb)return;
+ if(root.dataset.reviewBusy==='true')return;
+ if(refresh)refresh.disabled=true;
+ root.className='tf-ads-admin-feedback';
+ root.textContent='Consultando campañas...';
+ const setMetric=(id,value)=>{const el=$(id);if(el)el.textContent=String(value)};
  try{
+  // Una consulta sin filtros ni ordenamiento; necesita reglas de grupo, no un índice compuesto.
   const snap=await withDeadline(fbDb.collectionGroup('adsCampaigns').get({source:'server'}),18000,'La consulta administrativa tardó demasiado.');
-  const rows=[];
+  if(!root.isConnected||!isAdsAdmin)return;
+  const pending=[],counts={pending:0,approved:0,rejected:0};
   snap.forEach(doc=>{
    const ownerUid=String(doc.ref?.parent?.parent?.id||doc.data()?.ownerUid||'');
    if(!ownerUid||!doc.id)return;
    const c=normalizeCampaign({...doc.data(),id:doc.id,ownerUid});
-   if(c.approvalStatus!=='approved'||c.status==='active')rows.push(c);
+   if(Object.prototype.hasOwnProperty.call(counts,c.approvalStatus))counts[c.approvalStatus]++;
+   if(c.approvalStatus==='pending')pending.push(c);
   });
-  rows.sort((a,b)=>(a.approvalStatus==='pending'?0:1)-(b.approvalStatus==='pending'?0:1)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
-  root.className='';
-  root.innerHTML=rows.length?rows.map(c=>'<div class="module-row"><div><b>'+escapeHtml(c.name)+'</b><span>'+escapeHtml(c.businessName||'Anunciante')+' · '+escapeHtml(placementLabel(c.placement))+' · '+normalizeCampaign(c).ads.length+' anuncios</span></div><small>'+escapeHtml(approvalLabel(c.approvalStatus))+' · '+escapeHtml(statusLabel(c.status))+'</small><div class="row-actions"><button type="button" data-admin-approve="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Aprobar</button><button type="button" data-admin-reject="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Rechazar</button></div></div>').join(''):'<div class="empty">No hay campañas por revisar.</div>';
+  pending.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+  setMetric('adminPendingCount',counts.pending);
+  setMetric('adminApprovedCount',counts.approved);
+  setMetric('adminRejectedCount',counts.rejected);
+  setMetric('adminCampaignTotal',snap.size);
+  if(!pending.length){
+   root.className='tf-ads-admin-feedback';
+   root.innerHTML='<strong>No hay campañas pendientes</strong><p>Las solicitudes nuevas aparecerán aquí cuando los anunciantes las envíen a revisión.</p>';
+  }else{
+   root.className='tf-ads-admin-rows';
+   root.innerHTML=pending.map(c=>
+    '<article class="tf-ads-campaign-row"><div class="tf-ads-campaign-title"><b>'+escapeHtml(c.name||'Campaña sin nombre')+'</b>'
+    +'<span>'+escapeHtml(c.businessName||'Anunciante')+' · '+escapeHtml(placementLabel(c.placement))+' · '+normalizeCampaign(c).ads.length+' anuncio(s)</span>'
+    +'<span class="tf-ads-campaign-status">Pendiente de aprobación · '+escapeHtml(statusLabel(c.status))+'</span></div>'
+    +'<div class="tf-ads-review-actions"><button type="button" class="tf-ads-approve" data-admin-approve="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Aprobar</button>'
+    +'<button type="button" class="tf-ads-reject" data-admin-reject="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Rechazar</button></div></article>'
+   ).join('');
+  }
   root.onclick=async e=>{
    const btn=e.target.closest('[data-admin-approve],[data-admin-reject]');
    if(!btn||!root.contains(btn)||root.dataset.reviewBusy==='true')return;
-   const parts=String(btn.dataset.adminApprove||btn.dataset.adminReject||'').split('|');
+   const encoded=String(btn.dataset.adminApprove||btn.dataset.adminReject||'');
+   const parts=encoded.split('|');
    if(parts.length!==2||!parts[0]||!parts[1])return;
    root.dataset.reviewBusy='true';
    root.querySelectorAll('[data-admin-approve],[data-admin-reject]').forEach(el=>el.disabled=true);
    try{
     await adminReviewCampaign(parts[0],parts[1],!!btn.dataset.adminApprove);
+    root.dataset.reviewBusy='false';
     await loadAdminReview();
    }catch(error){
-    console.warn('La revisión administrativa no se completó:',error?.code||error?.message);
+    console.warn('Revisión ADS fallida:',error?.code||error?.message);
     toast(error?.message||'No fue posible revisar la campaña.');
    }finally{
     root.dataset.reviewBusy='false';
@@ -1414,9 +1504,17 @@ async function loadAdminReview(){
    }
   };
  }catch(e){
-  console.warn('No se pudo cargar la revisión administrativa:',e?.code||e?.message);
-  root.className='empty';
-  root.textContent='No fue posible consultar las campañas. Verifica la conexión y los permisos de la cuenta.';
+  console.warn('Consulta de campañas ADS fallida:',e?.code||e?.message);
+  ['adminPendingCount','adminApprovedCount','adminRejectedCount','adminCampaignTotal'].forEach(id=>setMetric(id,'—'));
+  const code=String(e?.code||'').toLowerCase();
+  const explanation=code.includes('permission-denied')?'Firestore rechazó la lectura agrupada. Es necesario publicar las reglas que autorizan a los administradores de TaskFlow ADS a consultar adsCampaigns.'
+   :code.includes('failed-precondition')?'Firestore requiere completar una configuración de la consulta. Revisa el detalle del error y la configuración de Firestore.'
+   :code.includes('unavailable')||code.includes('network')?'No se pudo conectar con Firestore. Verifica la conexión e inténtalo de nuevo.'
+   :'No se pudo completar la consulta administrativa. Vuelve a intentarlo; si continúa, revisa las reglas de Firestore.';
+  root.className='tf-ads-admin-feedback tf-ads-admin-error';
+  root.innerHTML='<strong>No se pudo consultar las campañas</strong><p>'+escapeHtml(explanation)+'</p>';
+ }finally{
+  if(refresh&&refresh.isConnected)refresh.disabled=false;
  }
 }
 async function adminReviewCampaign(ownerUid,id,approve){
