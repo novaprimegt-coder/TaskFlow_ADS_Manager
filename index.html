@@ -682,8 +682,57 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 #tfAdsDeliveryCheck .tf-tool-delivery-row b,#tfAdsDeliveryCheck .tf-tool-delivery-row span{display:block}
 #tfAdsDeliveryCheck .tf-tool-delivery-row b{font-size:12px;color:#1b354e}#tfAdsDeliveryCheck .tf-tool-delivery-row span{margin-top:4px;font-size:11px;line-height:1.4}
 @media(max-width:600px){#moduleContent .tf-tool-form-grid{grid-template-columns:1fr}#tfAdsDeliveryCheck .tf-tool-delivery-row{align-items:stretch;flex-direction:column}#appView.menu-open .sidebar .nav-item[data-view="admin"]::after{content:"Control ADS"}}
+
+/* V20261106.7: no permitir que la anchura intrínseca de tablas
+   expanda toda la página en pantallas móviles. */
+html,body{width:100%;max-width:100%;overflow-x:clip}
+#appView,#appView .workspace,#placeholderView{box-sizing:border-box;min-width:0;max-width:100%}
+#appView .workspace{width:100%;overflow-x:clip}
+#placeholderView{width:min(100%,1080px);margin-inline:auto!important;padding-inline:clamp(12px,3vw,30px)}
+#placeholderView .heading{display:flex;align-items:center;justify-content:center;text-align:center;margin:12px auto 14px;max-width:100%}
+#placeholderView .heading>div{min-width:0;max-width:100%}
+#placeholderView .heading h2{margin:4px 0 5px}
+#placeholderView .heading p{max-width:620px;margin:6px auto 0;white-space:normal;overflow-wrap:anywhere;text-wrap:pretty}
+#moduleContent{display:grid!important;grid-template-columns:minmax(0,1fr)!important;min-width:0!important;width:100%!important;max-width:100%!important;margin-inline:auto;gap:12px}
+#moduleContent>*{min-width:0!important;max-width:100%!important;width:100%;box-sizing:border-box}
+#moduleContent .tf-tool-panel,#moduleContent .tf-tool-table-scroll{min-width:0!important;width:100%;max-width:100%!important;box-sizing:border-box}
+#moduleContent .tf-tool-table-scroll{overflow-x:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+#moduleContent .tf-tool-panel,#moduleContent .tf-tool-kpi{overflow-wrap:anywhere}
+#moduleContent .tf-tool-kpis{width:100%;max-width:100%;grid-template-columns:repeat(2,minmax(0,1fr));justify-content:center}
+#moduleContent .tf-tool-kpis>*{min-width:0!important;width:auto!important}
+#moduleContent .tf-tool-kpi{text-align:center}
+#moduleContent .tf-tool-kpi strong{white-space:normal;overflow-wrap:anywhere;font-size:clamp(19px,3.2vw,28px)}
+#moduleContent .tf-tool-buttons{justify-content:center}
+#moduleContent .tf-tool-panel>.tf-tool-heading{text-align:center}
+#moduleContent .tf-tool-panel>.tf-tool-heading h3{font-size:15px}
+#moduleContent .tf-tool-loading,#moduleContent .tf-tool-empty{text-align:center;white-space:normal}
+#moduleContent .tf-tool-table{width:100%;min-width:520px;table-layout:auto}
+#moduleContent .tf-tool-bar-item{min-width:21px}
+#moduleContent .tf-tool-form{margin-inline:auto}
+#moduleContent .tf-tool-row,#moduleContent .tf-tool-creative{min-width:0}
+#moduleContent .tf-tool-gallery{min-width:0;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+#moduleContent .tf-tool-budget-edit{min-width:0}
+@media(max-width:820px){
+ #placeholderView{padding:16px 14px 32px!important}
+ #placeholderView .heading{margin:4px auto 12px}
+ #placeholderView .heading h2{font-size:clamp(23px,6vw,29px)}
+ #placeholderView .heading p{font-size:12px;line-height:1.5}
+ #moduleContent .tf-tool-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px}
+ #moduleContent .tf-tool-kpi{padding:13px 9px}
+ #moduleContent .tf-tool-panel{padding:13px 11px}
+ #moduleContent .tf-tool-table{min-width:480px}
+}
+@media(max-width:380px){
+ #placeholderView{padding-inline:10px!important}
+ #moduleContent .tf-tool-kpi strong{font-size:22px}
+ #moduleContent .tf-tool-kpi>span{font-size:10px}
+ #moduleContent .tf-tool-kpi small{font-size:9px}
+ #moduleContent .tf-tool-panel{padding-inline:10px}
+ #moduleContent .tf-tool-buttons button{flex:1 1 135px}
+}
+
 </style>
-<script defer src="./ads-manager-modules.js?v=20261106-6"></script>
+<script defer src="./ads-manager-modules.js?v=20261106-7"></script>
 </head>
 <body>
 
@@ -1892,7 +1941,7 @@ async function adminReviewCampaign(ownerUid,id,approve){
  notifyTaskFlowAdsChanged();
  toast(approve?(deliver?'Campaña aprobada y habilitada para entrega.':'Campaña aprobada; la entrega requiere activación y archivos válidos.'):'Campaña rechazada.');
 }
-function showView(name){if(name==='admin'&&(!isAdsAdmin||!currentUser))return;qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={audiences:['Audiencias','Segmentación y públicos comerciales utilizados por tus campañas.'],creatives:['Creativos','Biblioteca de archivos publicitarios validados y vinculados.'],reports:['Informes','Resumen operativo de campañas, estados y presupuesto configurado.'],billing:['Presupuestos','Consulta y modifica los presupuestos de las campañas sin confundirlos con cargos.'],settings:['Configuración','Estado y datos de la cuenta comercial.'],admin:['Control ADS','Revisión y aprobación central de campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp();requestAnimationFrame(fitSummaryMetricValues)}
+function showView(name){if(name==='admin'&&(!isAdsAdmin||!currentUser))return;qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={audiences:['Audiencias','Guarda y aplica segmentaciones a tus campañas.'],creatives:['Creativos','Revisa, previsualiza y edita anuncios.'],reports:['Informes','Eventos publicitarios registrados durante los últimos 30 días.'],billing:['Presupuestos','Configura límites de campaña. No son cobros.'],settings:['Configuración','Administra tu perfil comercial y seguridad.'],admin:['Control ADS','Aprueba o rechaza campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp();requestAnimationFrame(fitSummaryMetricValues)}
 
 function currentBudgetMode(){return qa('input[name="budgetDistribution"]').find(x=>x.checked)?.value||'system'}
 function equalBudgetShares(total,count){
