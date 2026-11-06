@@ -673,8 +673,17 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 #appView.menu-open .sidebar .nav-item[data-view]::after{display:block!important;position:static!important;transform:none!important;box-shadow:none!important;background:none!important;color:#273f59!important;white-space:normal!important;padding:0!important;font-size:11px!important;font-weight:800!important;text-align:left!important}
 #appView.menu-open .sidebar .nav-item.active[data-view]::after{color:#0856c3!important}
 }
+#moduleContent .tf-tool-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#moduleContent .tf-tool-budget-edit select{min-height:39px;min-width:0;width:100%;border:1px solid #d3e0ee;border-radius:8px;padding:7px;color:#223f5c;background:#fff;font-size:11px}
+#moduleContent .tf-tool-preset-list{margin-top:14px;border-top:1px solid #e6edf6}
+#tfAdsDeliveryCheck{margin:12px 0}#tfAdsDeliveryCheck .tf-tool-delivery-panel{padding:14px 16px;border:1px solid #d6e4f3;background:#fff;border-radius:14px}
+#tfAdsDeliveryCheck .tf-tool-delivery-panel>h3{font-size:14px;color:#25436a;margin:0 0 7px}
+#tfAdsDeliveryCheck .tf-tool-delivery-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #eef2f6}
+#tfAdsDeliveryCheck .tf-tool-delivery-row b,#tfAdsDeliveryCheck .tf-tool-delivery-row span{display:block}
+#tfAdsDeliveryCheck .tf-tool-delivery-row b{font-size:12px;color:#1b354e}#tfAdsDeliveryCheck .tf-tool-delivery-row span{margin-top:4px;font-size:11px;line-height:1.4}
+@media(max-width:600px){#moduleContent .tf-tool-form-grid{grid-template-columns:1fr}#tfAdsDeliveryCheck .tf-tool-delivery-row{align-items:stretch;flex-direction:column}#appView.menu-open .sidebar .nav-item[data-view="admin"]::after{content:"Control ADS"}}
 </style>
-<script defer src="./ads-manager-modules.js?v=20261106-2"></script>
+<script defer src="./ads-manager-modules.js?v=20261106-6"></script>
 </head>
 <body>
 
@@ -1604,7 +1613,7 @@ function publicationState(c){
  if(!campaignReady(c))return 'Archivo pendiente · sin entrega';
  return 'Aprobada · habilitada según audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
-function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,renderAll,toast}}
+function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,renderAll,toast}}
 function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary();renderObjectiveInsights();if(window.TaskFlowADSModules?.paintOverview&&currentUser)void window.TaskFlowADSModules.paintOverview(adsModulesContext(),false)}
 function fitSummaryMetricValues(){
  // Mantiene las cifras completas cuando caben; usa formato compacto solo si es necesario.
