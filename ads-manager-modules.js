@@ -50,7 +50,7 @@ function totals(metrics){
 function metricValue(m,key){return m&&!m.error&&Number.isFinite(Number(m[key]))?number(m[key]):'—'}
 function csvCell(s){return '"'+String(s==null?'':s).replace(/"/g,'""')+'"'}
 function csvDownload(name,rows){const csv='\uFEFF'+rows.map(row=>row.map(csvCell).join(';')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(href),3000)}
-async function paintOverview(api,refresh){
+async function paintOverview(api,refresh){current=api;
  const overview=document.getElementById('overviewView');if(!overview||!api.currentUser)return;
  let slot=document.getElementById('tfAdsLiveOverview');
  if(!slot){slot=document.createElement('section');slot.id='tfAdsLiveOverview';slot.className='tf-tool-overview';const anchor=overview.querySelector('.dashboard');if(anchor)anchor.insertAdjacentElement('beforebegin',slot);else overview.appendChild(slot)}
