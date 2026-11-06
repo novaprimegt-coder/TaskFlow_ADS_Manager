@@ -617,6 +617,22 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 .tf-chart-note{color:#8b98a7;font-size:10px;line-height:1.5;margin:3px 0 0}
 @media(max-width:860px){.tf-objective-insights,.tf-report-chart{grid-template-columns:1fr}.tf-chart-panel{padding:16px}.tf-chart-row{grid-template-columns:94px minmax(0,1fr) 70px;gap:8px}}
 </style>
+<style id="tfAdsFilterPopover2026">
+#campaignsView .tf-filter-native{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;opacity:0!important;clip-path:inset(50%)!important;overflow:hidden!important;pointer-events:none!important}
+#campaignsView .tf-filter-combobox{position:relative;min-width:145px;flex:1 1 175px;max-width:250px;isolation:isolate}
+#campaignsView .tf-filter-button{display:flex;width:100%;min-height:40px;padding:9px 11px;align-items:center;justify-content:space-between;gap:10px;border:1px solid #d5dfed;border-radius:10px;background:#fff;color:#2d3f59;font-size:11px;font-weight:750;text-align:left;box-shadow:0 2px 4px rgba(20,51,91,.03)}
+#campaignsView .tf-filter-button:hover,#campaignsView .tf-filter-button[aria-expanded=true]{border-color:#8fb8f5;background:#f5f9ff}
+#campaignsView .tf-filter-button>span:first-child{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#campaignsView .tf-filter-caret{color:#7187a6;font-size:17px;line-height:1}
+#campaignsView .tf-filter-menu{position:absolute;top:calc(100% + 5px);left:0;right:0;min-width:180px;z-index:100;padding:5px;border:1px solid #d8e2ef;background:#fff;border-radius:12px;box-shadow:0 14px 34px rgba(25,48,82,.17);max-height:min(280px,50dvh);overflow:auto}
+#campaignsView .tf-filter-menu.up{top:auto;bottom:calc(100% + 5px)}
+#campaignsView .tf-filter-menu[hidden]{display:none}
+#campaignsView .tf-filter-choice{display:block;width:100%;min-height:40px;text-align:left;padding:10px 11px;border:0;background:transparent;color:#40516a;border-radius:8px;font-size:12px;font-weight:650}
+#campaignsView .tf-filter-choice:hover,#campaignsView .tf-filter-choice:focus-visible{background:#eef5ff;color:#155cbd}
+#campaignsView .tf-filter-choice.selected{background:#e8f1ff;color:#1268d7;font-weight:850}
+#campaignsView .tf-filter-choice.selected:after{content:"✓";float:right;font-weight:800}
+@media(max-width:680px){#campaignsView .tf-filter-combobox{max-width:none;flex:1 1 43%;min-width:0}#campaignsView .tf-filter-button{min-height:43px}#campaignsView .tf-filter-menu{min-width:max(178px,100%)}}
+</style>
 </head>
 <body>
 
@@ -2314,7 +2330,56 @@ function blockExtraction(){
  document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});
  document.addEventListener('gesturestart',e=>e.preventDefault());
 }
-function bind(){updateObjectiveExperience();qa('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>togglePasswordVisibility(btn)));setAuthMode('login');$('loginTab').addEventListener('click',()=>setAuthMode('login'));$('registerTab').addEventListener('click',()=>setAuthMode('register'));$('authForm').addEventListener('submit',handleAuth);$('moduleContent').addEventListener('click',e=>{
+
+function setupCompactFilterMenus(){
+ const ids=['statusFilter','approvalFilter','orderFilter'];
+ let opened=null;
+ function close(){if(opened){opened.menu.hidden=true;opened.button.setAttribute('aria-expanded','false');opened=null}}
+ ids.forEach(id=>{
+  const native=$(id);if(!native||native.dataset.tfEnhanced)return;
+  native.dataset.tfEnhanced='1';
+  native.classList.add('tf-filter-native');
+  const holder=document.createElement('div');holder.className='tf-filter-combobox';
+  const btn=document.createElement('button');btn.type='button';btn.className='tf-filter-button';
+  btn.setAttribute('aria-haspopup','listbox');btn.setAttribute('aria-expanded','false');
+  btn.setAttribute('aria-label',native.getAttribute('aria-label')||'Seleccionar filtro');
+  const label=document.createElement('span');const caret=document.createElement('span');
+  caret.className='tf-filter-caret';caret.setAttribute('aria-hidden','true');caret.textContent='⌄';
+  btn.append(label,caret);
+  const menu=document.createElement('div');menu.className='tf-filter-menu';menu.setAttribute('role','listbox');
+  menu.setAttribute('aria-label',native.getAttribute('aria-label')||'Filtro');menu.hidden=true;
+  const update=()=>{
+   const current=native.selectedOptions?.[0]||native.options[0];
+   label.textContent=current?.textContent||'Seleccionar';
+   menu.replaceChildren();
+   [...native.options].forEach(opt=>{
+    const item=document.createElement('button');item.type='button';item.className='tf-filter-choice';
+    item.setAttribute('role','option');item.setAttribute('aria-selected',String(native.value===opt.value));
+    item.textContent=opt.textContent;
+    if(native.value===opt.value)item.classList.add('selected');
+    item.addEventListener('click',()=>{
+     native.value=opt.value;native.dispatchEvent(new Event('change',{bubbles:true}));update();close();btn.focus();
+    });
+    menu.appendChild(item);
+   });
+  };
+  btn.addEventListener('click',()=>{
+   const wasOpen=opened?.menu===menu;close();if(wasOpen)return;
+   update();menu.hidden=false;btn.setAttribute('aria-expanded','true');opened={menu,button:btn};
+   menu.classList.toggle('up',window.innerHeight-btn.getBoundingClientRect().bottom<250);
+  });
+  native.addEventListener('change',update);
+  holder.append(btn,menu);
+  native.insertAdjacentElement('afterend',holder);update();
+ });
+ document.addEventListener('pointerdown',e=>{if(opened&&!opened.menu.contains(e.target)&&!opened.button.contains(e.target))close()});
+ document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&opened){e.preventDefault();let b=opened.button;close();b.focus()}
+  if(e.key==='ArrowDown'&&opened&&document.activeElement===opened.button){e.preventDefault();opened.menu.querySelector('button')?.focus()}
+ });
+ window.addEventListener('resize',close,{passive:true});
+}
+function bind(){setupCompactFilterMenus();updateObjectiveExperience();qa('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>togglePasswordVisibility(btn)));setAuthMode('login');$('loginTab').addEventListener('click',()=>setAuthMode('login'));$('registerTab').addEventListener('click',()=>setAuthMode('register'));$('authForm').addEventListener('submit',handleAuth);$('moduleContent').addEventListener('click',e=>{
  const end=e.target.closest('[data-settings-logout]');
  if(end){end.disabled=true;void logout().finally(()=>{if(end.isConnected)end.disabled=false});return}
  const admin=e.target.closest('[data-settings-admin]');
