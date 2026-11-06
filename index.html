@@ -1858,7 +1858,7 @@ async function storeMediaInFirebase(campaignId,ad,placement){
     try{task.cancel()}catch(_){ }
     finish(error);
    };
-   const resetIdle=()=>{clearTimeout(idleTimer);idleTimer=setTimeout(timeout,MEDIA_UPLOAD_IDLE_MS)};
+   const resetIdle=()=>{clearTimeout(idleTimer);idleTimer=setTimeout(timeout,bytesSeen<=0?25000:MEDIA_UPLOAD_IDLE_MS)};
    totalTimer=setTimeout(timeout,MEDIA_UPLOAD_LIMIT_MS);
    resetIdle();
    unsub=task.on(firebase.storage.TaskEvent.STATE_CHANGED,snapshot=>{
@@ -1877,40 +1877,78 @@ async function storeMediaInFirebase(campaignId,ad,placement){
 }
 async function uploadCreative(campaignId,ad,placement){
  if(!ad._blob)return ad.src||'';
- if(ad._blob.size>MEDIA_MAX_BYTES)throw new Error('El archivo de '+(ad.name||'este anuncio')+' supera 20 MB.');
+ if(ad._blob.size>MEDIA_MAX_BYTES)throw new Error('El archivo supera el límite de 20 MB.');
  const kind=placement||selectedPlacement(),user=fbAuth?.currentUser;
  if(!user||!currentUser||user.uid!==currentUser.id)throw new Error('La sesión caducó. Vuelve a iniciar sesión.');
  ad._placement=kind;
  validMediaCoordinates(campaignId,ad);
  const spec=placementSpecs[kind];
- if(!spec||!spec.accept.split(',').includes(ad._blob.type)||!creativeSizeAllowed(ad.mediaMeta?.width,ad.mediaMeta?.height,spec))throw new Error('El archivo no cumple los requisitos del anuncio.');
- if(typeof window.TaskFlowAdsFileUpload!=='function')throw new Error('No fue posible iniciar el servicio de archivos. Recarga la página y vuelve a intentarlo.');
- const controller=new AbortController();
- const timer=setTimeout(()=>controller.abort(),120000);
+ if(!spec||!spec.accept.split(',').includes(ad._blob.type)||!creativeSizeAllowed(ad.mediaMeta?.width,ad.mediaMeta?.height,spec))throw new Error('El formato o las medidas del archivo no coinciden con este espacio publicitario.');
  const creativeName=ad.mediaMeta?.name||'Creativo';
- setMediaStatus('Preparando carga segura · '+creativeName);
- let result;
- try{
-  const token=await withDeadline(user.getIdToken(),15000,'No fue posible verificar tu sesión.');
-  result=await withDeadline(window.TaskFlowAdsFileUpload({
-   endpoint:SECURE_MEDIA_URL,file:ad._blob,idToken:token,uid:currentUser.id,
-   campaignId:campaignId,adId:ad.id,placement:kind,signal:controller.signal,
-   progress:pct=>{
-    const value=Math.max(0,Math.min(100,Math.round(Number(pct)||0)));
-    setMediaStatus('Cargando archivo: '+value+' % · '+creativeName);
-    if(!$('campaignModal').hidden)msg('Cargando archivo publicitario: '+value+' %...');
-   }
-  }),125000,'La carga tardó demasiado. Comprueba tu conexión e inténtalo nuevamente.');
- }catch(e){
-  console.warn('Fallo en la carga de creativo:',e?.name||e?.code||'upload');
-  const error=String(e?.message||'');
-  if(e?.name==='AbortError'||e?.code==='ads/timeout')throw new Error('No fue posible completar la carga. Comprueba tu conexión e inténtalo de nuevo.');
-  if(/unauthorized|forbidden|403|token|autoriz/i.test(error))throw new Error('No se pudo autorizar la carga. Vuelve a iniciar sesión e inténtalo de nuevo.');
-  throw new Error('No se pudo almacenar el archivo. Comprueba tu conexión y vuelve a intentarlo.');
- }finally{clearTimeout(timer)}
- if(!result||!/^https:\/\//i.test(result.src||'')||!String(result.storagePath||'').startsWith('blob:ads/media/'+currentUser.id+'/'+campaignId+'/'+ad.id+'/'))throw new Error('El servicio no confirmó el archivo. Vuelve a intentarlo.');
- ad.src=result.src;ad.storagePath=result.storagePath;ad.pendingMediaLocal=false;
- // Evita repetir una carga ya confirmada si falla después la sincronización de la campaña.
+ const prefix='ads/media/'+currentUser.id+'/'+campaignId+'/'+ad.id+'/';
+ const firebasePrefix='ads/'+currentUser.id+'/'+campaignId+'/'+ad.id+'/';
+ const isVertical=kind==='entry'||kind==='interaction';
+ // El servicio Blob cambia a multipartes por encima de 5 MB.
+ // Para creativos verticales grandes, preferir subida reanudable Firebase.
+ // Si falla el proveedor principal, probar el alternativo sin perder el archivo.
+ const providers=!isVertical?['blob']:ad._blob.size>5*1024*1024?['firebase','blob']:['blob','firebase'];
+ const errors=[];
+ const attemptBlob=async()=>{
+  if(typeof window.TaskFlowAdsFileUpload!=='function')throw new Error('Servicio de carga Blob no disponible.');
+  const token=await withDeadline(user.getIdToken(),15000,'No se pudo renovar la autenticación.');
+  const ctrl=new AbortController();
+  let watchdog=null,lastProgress=-1;
+  const resetWatchdog=()=>{
+   clearTimeout(watchdog);
+   watchdog=setTimeout(()=>ctrl.abort(),lastProgress<=0?32000:45000);
+  };
+  const hardTimeout=setTimeout(()=>ctrl.abort(),MEDIA_UPLOAD_LIMIT_MS);
+  resetWatchdog();
+  try{
+   const response=await withDeadline(window.TaskFlowAdsFileUpload({
+    endpoint:SECURE_MEDIA_URL,file:ad._blob,idToken:token,uid:currentUser.id,
+    campaignId,adId:ad.id,placement:kind,signal:ctrl.signal,
+    progress:pct=>{
+     const p=Math.max(0,Math.min(100,Math.round(Number(pct)||0)));
+     if(p>lastProgress){lastProgress=p;resetWatchdog()}
+     setMediaStatus('Cargando archivo: '+p+' % · '+creativeName);
+     if(!$('campaignModal').hidden)msg('Cargando archivo publicitario: '+p+' %...');
+    }
+   }),MEDIA_UPLOAD_LIMIT_MS+5000,'Se agotó el tiempo de carga por Blob.');
+   if(!response||!/^https:\/\//i.test(response.src||'')||!String(response.storagePath||'').startsWith('blob:'+prefix))throw new Error('Blob no confirmó una subida válida.');
+   return {src:response.src,storagePath:response.storagePath};
+  }finally{clearTimeout(watchdog);clearTimeout(hardTimeout);ctrl.abort()}
+ };
+ const attemptFirebase=async()=>{
+  if(!fbStorage)throw new Error('Almacenamiento reanudable no disponible.');
+  const result=await storeMediaInFirebase(campaignId,ad,kind);
+  if(!result||!/^https:\/\//i.test(result.src||'')||!String(result.storagePath||'').startsWith(firebasePrefix))throw new Error('Firebase no confirmó una subida válida.');
+  return result;
+ };
+ let uploaded=null;
+ for(let i=0;i<providers.length;i++){
+  const provider=providers[i];
+  const label=provider==='firebase'?'carga reanudable':'carga segura';
+  setMediaStatus((i?'Reintentando con método alternativo: ':'Iniciando ')+label+' · '+creativeName);
+  if(!$('campaignModal').hidden)msg((i?'Probando el almacenamiento alternativo':'Preparando el archivo')+' · '+creativeName);
+  try{
+   uploaded=await(provider==='firebase'?attemptFirebase():attemptBlob());
+   if(uploaded)break;
+  }catch(error){
+   errors.push({provider,code:String(error?.code||''),message:String(error?.message||'')});
+   console.warn('Carga ADS fallida, proveedor:',provider,'código:',String(error?.code||error?.name||'unknown'));
+  }
+ }
+ if(!uploaded){
+  const permission=errors.some(e=>/unauthoriz|permission|forbidden|403|storage\/unauthenticated/i.test(e.code+' '+e.message));
+  const timeout=errors.some(e=>/timeout|abort|tardó|agotó/i.test(e.code+' '+e.message));
+  const reason=permission?' Los servicios rechazaron los permisos de almacenamiento.':timeout?' Los servicios agotaron el tiempo de carga.':' Ninguno de los servicios confirmó el archivo.';
+  setMediaStatus('Error al cargar: '+creativeName+'.'+reason+' El archivo permanece seleccionado.','error');
+  throw new Error('No se pudo cargar el archivo.'+reason+' Comprueba la conexión y vuelve a guardar; no necesitas seleccionar el archivo nuevamente.');
+ }
+ ad.src=uploaded.src;
+ ad.storagePath=uploaded.storagePath;
+ ad.pendingMediaLocal=false;
  ad._blob=null;
  if(currentAdDraftId===ad.id){pendingMedia=null;existingMediaMeta=ad.mediaMeta||null;}
  setMediaStatus('Archivo cargado correctamente · '+creativeName,'ok');
