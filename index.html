@@ -735,6 +735,70 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #moduleContent .tf-tool-delivery-evidence>strong{display:block;font-size:12px;color:#17406b}
 #moduleContent .tf-tool-delivery-evidence>p{max-width:750px;margin:7px auto 0;color:#526981;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
 
+
+/* Resumen: actualización visual limitada a las dos tarjetas de campañas y formatos */
+#overviewView .dashboard{align-items:start;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px}
+#overviewView .tf-overview-card{min-width:0;isolation:isolate;border:1px solid #e0e8f3;border-radius:22px;background:#fff;box-shadow:0 8px 32px rgba(27,50,85,.055);overflow:hidden}
+#overviewView .tf-overview-card .tf-overview-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 23px 19px;border-bottom:1px solid #eaf0f6;background:linear-gradient(115deg,#fff 52%,#f4f9ff)}
+#overviewView .tf-overview-card .tf-overview-title{min-width:0}
+#overviewView .tf-overview-card .tf-overview-title .eyebrow{display:block;color:#7892ae;letter-spacing:.12em;font-size:10px;font-weight:850}
+#overviewView .tf-overview-card .tf-overview-title h3{font-size:19px;line-height:1.23;letter-spacing:-.02em;color:#1e304a;font-weight:850;margin:6px 0 0}
+#overviewView .tf-overview-all{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:39px;padding:8px 13px;border:1px solid #dce7f4;border-radius:11px;background:#fff;color:#24548d;font-size:12px;font-weight:850;box-shadow:0 2px 7px rgba(22,53,93,.035);transition:background .15s,border-color .15s}
+#overviewView .tf-overview-all:hover,#overviewView .tf-overview-all:focus-visible{background:#eef6ff;border-color:#aac9f5}
+#overviewView .tf-overview-all span{color:#2075dd;font-size:22px;font-weight:600;line-height:.7}
+#overviewView .tf-recent-list{display:grid}
+#overviewView .tf-recent-item.activity{min-width:0;display:grid;grid-template-columns:60px minmax(0,1fr) auto;align-items:center;gap:14px;padding:15px 21px;border:0;border-bottom:1px solid #edf1f7;background:#fff;text-align:left;transition:background .16s}
+#overviewView .tf-recent-item.activity:last-child{border-bottom:0}
+#overviewView .tf-recent-item.activity:hover,#overviewView .tf-recent-item.activity:focus-visible{background:#f4f9ff}
+#overviewView .tf-recent-item .activity-icon.tf-thumb-shell{width:60px;height:60px;border-radius:15px;background:#edf4fc;border:1px solid #dfe9f4;box-shadow:inset 0 1px 0 #fff,0 3px 9px rgba(24,51,89,.04)}
+#overviewView .tf-recent-item .tf-recent-copy{min-width:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:4px}
+#overviewView .tf-recent-item .tf-recent-copy b{display:block;margin:0;font-size:13px;line-height:1.28;font-weight:850;color:#223550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#overviewView .tf-recent-item .tf-recent-copy span{display:block;margin:0;max-width:100%;font-size:11px;line-height:1.32;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#overviewView .tf-recent-item .tf-recent-placement{font-weight:750;color:#4e7199}
+#overviewView .tf-recent-item .tf-recent-location{color:#8898a9}
+#overviewView .tf-recent-item .tf-recent-status{flex:none;display:inline-flex;align-items:center;justify-content:center;width:max-content;max-width:100%;white-space:nowrap;overflow:visible;gap:5px;border-radius:999px;padding:7px 10px;border:1px solid #dde5ed;background:#f3f6fa;color:#687b90;font-size:10px;font-weight:850}
+#overviewView .tf-recent-item .tf-recent-status:before{content:"";display:block;width:6px;height:6px;border-radius:50%;flex:none;background:currentColor}
+#overviewView .tf-recent-item .tf-recent-status-active{background:#eaf8f0;border-color:#ccebd8;color:#178052}
+#overviewView .tf-recent-item .tf-recent-status-paused{background:#fff6e9;border-color:#fae0bb;color:#a46a1f}
+#overviewView .tf-recent-item .tf-recent-status-draft{background:#f1f4f8;border-color:#e0e6ee;color:#67778a}
+#overviewView .tf-recent-empty{padding:27px 17px;font-size:12px}
+#overviewView .tf-overview-count{flex:none;display:inline-flex;align-items:center;justify-content:center;padding:8px 11px;min-height:32px;background:#e9f8f2;border:1px solid #d1efdf;border-radius:999px;color:#17805b;font-size:11px;font-weight:850}
+#overviewView .tf-format-list{display:grid}
+#overviewView .tf-format-row.side-row{display:grid;grid-template-columns:44px minmax(0,1fr);gap:13px;align-items:center;margin:0;padding:17px 21px;border:0;border-bottom:1px solid #edf1f7}
+#overviewView .tf-format-row.side-row:last-child{border-bottom:0}
+#overviewView .tf-format-icon{width:44px;height:44px;display:grid;place-items:center;border:1px solid #d8e6fa;border-radius:13px;background:#ecf4ff;color:#236cd3}
+#overviewView .tf-format-icon svg{display:block;width:25px;height:25px}
+#overviewView .tf-format-icon.tf-format-vertical{background:#eef5ff;color:#3766c8}
+#overviewView .tf-format-icon.tf-format-interaction{background:#f0f4ff;color:#725cca}
+#overviewView .tf-format-details{min-width:0;display:block}
+#overviewView .tf-format-details b{display:block;color:#25354b;font-size:13px;line-height:1.35;font-weight:850}
+#overviewView .tf-format-details>span{display:block;margin:4px 0 0;color:#8392a4;font-size:11px;line-height:1.35}
+#overviewView .tf-format-sizes{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:10px}
+#overviewView .tf-format-sizes .tf-format-chip{display:inline-flex;align-items:center;justify-content:center;margin:0;padding:5px 8px;min-height:25px;border:1px solid #e3e9f2;border-radius:7px;background:#f5f7fa;color:#596e85;font-size:10px;font-weight:800;line-height:1.1;white-space:nowrap}
+#overviewView .tf-format-sizes .tf-format-chip-hd{background:#eaf2ff;border-color:#cfe1ff;color:#2063c0}
+@media(max-width:1130px){#overviewView .dashboard{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){
+ #overviewView .dashboard{gap:14px}
+ #overviewView .tf-overview-card{border-radius:19px}
+ #overviewView .tf-overview-card .tf-overview-card-head{padding:17px 17px 15px}
+ #overviewView .tf-overview-card .tf-overview-title h3{font-size:17px}
+ #overviewView .tf-overview-card .tf-overview-title .eyebrow{font-size:9px}
+ #overviewView .tf-overview-all{font-size:11px;min-height:36px;padding:8px 11px}
+ #overviewView .tf-recent-item.activity{grid-template-columns:54px minmax(0,1fr) auto;gap:10px;padding:14px 14px}
+ #overviewView .tf-recent-item .activity-icon.tf-thumb-shell{width:54px;height:54px;border-radius:13px}
+ #overviewView .tf-recent-item .tf-recent-copy b{font-size:12.5px}
+ #overviewView .tf-recent-item .tf-recent-copy span{font-size:10px}
+ #overviewView .tf-recent-item .tf-recent-status{padding:6px 8px;font-size:9px}
+ #overviewView .tf-format-row.side-row{padding:14px 16px;gap:11px;grid-template-columns:41px minmax(0,1fr)}
+ #overviewView .tf-format-icon{width:41px;height:41px;border-radius:12px}
+ #overviewView .tf-format-icon svg{width:23px;height:23px}
+}
+@media(max-width:360px){
+ #overviewView .tf-recent-item.activity{grid-template-columns:48px minmax(0,1fr);gap:9px}
+ #overviewView .tf-recent-item .activity-icon.tf-thumb-shell{width:48px;height:48px}
+ #overviewView .tf-recent-item .tf-recent-status{grid-column:2;justify-self:start;margin-top:0}
+}
+
 </style>
 <script defer src="./ads-manager-modules.js?v=20261106-8"></script>
 </head>
@@ -909,8 +973,8 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 <div class="metrics"><article class="metric"><span>Campañas</span><strong id="metricCampaigns">0</strong><small>Total guardadas</small></article><article class="metric"><span>Activadas</span><strong id="metricActive">0</strong><small>La circulación requiere aprobación</small></article><article class="metric"><span>Presupuesto diario</span><strong id="metricBudget">Q0.00</strong><small>Campañas activas</small></article><article class="metric"><span>Formatos</span><strong id="metricFormats">0</strong><small>Tipos utilizados</small></article></div>
 <div class="tf-objective-insights" id="objectiveInsights" aria-label="Gráficos de configuración de campañas"></div><div class="tf-approval-summary" aria-label="Resumen de aprobación"><span>Estado de aprobación</span><button type="button" data-approval-shortcut="approved">Aprobadas <strong id="summaryApproved">0</strong></button><button type="button" data-approval-shortcut="pending">En revisión <strong id="summaryPending">0</strong></button><button type="button" data-approval-shortcut="rejected">Rechazadas <strong id="summaryRejected">0</strong></button></div>
 <div class="dashboard">
-<article class="panel"><div class="panel-head"><div><span class="eyebrow">Actividad reciente</span><h3>Campañas</h3></div><button class="secondary" data-view-link="campaigns">Ver todas</button></div><div class="empty" id="recentCampaigns">Aún no hay campañas.</div></article>
-<article class="panel"><div class="panel-head"><div><span class="eyebrow">TaskFlow</span><h3>Formatos publicitarios</h3></div><span class="badge ok">3 tipos</span></div><div class="side-list"><div class="side-row"><div><b>Banner</b><span>HD recomendado: 2400 × 360 px. Estándar: 1200 × 180 px.</span></div><span class="place-code">2400×360 HD</span></div><div class="side-row"><div><b>Anuncio de ingreso</b><span>HD recomendado: 2160 × 3840 px. Estándar: 1080 × 1920 px.</span></div><span class="place-code">2160×3840 HD</span></div><div class="side-row"><div><b>Por interacción</b><span>HD recomendado: 2160 × 3840 px. Estándar: 1080 × 1920 px.</span></div><span class="place-code">2160×3840 HD</span></div></div></article>
+<article class="panel tf-overview-card tf-overview-campaigns" id="tfOverviewCampaignPanel" aria-label="Campañas recientes"><div class="panel-head tf-overview-card-head"><div class="tf-overview-title"><span class="eyebrow">Actividad reciente</span><h3>Campañas</h3></div><button class="secondary tf-overview-all" data-view-link="campaigns" type="button">Ver todas <span aria-hidden="true">›</span></button></div><div class="empty" id="recentCampaigns">Aún no hay campañas.</div></article>
+<article class="panel tf-overview-card tf-overview-formats" id="tfOverviewFormatsPanel" aria-label="Formatos publicitarios"><div class="panel-head tf-overview-card-head"><div class="tf-overview-title"><span class="eyebrow">TaskFlow ADS</span><h3>Formatos publicitarios</h3></div><span class="tf-overview-count">3 tipos</span></div><div class="side-list tf-format-list"><div class="side-row tf-format-row"><span class="tf-format-icon tf-format-banner" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"><rect x="3.5" y="8.5" width="21" height="11" rx="2.5"/><path d="M8 22.5h12M14 19.5v3"/></svg></span><div class="tf-format-details"><b>Banner</b><span>Imagen o GIF</span><div class="tf-format-sizes"><span class="tf-format-chip tf-format-chip-hd">HD 2400 × 360</span><span class="tf-format-chip">1200 × 180</span></div></div></div><div class="side-row tf-format-row"><span class="tf-format-icon tf-format-vertical" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"><rect x="8" y="3.5" width="12" height="21" rx="2.8"/><path d="M12 7h4M13 21h2"/></svg></span><div class="tf-format-details"><b>Anuncio de ingreso</b><span>Imagen, GIF o video</span><div class="tf-format-sizes"><span class="tf-format-chip tf-format-chip-hd">HD 2160 × 3840</span><span class="tf-format-chip">1080 × 1920</span></div></div></div><div class="side-row tf-format-row"><span class="tf-format-icon tf-format-interaction" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"><path d="M10 13V6.5a2 2 0 0 1 4 0v4.3m0-1.8a2 2 0 0 1 4 0v2m0-.5a2 2 0 0 1 4 0v5.6c0 4-3.3 7.4-7.4 7.4H13c-2.1 0-3.4-.7-4.8-2.1L5 18.3a2 2 0 0 1 2.8-2.8l2.2 2.1"/></svg></span><div class="tf-format-details"><b>Por interacción</b><span>Imagen, GIF o video</span><div class="tf-format-sizes"><span class="tf-format-chip tf-format-chip-hd">HD 2160 × 3840</span><span class="tf-format-chip">1080 × 1920</span></div></div></div></div></article>
 </div>
 </section>
 <section class="view ads-manager-view" id="campaignsView">
@@ -1742,7 +1806,16 @@ function creativeThumbMarkup(ad,fallback){
  let safe='';try{const u=new URL(src);if(u.protocol==='https:'&&!u.username&&!u.password)safe=u.href}catch(_){}
  return '<span class="tf-thumb-inner"><span>'+escapeHtml(fallback||(meta.kind==='video'?'VID':'AD'))+'</span>'+(safe&&visual?'<img class="tf-creative-image" loading="lazy" decoding="async" alt="" referrerpolicy="no-referrer" src="'+escapeHtml(safe)+'">':'')+'</span>';
 }
-function renderRecent(){const list=campaigns.slice(0,5);const e=$('recentCampaigns');if(!list.length){e.className='empty';e.textContent='Aún no hay campañas.';return}e.className='activity-list';e.innerHTML=list.map(c=>'<button type="button" class="activity" data-recent-edit="'+escapeHtml(c.id)+'" title="Editar '+escapeHtml(c.name)+'"><span class="activity-icon tf-thumb-shell">'+creativeThumbMarkup(normalizeCampaign(c).ads[0],'AD')+'</span><span class="activity-info"><b>'+escapeHtml(c.name)+'</b><span>'+escapeHtml(placementLabel(c.placement))+' · '+escapeHtml(locationLabel(c))+'</span></span><small>'+escapeHtml(statusLabel(c.status))+'</small></button>').join('')}
+function renderRecent(){
+ const list=campaigns.slice(0,5),e=$('recentCampaigns');
+ if(!list.length){e.className='empty tf-recent-empty';e.textContent='Aún no hay campañas.';return}
+ e.className='activity-list tf-recent-list';
+ e.innerHTML=list.map(c=>{
+  const state=['active','paused','draft'].includes(c.status)?c.status:'draft';
+  const place=locationLabel(c),placement=placementLabel(c.placement);
+  return '<button type="button" class="activity tf-recent-item" data-recent-edit="'+escapeHtml(c.id)+'" title="Editar '+escapeHtml(c.name)+'"><span class="activity-icon tf-thumb-shell">'+creativeThumbMarkup(normalizeCampaign(c).ads[0],'AD')+'</span><span class="activity-info tf-recent-copy"><b>'+escapeHtml(c.name)+'</b><span class="tf-recent-placement">'+escapeHtml(placement)+'</span><span class="tf-recent-location" title="'+escapeHtml(place)+'">'+escapeHtml(place)+'</span></span><small class="tf-recent-status tf-recent-status-'+state+'">'+escapeHtml(statusLabel(c.status))+'</small></button>'
+ }).join('')
+}
 function renderManagerSummary(){const active=campaigns.filter(c=>c.status==='active').length;const daily=campaigns.filter(c=>c.status==='active'&&c.budgetType==='daily').reduce((s,c)=>s+Number(c.budget||0),0);const set=(id,val)=>{const el=$(id);if(el)el.textContent=val};set('stripCampaigns',String(campaigns.length));set('stripActive',String(active));set('stripBudget',money(daily));set('stripPublished',String(campaigns.filter(c=>c.status==='active'&&c.approvalStatus==='approved'&&campaignReady(c)).length));set('tabCampaignCount',selectedCampaignIds.size+' seleccionadas');set('managerAccountLabel',currentUser?.company||currentUser?.name||'Cuenta publicitaria activa');updateBulkActions()}
 function updateBulkActions(){const n=selectedCampaignIds.size;['duplicateBtn','bulkEditBtn','bulkDeleteBtn'].forEach(id=>{const el=$(id);if(el)el.disabled=n===0||(id==='bulkEditBtn'&&n!==1)});const info=$('selectionInfo');if(info){const s=info.querySelector('span');if(s)s.textContent=n+' '+(n===1?'elemento seleccionado':'elementos seleccionados')}const master=$('masterSelect');if(master){const visible=qa('#campaignBody [data-select-id]');master.checked=visible.length>0&&visible.every(x=>x.checked);master.indeterminate=visible.some(x=>x.checked)&&!master.checked}const c=$('tabCampaignCount');if(c)c.textContent=n+' seleccionadas'}
 function getVisibleCampaigns(){
