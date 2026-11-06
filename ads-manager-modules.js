@@ -218,6 +218,24 @@ function creatives(api){
  '<div class="tf-tool-kpis">'+mini(entries.length,'Anuncios')+mini(entries.filter(x=>x.media.kind==='video').length,'Videos')+mini(entries.filter(x=>x.campaign.placement==='banner').length,'Banners')+'</div>'+
  section('Archivos por campaña','<label class="tf-tool-search">Buscar creativo<input type="search" data-tf-search="creatives" placeholder="Creativo, campaña o formato"></label><div class="tf-tool-gallery" data-tf-results="creatives">'+creativeRows(api,'')+'</div>'));
 }
+
+function localDeliveryEvidence(){
+ try{
+  const info=JSON.parse(localStorage.getItem('taskflow_ads_analytics_delivery_v1')||'null');
+  if(!info||!info.lastAt||Date.now()-Number(info.lastAt)>30*86400000)return '';
+  const attempted=Number(info.attempted?.click)||0;
+  const acknowledged=Number(info.acknowledged?.click)||0;
+  const failed=Number(info.failed?.click)||0;
+  const total=Number(info.attempted?.impression)||0;
+  if(!attempted&&!total)return '';
+  return '<div class="tf-tool-delivery-evidence">'+
+   '<strong>Diagnóstico local de envío</strong>'+
+   '<p>En este navegador, desde que se activó el diagnóstico: '+number(attempted)+' intento(s) de registrar clics, '+number(acknowledged)+' respuesta(s) aceptada(s) por el servidor y '+number(failed)+' envío(s) sin confirmar.</p>'+
+   (info.lastError&&failed?'<p class="tf-tool-warning">Último problema: '+esc(info.lastError)+'</p>':'')+
+   '<p class="tf-tool-note">Estas cifras NO se suman al informe: un intento o una respuesta HTTP no garantizan un evento único almacenado. Los totales oficiales se consultan exclusivamente en el servicio de métricas.</p></div>';
+ }catch(_){return ''}
+}
+
 function reportContent(api,data){
  const t=totals(data),hasAny=api.campaigns.length>0,allAvailable=data.failed.length===0;
  const daily={};
@@ -229,6 +247,7 @@ function reportContent(api,data){
  return '<div class="tf-tool-kpis">'+mini(hasAny&&!t.known?'—':number(t.impressions),'Impresiones','Eventos confirmados')+mini(hasAny&&!t.known?'—':number(t.clicks),'Clics','Clics confirmados')+mini(hasAny&&!t.known?'—':t.ctr.toFixed(2)+' %','CTR','Clics / impresiones')+mini(t.known+'/'+api.campaigns.length,'Campañas consultadas')+'</div>'+
  (data.failed.length?'<p class="tf-tool-warning">'+data.failed.length+' campaña(s) con métricas no disponibles. No se muestran datos estimados.</p>':'')+
  (t.partial?'<p class="tf-tool-warning">La consulta de eventos llegó al límite de paginación; algunas cifras pueden ser parciales.</p>':'')+
+ localDeliveryEvidence()+
  section('Actividad registrada por día',days.length?'<div class="tf-tool-bars">'+bars+'</div><small class="tf-tool-note">Últimos 14 días con actividad dentro de los últimos 30 días · impresiones</small>':'<p class="tf-tool-empty">Todavía no hay impresiones registradas.</p>')+
  section('Rendimiento por campaña','<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Campaña</th><th>Impresiones</th><th>Clics</th><th>CTR</th><th>Formato</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  section('Desglose por anuncio','<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Anuncio</th><th>Impresiones</th><th>Clics</th><th>CTR</th></tr></thead><tbody>'+perAd+'</tbody></table></div>')+
