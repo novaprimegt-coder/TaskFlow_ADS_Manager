@@ -101,6 +101,7 @@ body{background:#f5f6f7;color:var(--tf-ink);font-size:13px}.app-shell{grid-templ
 .sidebar{display:flex;align-items:center}
 .side-brand,.nav,.side-foot{width:100%}
 .nav-item{display:flex!important;align-items:center!important;justify-content:center!important}
+.nav-item[hidden],.nav-item.admin-only[hidden]{display:none!important}
 .nav-item.active:before{left:-9px}
 .nav-item:after{left:64px}
 .side-foot{margin-top:auto}
@@ -576,7 +577,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 <div class="nav-section">Administración</div>
 <nav class="nav"><button class="nav-item active" data-view="overview"><svg class="tf-icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>Resumen</button><button class="nav-item" data-view="campaigns"><svg class="tf-icon" aria-hidden="true"><use href="#i-campaign"></use></svg>Campañas</button><button class="nav-item" data-view="audiences"><svg class="tf-icon" aria-hidden="true"><use href="#i-users"></use></svg>Audiencias</button><button class="nav-item" data-view="creatives"><svg class="tf-icon" aria-hidden="true"><use href="#i-image"></use></svg>Creativos</button><button class="nav-item" data-view="reports"><svg class="tf-icon" aria-hidden="true"><use href="#i-chart"></use></svg>Informes</button></nav>
 <div class="nav-section">Cuenta</div>
-<nav class="nav"><button class="nav-item" data-view="billing"><svg class="tf-icon" aria-hidden="true"><use href="#i-card"></use></svg>Facturación</button><button class="nav-item admin-only" data-view="admin" hidden title="Control ADS"><svg class="tf-icon" aria-hidden="true"><use href="#i-settings"></use></svg><span class="nav-label">Control ADS</span></button><button class="nav-item" data-view="settings"><svg class="tf-icon" aria-hidden="true"><use href="#i-settings"></use></svg>Configuración</button></nav>
+<nav class="nav"><button class="nav-item" data-view="billing"><svg class="tf-icon" aria-hidden="true"><use href="#i-card"></use></svg>Facturación</button><button class="nav-item" data-view="settings"><svg class="tf-icon" aria-hidden="true"><use href="#i-settings"></use></svg>Configuración</button></nav>
 <div class="side-version"><span>TaskFlow ADS</span><b>Commercial Manager</b></div><div class="side-foot"><button class="nav-item" id="logoutBtn"><svg class="tf-icon" aria-hidden="true"><use href="#i-logout"></use></svg>Cerrar sesión</button></div>
 </aside>
 <button class="menu-scrim" id="menuScrim" type="button" aria-label="Cerrar menú"></button>
@@ -1149,7 +1150,7 @@ function businessRef(uid){return fbDb.collection('users').doc(uid).collection('a
 function campaignsRef(uid){return fbDb.collection('users').doc(uid).collection('adsCampaigns')}
 function publicCampaignRef(id){return fbDb.collection('adsPublicCampaigns').doc(id)}
 async function getBusiness(uid){try{const snap=await businessRef(uid).get();return snap.exists?snap.data():null}catch(e){console.warn('ADS business load:',e);return null}}
-async function getAdminClaim(user){try{const t=await user.getIdTokenResult();return t&&t.claims&&t.claims.taskflowAdsAdmin===true}catch(_){return false}}
+async function getAdminClaim(user){try{const t=await user.getIdTokenResult(true);return t&&t.claims&&t.claims.taskflowAdsAdmin===true}catch(_){return false}}
 function setAuthMode(mode){resetPasswordVisibility();const reg=mode==='register';$('loginTab').classList.toggle('active',!reg);$('registerTab').classList.toggle('active',reg);$('loginTab').setAttribute('aria-selected',String(!reg));$('registerTab').setAttribute('aria-selected',String(reg));$('nameField').hidden=!reg;$('companyField').hidden=!reg;$('confirmField').hidden=!reg;$('authSubmit').textContent=reg?'Crear cuenta':'Iniciar sesión';$('authForm').dataset.mode=reg?'register':'login';$('password').autocomplete=reg?'new-password':'current-password';window.TaskFlowGooey?.go(reg?1:0);authMsg('')}
 function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'auth/email-already-in-use':'Ese correo ya está registrado.','auth/invalid-email':'El correo electrónico no es válido.','auth/weak-password':'La contraseña debe tener al menos 8 caracteres.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Intenta nuevamente más tarde.','auth/network-request-failed':'No hay conexión con el servicio de cuentas.','auth/unauthorized-domain':'Este dominio todavía no está autorizado para iniciar sesión.'};return map[c]||'No fue posible completar el acceso.'}
  async function handleAuth(e){
@@ -1251,13 +1252,40 @@ async function syncPublicCampaign(c){
  try{await withDeadline(publicCampaignRef(c.id).delete(),9000,'No se pudo confirmar la limpieza del anuncio anterior.');notifyTaskFlowAdsChanged()}catch(error){console.warn('No se pudo limpiar la publicación anterior:',error?.code||error?.message)}
  return false;
 }
+function syncAdminNavigation(){
+ // No se crea navegación administrativa hasta verificar el token de la sesión.
+ const settings=document.querySelector('.sidebar .nav-item[data-view="settings"]');
+ const existing=document.getElementById('tfAdsAdminNav');
+ if(!isAdsAdmin||!currentUser){
+  if(existing)existing.remove();
+  return;
+ }
+ if(existing||!settings||!settings.parentElement)return;
+ const button=document.createElement('button');
+ button.id='tfAdsAdminNav';
+ button.type='button';
+ button.className='nav-item admin-only';
+ button.dataset.view='admin';
+ button.title='Control ADS';
+ button.setAttribute('aria-label','Control ADS');
+ button.innerHTML='<svg class="tf-icon" aria-hidden="true"><use href="#i-settings"></use></svg><span class="nav-label">Control ADS</span>';
+ button.addEventListener('click',()=>{if(isAdsAdmin&&currentUser)showView('admin')});
+ settings.parentElement.insertBefore(button,settings);
+}
+function clearAdminView(){
+ const module=$('moduleContent');
+ if(module)module.replaceChildren();
+ if($('placeholderView')?.classList.contains('active'))showView('overview');
+}
 async function enterApp(){
- $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);qa('.admin-only').forEach(el=>el.hidden=!isAdsAdmin);await loadCampaigns();renderAll();animateApp()
+ syncAdminNavigation();
+ if(!isAdsAdmin)clearAdminView();
+ $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);await loadCampaigns();renderAll();animateApp()
 }
 async function logout(){try{await fbAuth.signOut()}catch(_){}}
 async function handleAuthState(user){
  authReady=true;
- if(!user){currentUser=null;campaigns=[];$('appView').hidden=true;$('authView').hidden=false;$('authForm').reset();setAuthMode('login');animateAuth();return}
+ if(!user){isAdsAdmin=false;currentUser=null;syncAdminNavigation();clearAdminView();campaigns=[];$('appView').hidden=true;$('authView').hidden=false;$('authForm').reset();setAuthMode('login');animateAuth();return}
  const business=await getBusiness(user.uid);
  if(business&&business.accountStatus==='suspended'){authMsg('Esta cuenta comercial está suspendida.','error');await fbAuth.signOut();return}
  isAdsAdmin=await getAdminClaim(user);
@@ -1343,7 +1371,7 @@ async function adminReviewCampaign(ownerUid,id,approve){
  notifyTaskFlowAdsChanged();
  toast(approve?'Campaña aprobada.':'Campaña rechazada.')
 }
-function showView(name){qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={audiences:['Audiencias','Segmentación y públicos comerciales utilizados por tus campañas.'],creatives:['Creativos','Biblioteca de archivos publicitarios validados y vinculados.'],reports:['Informes','Resumen operativo de campañas, estados y presupuesto configurado.'],billing:['Facturación','Control presupuestario y preparación de operaciones comerciales.'],settings:['Configuración','Estado y datos de la cuenta comercial.'],admin:['Control ADS','Revisión y aprobación central de campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp()}
+function showView(name){if(name==='admin'&&(!isAdsAdmin||!currentUser))return;qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={audiences:['Audiencias','Segmentación y públicos comerciales utilizados por tus campañas.'],creatives:['Creativos','Biblioteca de archivos publicitarios validados y vinculados.'],reports:['Informes','Resumen operativo de campañas, estados y presupuesto configurado.'],billing:['Facturación','Control presupuestario y preparación de operaciones comerciales.'],settings:['Configuración','Estado y datos de la cuenta comercial.'],admin:['Control ADS','Revisión y aprobación central de campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp()}
 
 function currentBudgetMode(){return qa('input[name="budgetDistribution"]').find(x=>x.checked)?.value||'system'}
 function equalBudgetShares(total,count){
