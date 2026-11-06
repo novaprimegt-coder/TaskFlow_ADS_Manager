@@ -498,6 +498,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 #uploadZone:active{border-color:#0866ff;background:#eaf2ff}
 #uploadZone #creativeFile:focus-visible{outline:none!important}
 </style>
+<script src="https://taskflow-ads-media.vercel.app/blob-client.js" defer></script>
 </head>
 <body>
 
@@ -1035,6 +1036,7 @@ const FIREBASE_CONFIG=Object.freeze({apiKey:'AIzaSyAswSpJcc1oEy93DFcKZ-9RBfszuGJ
 const CAMPAIGN_CACHE_KEY='tf_ads_manager_campaigns_prod_';
 // La integración opcional se autentica y procesa exclusivamente en el servidor.
 const MEDIA_SERVICE_URL='https://us-central1-taskflow-b0ece.cloudfunctions.net/taskflowAdsMedia';
+const SECURE_MEDIA_URL='https://taskflow-ads-media.vercel.app/api/media';
 const MEDIA_MAX_BYTES=20*1024*1024;
 const MEDIA_UPLOAD_LIMIT_MS=120000;
 const MEDIA_UPLOAD_IDLE_MS=45000;
@@ -1498,33 +1500,61 @@ async function storeMediaInFirebase(campaignId,ad,placement){
 async function uploadCreative(campaignId,ad,placement){
  if(!ad._blob)return ad.src||'';
  if(ad._blob.size>MEDIA_MAX_BYTES)throw new Error('El archivo de '+(ad.name||'este anuncio')+' supera 20 MB.');
- const kind=placement||selectedPlacement();
- setMediaStatus('Guardando archivo · '+(ad.mediaMeta?.name||'Creativo')+'...');
- let result=null,firstError=null;
- // Se usa el almacenamiento autenticado ya configurado; una integración adicional es alternativa.
- try{result=await storeMediaInFirebase(campaignId,ad,kind)}catch(error){firstError=error}
- if(!result){
-  try{
-   const remote=await mediaProxyRequest('upload',campaignId,ad,ad._blob,kind);
-   if(remote.src&&remote.storagePath&&String(remote.storagePath).startsWith('ads/media/'))result={src:remote.src,storagePath:remote.storagePath};
-  }catch(error){console.warn('Ruta de carga alternativa no disponible:',error?.message)}
- }
- if(!result){throw new Error(mediaUploadError(firstError))}
+ const kind=placement||selectedPlacement(),user=fbAuth?.currentUser;
+ if(!user||!currentUser||user.uid!==currentUser.id)throw new Error('La sesión caducó. Vuelve a iniciar sesión.');
+ ad._placement=kind;
+ validMediaCoordinates(campaignId,ad);
+ const spec=placementSpecs[kind];
+ if(!spec||!spec.accept.split(',').includes(ad._blob.type)||Number(ad.mediaMeta?.width)!==spec.width||Number(ad.mediaMeta?.height)!==spec.height)throw new Error('El archivo no cumple los requisitos del anuncio.');
+ if(typeof window.TaskFlowAdsFileUpload!=='function')throw new Error('No fue posible iniciar el servicio de archivos. Recarga la página y vuelve a intentarlo.');
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),120000);
+ const creativeName=ad.mediaMeta?.name||'Creativo';
+ setMediaStatus('Preparando carga segura · '+creativeName);
+ let result;
+ try{
+  const token=await withDeadline(user.getIdToken(),15000,'No fue posible verificar tu sesión.');
+  result=await withDeadline(window.TaskFlowAdsFileUpload({
+   endpoint:SECURE_MEDIA_URL,file:ad._blob,idToken:token,uid:currentUser.id,
+   campaignId:campaignId,adId:ad.id,placement:kind,signal:controller.signal,
+   progress:pct=>{
+    const value=Math.max(0,Math.min(100,Math.round(Number(pct)||0)));
+    setMediaStatus('Cargando archivo: '+value+' % · '+creativeName);
+    if(!$('campaignModal').hidden)msg('Cargando archivo publicitario: '+value+' %...');
+   }
+  }),125000,'La carga tardó demasiado. Comprueba tu conexión e inténtalo nuevamente.');
+ }catch(e){
+  console.warn('Fallo en la carga de creativo:',e?.name||e?.code||'upload');
+  const error=String(e?.message||'');
+  if(e?.name==='AbortError'||e?.code==='ads/timeout')throw new Error('No fue posible completar la carga. Comprueba tu conexión e inténtalo de nuevo.');
+  if(/unauthorized|forbidden|403|token|autoriz/i.test(error))throw new Error('No se pudo autorizar la carga. Vuelve a iniciar sesión e inténtalo de nuevo.');
+  throw new Error('No se pudo almacenar el archivo. Comprueba tu conexión y vuelve a intentarlo.');
+ }finally{clearTimeout(timer)}
+ if(!result||!/^https:\/\//i.test(result.src||'')||!String(result.storagePath||'').startsWith('blob:ads/media/'+currentUser.id+'/'+campaignId+'/'+ad.id+'/'))throw new Error('El servicio no confirmó el archivo. Vuelve a intentarlo.');
  ad.src=result.src;ad.storagePath=result.storagePath;ad.pendingMediaLocal=false;
- setMediaStatus('Archivo guardado correctamente · '+(ad.mediaMeta?.name||'Creativo'),'ok');
+ // Evita repetir una carga ya confirmada si falla después la sincronización de la campaña.
+ ad._blob=null;
+ if(currentAdDraftId===ad.id){pendingMedia=null;existingMediaMeta=ad.mediaMeta||null;}
+ setMediaStatus('Archivo cargado correctamente · '+creativeName,'ok');
  return ad.src;
 }
 async function deleteCreative(campaignId,ad){
  try{
-  const path=String(ad?.storagePath||'');if(!path)return;
-  if(path.startsWith('ads/media/')){
-   // Solo borrar el archivo que pertenezca realmente a este anuncio y campaña.
+  const path=String(ad?.storagePath||'');if(!path||!currentUser)return;
+  if(path.startsWith('blob:ads/media/')){
+   const owned='blob:ads/media/'+currentUser.id+'/'+campaignId+'/'+ad.id+'/';
+   if(!path.startsWith(owned)||!/^https:\/\//i.test(ad.src||''))return;
+   const user=fbAuth?.currentUser;
+   if(!user||user.uid!==currentUser.id)return;
+   const token=await withDeadline(user.getIdToken(),8000,'Sesión no disponible.');
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
+   try{await fetch(SECURE_MEDIA_URL,{method:'DELETE',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({url:ad.src}),signal:controller.signal,cache:'no-store'});}finally{clearTimeout(timer)}
+  }else if(path.startsWith('ads/media/')){
    if(path.startsWith('ads/media/'+currentUser.id+'/'+campaignId+'/'+ad.id+'/'))await mediaProxyRequest('delete',campaignId,ad);
   }else if(path.startsWith('ads/'+currentUser.id+'/'+campaignId+'/'+ad.id+'/')&&fbStorage){
-   // Archivos históricos de V12 conservan su método original de limpieza.
    await fbStorage.ref(path).delete();
   }
- }catch(error){console.warn('No fue posible borrar el creativo anterior:',error)}
+ }catch(error){console.warn('No fue posible limpiar el archivo anterior.');}
 }
 function mediaKey(campaignId,adId){return currentUser.id+'|'+campaignId+(adId?'|'+adId:'')}
 function setStep(n){
