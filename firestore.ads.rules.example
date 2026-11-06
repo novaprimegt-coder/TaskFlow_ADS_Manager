@@ -28,6 +28,17 @@ match /users/{userId}/adsManager/{docId} {
   allow delete: if adsAdmin();
 }
 
+// Requisito para fbDb.collectionGroup('adsCampaigns') en Control ADS.
+// Añadir dentro de match /databases/{database}/documents en un archivo
+// que empiece por rules_version = '2'; (NO duplicar encabezados).
+// Únicamente un administrador con claim verificado puede listar el grupo.
+match /{path=**}/adsCampaigns/{campaignId} {
+  allow list: if adsAdmin();
+}
+
+// La consulta agrupada no requiere índices adicionales si no usa filtros
+// ni ordenación. Mantener además las reglas específicas por propietario.
+
 match /users/{userId}/adsCampaigns/{campaignId} {
   allow read: if adsOwner(userId) || adsAdmin();
 
