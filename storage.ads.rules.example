@@ -12,7 +12,7 @@ match /ads/{userId}/{campaignId}/{adId}/{fileName} {
   allow read: if adsAdmin() || (adsSignedIn() && request.auth.uid == userId);
 
   allow write: if (adsAdmin() || (adsSignedIn() && request.auth.uid == userId))
-    && request.resource.size < 60 * 1024 * 1024
+    && request.resource.size <= 500 * 1024 * 1024
     && (
       request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
       || request.resource.contentType.matches('video/(mp4|webm)')
