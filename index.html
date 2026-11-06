@@ -563,7 +563,31 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 #campaignsView .tf-approval-state[data-state="pending"]{background:#fff6e6;border-color:#f0d8ad;color:#946012}
 #campaignsView .tf-approval-state[data-state="rejected"]{background:#feedef;border-color:#f2c5cb;color:#a8384c}
 </style>
-</head>
+<style id="tfAdsLargeMediaResponsive2026">
+/* Solo el editor y las fichas publicitarias: presentación compacta y contenido legible */
+#campaignModal .modal-card{max-width:100vw;overflow-x:hidden}
+#campaignModal .wizard,#campaignModal .wizard-body,#campaignModal .wizard-page{min-width:0}
+#campaignModal .preview-card,#campaignModal .creative-layout,#campaignModal .review,#campaignModal .spec-grid{min-width:0;max-width:100%}
+#campaignModal .spec b,#campaignModal .spec span{overflow-wrap:anywhere;line-height:1.45}
+#campaignModal .media-frame img,#campaignModal .media-frame video{display:block;object-fit:contain;object-position:center;max-width:100%;max-height:100%;filter:none}
+#campaignModal .upload-zone{min-width:0}
+#campaignModal .media-status,#campaignModal .form-message{overflow-wrap:anywhere}
+#campaignModal .wizard-footer button{white-space:normal;line-height:1.25;min-height:42px}
+@media(max-width:680px){
+ #campaignModal .modal-head{padding:14px 15px}
+ #campaignModal .modal-head h2{font-size:21px;line-height:1.16}
+ #campaignModal .steps{padding:7px 8px;gap:6px;grid-template-columns:repeat(4,minmax(0,1fr))}
+ #campaignModal .step{min-width:0;justify-content:center;padding:8px 4px}
+ #campaignModal .step>span{font-size:12px;min-width:29px;height:29px}
+ #campaignModal .wizard-body{padding-left:12px;padding-right:12px}
+ #campaignModal .spec-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ #campaignModal .spec{padding:8px 6px}
+ #campaignModal .spec b{font-size:10px}
+ #campaignModal .wizard-footer{gap:8px;flex-wrap:wrap;padding-top:15px}
+ #campaignModal .wizard-right{min-width:0;display:flex;flex-wrap:wrap;gap:8px}
+ #campaignModal .wizard-right button{flex:1 1 auto;padding:10px 9px;font-size:12px}
+}
+</style></head>
 <body>
 
 
@@ -800,7 +824,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 <div class="field"><label>Nombre del anuncio</label><input id="adName" maxlength="120" placeholder="Ej. Creativo principal"/></div>
 <div class="field"><label>URL de destino</label><input id="destination" maxlength="500" placeholder="https://tuempresa.com" type="url"/></div>
 <div class="field"><label>Archivo publicitario</label>
-<div class="upload-zone" id="uploadZone"><input accept="image/jpeg,image/png,image/webp,image/gif" id="creativeFile" type="file" aria-label="Seleccionar archivo publicitario: imagen, GIF o video"/><div><div class="upload-icon"><svg class="tf-icon" aria-hidden="true"><use href="#i-upload"></use></svg></div><b>Seleccionar archivo publicitario</b><span id="uploadHelp">Banner: HD 2400 × 360 px recomendado · Estándar 1200 × 180 px.</span><small id="uploadFormats">JPG · PNG · WEBP · GIF</small><small>Para máxima nitidez, utiliza imágenes originales en PNG o WEBP de alta calidad (o JPG de compresión mínima). No amplíes imágenes pequeñas. Para video, 10 segundos. Límite: 20 MB por archivo.</small><small>Se aceptan las dos resoluciones indicadas. La calidad real depende del archivo original.</small></div></div>
+<div class="upload-zone" id="uploadZone"><input accept="image/jpeg,image/png,image/webp,image/gif" id="creativeFile" type="file" aria-label="Seleccionar archivo publicitario: imagen, GIF o video"/><div><div class="upload-icon"><svg class="tf-icon" aria-hidden="true"><use href="#i-upload"></use></svg></div><b>Seleccionar archivo publicitario</b><span id="uploadHelp">Banner: HD 2400 × 360 px recomendado · Estándar 1200 × 180 px.</span><small id="uploadFormats">JPG · PNG · WEBP · GIF</small><small>Para máxima nitidez, utiliza imágenes originales en PNG o WEBP de alta calidad (o JPG de compresión mínima). No amplíes imágenes pequeñas. Para videos, de 10 segundos a 3 minutos (180 s). Límite: 500 MB por imagen, GIF o video.</small><small>Se aceptan las dos resoluciones indicadas. La calidad real depende del archivo original.</small></div></div>
 <div class="media-status" id="mediaStatus">No se ha seleccionado un archivo.</div>
 </div>
 <div class="field" hidden="" id="soundField"><label>Audio del video</label><select id="sound"><option value="false">Sin audio</option><option value="true">Con audio</option></select></div>
@@ -1183,9 +1207,9 @@ const CAMPAIGN_CACHE_KEY='tf_ads_manager_campaigns_prod_';
 // La integración opcional se autentica y procesa exclusivamente en el servidor.
 const MEDIA_SERVICE_URL='https://us-central1-taskflow-b0ece.cloudfunctions.net/taskflowAdsMedia';
 const SECURE_MEDIA_URL='https://taskflow-ads-media.vercel.app/api/media';
-const MEDIA_MAX_BYTES=20*1024*1024;
-const MEDIA_UPLOAD_LIMIT_MS=120000;
-const MEDIA_UPLOAD_IDLE_MS=45000;
+const MEDIA_MAX_BYTES=500*1024*1024;
+const MEDIA_UPLOAD_LIMIT_MS=2*60*60*1000;
+const MEDIA_UPLOAD_IDLE_MS=180000;
 const ADS_REMOTE_WRITE_MS=20000;
 // Una operación pendiente no debe bloquear indefinidamente el formulario.
 function withDeadline(operation,ms,message){
@@ -1198,7 +1222,7 @@ function withDeadline(operation,ms,message){
  let registrationGate=null;
 let authScreenInitialized=false;
 let fbApp=null,fbAuth=null,fbDb=null,fbStorage=null,currentUser=null,campaigns=[],step=1,objective='awareness',editingId=null,pendingMedia=null,existingMediaMeta=null,currentPreviewUrl=null,managerLevel='campaigns',selectedCampaignIds=new Set(),adDrafts=[],currentAdDraftId=null,isAdsAdmin=false,authReady=false;
-const placementSpecs={banner:{label:'Banner',width:1200,height:180,hdWidth:2400,hdHeight:360,accept:'image/jpeg,image/png,image/webp,image/gif',formats:'JPG · PNG · WEBP · GIF',specFormat:'Imagen / GIF',duration:'No aplica',frame:'banner'},entry:{label:'Anuncio de ingreso',width:1080,height:1920,hdWidth:2160,hdHeight:3840,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'10 s si es video',frame:'vertical'},interaction:{label:'Por interacción',width:1080,height:1920,hdWidth:2160,hdHeight:3840,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'10 s si es video',frame:'vertical'}};
+const placementSpecs={banner:{label:'Banner',width:1200,height:180,hdWidth:2400,hdHeight:360,accept:'image/jpeg,image/png,image/webp,image/gif',formats:'JPG · PNG · WEBP · GIF',specFormat:'Imagen / GIF',duration:'No aplica',frame:'banner'},entry:{label:'Anuncio de ingreso',width:1080,height:1920,hdWidth:2160,hdHeight:3840,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'Video: 10 s – 3 min',frame:'vertical'},interaction:{label:'Por interacción',width:1080,height:1920,hdWidth:2160,hdHeight:3840,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'Video: 10 s – 3 min',frame:'vertical'}};
 function clean(v){return String(v==null?'':v).trim()}function money(v){return new Intl.NumberFormat('es-GT',{style:'currency',currency:'GTQ'}).format(Number(v)||0)}function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function now(){return new Date().toISOString()}function makeId(){return 'cmp_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9)}function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2300)}function msg(text,type=''){const e=$('campaignMessage');e.textContent=text||'';e.className='form-message'+(type?' '+type:'')}function authMsg(text,type=''){const e=$('authMessage');e.textContent=text||'';e.className='form-message'+(type?' '+type:'')}
 function readJSON(key,fallback){try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback}catch(_){return fallback}}function writeJSON(key,v){try{localStorage.setItem(key,JSON.stringify(v));return true}catch(_){return false}}
 // V14: conservamos creativos seleccionados mientras la campaña sigue como borrador.
@@ -1287,7 +1311,7 @@ function initFirebase(){
  if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
  fbApp=firebase.app();fbAuth=firebase.auth();fbDb=firebase.firestore();fbStorage=firebase.storage();
  // Restringe los reintentos automáticos para que el navegador recupere el control.
- if(typeof fbStorage.setMaxUploadRetryTime==='function')fbStorage.setMaxUploadRetryTime(45000);
+ if(typeof fbStorage.setMaxUploadRetryTime==='function')fbStorage.setMaxUploadRetryTime(180000);
  if(typeof fbStorage.setMaxOperationRetryTime==='function')fbStorage.setMaxOperationRetryTime(20000);
  fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
  try{fbDb.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(_){}
@@ -1780,16 +1804,16 @@ async function removeCampaignAd(){
 function selectedPlacement(){return qa('input[name="placement"]',$('placements')).find(x=>x.checked)?.value||'banner'}
 function creativeSizeAllowed(width,height,spec){return !!spec&&((Number(width)===spec.width&&Number(height)===spec.height)||(Number(width)===spec.hdWidth&&Number(height)===spec.hdHeight))}
 function updateCreativeRules(resetFile=false){
- const p=selectedPlacement(),s=placementSpecs[p];$('creativeFile').accept=s.accept;$('uploadHelp').textContent=s.label+': HD recomendado '+s.hdWidth+' × '+s.hdHeight+' px · También admite '+s.width+' × '+s.height+' px.';$('uploadFormats').textContent=s.formats;$('previewType').textContent=s.label+' · '+s.width+'×'+s.height;$('specSize').textContent=s.hdWidth+'×'+s.hdHeight+' HD · '+s.width+'×'+s.height+' estándar';$('specFormat').textContent=s.specFormat;$('specDuration').textContent=s.duration;$('mediaFrame').className='media-frame '+s.frame;
+ const p=selectedPlacement(),s=placementSpecs[p];$('creativeFile').accept=s.accept;$('uploadHelp').textContent=s.label+': HD '+s.hdWidth+' × '+s.hdHeight+' px (recomendado) o '+s.width+' × '+s.height+' px · Máximo 500 MB por archivo'+(p==='banner'?'.':'. Videos: 10–180 s.');$('uploadFormats').textContent=s.formats;$('previewType').textContent=s.label+' · '+s.width+'×'+s.height;$('specSize').textContent=s.hdWidth+'×'+s.hdHeight+' HD · '+s.width+'×'+s.height+' estándar';$('specFormat').textContent=s.specFormat;$('specDuration').textContent=s.duration;$('mediaFrame').className='media-frame '+s.frame;
  if(resetFile){pendingMedia=null;existingMediaMeta=null;$('creativeFile').value='';clearPreview();setMediaStatus('No se ha seleccionado un archivo.','')}
  updateSoundVisibility()
 }
 function updateSoundVisibility(){const meta=pendingMedia?.meta||existingMediaMeta;$('soundField').hidden=!(meta&&meta.kind==='video')}
 function setMediaStatus(text,type=''){$('mediaStatus').textContent=text;$('mediaStatus').className='media-status'+(type?' '+type:'')}
 function clearPreview(){if(currentPreviewUrl){URL.revokeObjectURL(currentPreviewUrl);currentPreviewUrl=null}$('mediaFrame').innerHTML='<div class="media-placeholder">Vista previa del creativo.<br>El sistema valida formato, dimensiones y duración antes de guardar.</div>'}
-async function inspectMedia(file){const p=selectedPlacement(),spec=placementSpecs[p],type=file.type||'';const isVideo=type.startsWith('video/'),isImage=type.startsWith('image/');if(!isVideo&&!isImage)throw new Error('Formato no permitido.');if(p==='banner'&&isVideo)throw new Error('Banner no acepta videos. Solo imagen o GIF.');const allowed=spec.accept.split(',');if(!allowed.includes(type))throw new Error('Formato no permitido para este tipo de anuncio.');const url=URL.createObjectURL(file);try{if(isVideo){const info=await new Promise((resolve,reject)=>{const v=document.createElement('video');v.preload='metadata';v.src=url;v.onloadedmetadata=()=>resolve({width:v.videoWidth,height:v.videoHeight,duration:v.duration});v.onerror=()=>reject(new Error('No fue posible leer el video.'))});if(!creativeSizeAllowed(info.width,info.height,spec))throw new Error('Medida inválida. Usa '+spec.hdWidth+' × '+spec.hdHeight+' px (HD) o '+spec.width+' × '+spec.height+' px (estándar).');if(Math.abs(info.duration-10)>.08)throw new Error('Duración inválida: el video debe durar exactamente 10 segundos.');return {kind:'video',mime:type,name:file.name,width:info.width,height:info.height,duration:info.duration,size:file.size}}else{const info=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve({width:img.naturalWidth,height:img.naturalHeight});img.onerror=()=>reject(new Error('No fue posible leer la imagen.'));img.src=url});if(!creativeSizeAllowed(info.width,info.height,spec))throw new Error('Medida inválida. Usa '+spec.hdWidth+' × '+spec.hdHeight+' px (HD) o '+spec.width+' × '+spec.height+' px (estándar).');return {kind:'image',mime:type,name:file.name,width:info.width,height:info.height,duration:null,size:file.size}}}finally{URL.revokeObjectURL(url)}}
+async function inspectMedia(file){const p=selectedPlacement(),spec=placementSpecs[p],type=file.type||'';const isVideo=type.startsWith('video/'),isImage=type.startsWith('image/');if(!isVideo&&!isImage)throw new Error('Formato no permitido.');if(p==='banner'&&isVideo)throw new Error('Banner no acepta videos. Solo imagen o GIF.');const allowed=spec.accept.split(',');if(!allowed.includes(type))throw new Error('Formato no permitido para este tipo de anuncio.');const url=URL.createObjectURL(file);try{if(isVideo){const info=await new Promise((resolve,reject)=>{const v=document.createElement('video');v.preload='metadata';v.src=url;v.onloadedmetadata=()=>resolve({width:v.videoWidth,height:v.videoHeight,duration:v.duration});v.onerror=()=>reject(new Error('No fue posible leer el video.'))});if(!creativeSizeAllowed(info.width,info.height,spec))throw new Error('Medida inválida. Usa '+spec.hdWidth+' × '+spec.hdHeight+' px (HD) o '+spec.width+' × '+spec.height+' px (estándar).');if(!Number.isFinite(info.duration)||info.duration<9.95||info.duration>180.05)throw new Error('Duración inválida: el video debe durar entre 10 segundos y 3 minutos (180 segundos).');return {kind:'video',mime:type,name:file.name,width:info.width,height:info.height,duration:info.duration,size:file.size}}else{const info=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve({width:img.naturalWidth,height:img.naturalHeight});img.onerror=()=>reject(new Error('No fue posible leer la imagen.'));img.src=url});if(!creativeSizeAllowed(info.width,info.height,spec))throw new Error('Medida inválida. Usa '+spec.hdWidth+' × '+spec.hdHeight+' px (HD) o '+spec.width+' × '+spec.height+' px (estándar).');return {kind:'image',mime:type,name:file.name,width:info.width,height:info.height,duration:null,size:file.size}}}finally{URL.revokeObjectURL(url)}}
 async function handleCreativeFile(file){
- if(!file)return;if(file.size>MEDIA_MAX_BYTES){setMediaStatus('El archivo supera el tamaño máximo permitido de 20 MB.','error');$('creativeFile').value='';return}setMediaStatus('Validando archivo...','');
+ if(!file)return;if(file.size>MEDIA_MAX_BYTES){setMediaStatus('El archivo supera el tamaño máximo permitido de 500 MB.','error');$('creativeFile').value='';return}setMediaStatus('Validando archivo...','');
  try{
    const meta=await inspectMedia(file);pendingMedia={blob:file,meta};existingMediaMeta=null;
    const a=currentAdDraft();if(a){a.mediaMeta=meta;a._blob=file;a.pendingMediaLocal=true;a.updatedAt=now()}
@@ -1858,8 +1882,9 @@ async function storeMediaInFirebase(campaignId,ad,placement){
     try{task.cancel()}catch(_){ }
     finish(error);
    };
-   const resetIdle=()=>{clearTimeout(idleTimer);idleTimer=setTimeout(timeout,bytesSeen<=0?25000:MEDIA_UPLOAD_IDLE_MS)};
-   totalTimer=setTimeout(timeout,MEDIA_UPLOAD_LIMIT_MS);
+   const resetIdle=()=>{clearTimeout(idleTimer);idleTimer=setTimeout(timeout,bytesSeen<=0?120000:MEDIA_UPLOAD_IDLE_MS)};
+   const uploadMaxMs=Math.min(MEDIA_UPLOAD_LIMIT_MS,Math.max(5*60*1000,Math.ceil(ad._blob.size/(64*1024))*1000));
+   totalTimer=setTimeout(timeout,uploadMaxMs);
    resetIdle();
    unsub=task.on(firebase.storage.TaskEvent.STATE_CHANGED,snapshot=>{
     const sent=Number(snapshot.bytesTransferred)||0,total=Number(snapshot.totalBytes)||0;
@@ -1877,7 +1902,7 @@ async function storeMediaInFirebase(campaignId,ad,placement){
 }
 async function uploadCreative(campaignId,ad,placement){
  if(!ad._blob)return ad.src||'';
- if(ad._blob.size>MEDIA_MAX_BYTES)throw new Error('El archivo supera el límite de 20 MB.');
+ if(ad._blob.size>MEDIA_MAX_BYTES)throw new Error('El archivo supera el límite de 500 MB.');
  const kind=placement||selectedPlacement(),user=fbAuth?.currentUser;
  if(!user||!currentUser||user.uid!==currentUser.id)throw new Error('La sesión caducó. Vuelve a iniciar sesión.');
  ad._placement=kind;
@@ -1885,13 +1910,15 @@ async function uploadCreative(campaignId,ad,placement){
  const spec=placementSpecs[kind];
  if(!spec||!spec.accept.split(',').includes(ad._blob.type)||!creativeSizeAllowed(ad.mediaMeta?.width,ad.mediaMeta?.height,spec))throw new Error('El formato o las medidas del archivo no coinciden con este espacio publicitario.');
  const creativeName=ad.mediaMeta?.name||'Creativo';
+ // Adaptar duración máxima a enlaces lentos, manteniendo control de inactividad.
+ const uploadLimitMs=Math.min(MEDIA_UPLOAD_LIMIT_MS,Math.max(5*60*1000,Math.ceil(ad._blob.size/(64*1024))*1000));
  const prefix='ads/media/'+currentUser.id+'/'+campaignId+'/'+ad.id+'/';
  const firebasePrefix='ads/'+currentUser.id+'/'+campaignId+'/'+ad.id+'/';
  const isVertical=kind==='entry'||kind==='interaction';
  // El servicio Blob cambia a multipartes por encima de 5 MB.
  // Para creativos verticales grandes, preferir subida reanudable Firebase.
  // Si falla el proveedor principal, probar el alternativo sin perder el archivo.
- const providers=!isVertical?['blob']:ad._blob.size>5*1024*1024?['firebase','blob']:['blob','firebase'];
+ const providers=!isVertical?['blob']:ad._blob.size>5*1024*1024&&ad._blob.size<=90*1024*1024?['firebase','blob']:['blob','firebase'];
  const errors=[];
  const attemptBlob=async()=>{
   if(typeof window.TaskFlowAdsFileUpload!=='function')throw new Error('Servicio de carga Blob no disponible.');
@@ -1900,9 +1927,9 @@ async function uploadCreative(campaignId,ad,placement){
   let watchdog=null,lastProgress=-1;
   const resetWatchdog=()=>{
    clearTimeout(watchdog);
-   watchdog=setTimeout(()=>ctrl.abort(),lastProgress<=0?32000:45000);
+   watchdog=setTimeout(()=>ctrl.abort(),lastProgress<=0?120000:180000);
   };
-  const hardTimeout=setTimeout(()=>ctrl.abort(),MEDIA_UPLOAD_LIMIT_MS);
+  const hardTimeout=setTimeout(()=>ctrl.abort(),uploadLimitMs);
   resetWatchdog();
   try{
    const response=await withDeadline(window.TaskFlowAdsFileUpload({
@@ -1914,7 +1941,7 @@ async function uploadCreative(campaignId,ad,placement){
      setMediaStatus('Cargando archivo: '+p+' % · '+creativeName);
      if(!$('campaignModal').hidden)msg('Cargando archivo publicitario: '+p+' %...');
     }
-   }),MEDIA_UPLOAD_LIMIT_MS+5000,'Se agotó el tiempo de carga por Blob.');
+   }),uploadLimitMs+5000,'Se agotó el tiempo de carga por Blob.');
    if(!response||!/^https:\/\//i.test(response.src||'')||!String(response.storagePath||'').startsWith('blob:'+prefix))throw new Error('Blob no confirmó una subida válida.');
    return {src:response.src,storagePath:response.storagePath};
   }finally{clearTimeout(watchdog);clearTimeout(hardTimeout);ctrl.abort()}
