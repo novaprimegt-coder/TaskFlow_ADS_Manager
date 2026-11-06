@@ -894,6 +894,109 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 @media(prefers-reduced-motion:reduce){
  #authView .tf-crystal-fallback,#authView .tf-crystal-fallback:before{animation:none!important}
 }
+
+/* Presupuesto diario: diseño independiente, cifras completas, lectura móvil sin recortes. */
+#objectiveInsights .tf-budget-spotlight{
+ padding:0;overflow:hidden;max-width:100%;min-width:0;
+ background:#fff;border:1px solid #dde8f4;border-radius:21px;
+ box-shadow:0 10px 36px rgba(23,51,87,.075);
+}
+#objectiveInsights .tf-budget-summary{
+ position:relative;isolation:isolate;overflow:hidden;
+ padding:22px 24px 21px;
+ background:radial-gradient(ellipse at 100% 0%,rgba(71,203,238,.20),transparent 53%),
+ linear-gradient(122deg,#ecf5ff 0%,#f7fbff 56%,#fff 100%);
+ border-bottom:1px solid #dceaf9;
+}
+#objectiveInsights .tf-budget-summary:after{
+ content:"";position:absolute;width:150px;height:150px;right:-75px;top:-72px;
+ border-radius:50%;border:1px solid rgba(32,121,225,.18);
+ box-shadow:0 0 0 29px rgba(32,121,225,.04),0 0 0 60px rgba(32,121,225,.035);
+ pointer-events:none;z-index:-1;
+}
+#objectiveInsights .tf-budget-eyebrow{
+ display:flex;align-items:center;gap:8px;color:#316a9c;
+ text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:850;
+}
+#objectiveInsights .tf-budget-eyebrow i{
+ width:8px;height:8px;border-radius:50%;display:inline-block;flex:none;
+ background:#1fb9cf;box-shadow:0 0 0 4px rgba(31,185,207,.12);
+}
+#objectiveInsights .tf-budget-summary h3{
+ color:#293f5c;font-size:clamp(14px,2vw,16px);font-weight:800;
+ letter-spacing:-.015em;line-height:1.4;max-width:420px;
+ margin:13px 0 17px;overflow-wrap:normal;
+}
+#objectiveInsights .tf-budget-total{
+ display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;
+ min-width:0;max-width:100%;
+}
+#objectiveInsights .tf-budget-total strong{
+ display:block;max-width:100%;color:#1266c7;font-size:clamp(27px,4.2vw,38px);
+ font-weight:900;letter-spacing:-.055em;line-height:1.18;
+ white-space:normal;overflow:visible;text-overflow:unset;overflow-wrap:anywhere;
+ font-variant-numeric:tabular-nums;
+}
+#objectiveInsights .tf-budget-total>span{
+ color:#6e86a0;font-size:12px;font-weight:750;
+}
+#objectiveInsights .tf-budget-context{
+ margin-top:10px;color:#647a95;font-size:11px;line-height:1.5;
+}
+#objectiveInsights .tf-budget-body{padding:22px 24px 19px;min-width:0}
+#objectiveInsights .tf-budget-body h4{
+ color:#263f60;font-size:12px;font-weight:850;letter-spacing:.005em;margin:0 0 19px;
+}
+#objectiveInsights .tf-budget-category + .tf-budget-category{margin-top:19px}
+#objectiveInsights .tf-budget-category-line{
+ display:flex;align-items:baseline;justify-content:space-between;gap:9px;min-width:0;
+}
+#objectiveInsights .tf-budget-category-line span{
+ color:#455e7c;font-size:12px;font-weight:700;line-height:1.38;min-width:0;
+ overflow-wrap:break-word;
+}
+#objectiveInsights .tf-budget-category-line strong{
+ color:#263b56;font-size:12px;font-weight:850;line-height:1.35;
+ white-space:nowrap;overflow:visible;text-overflow:unset;max-width:none;flex:none;
+ font-variant-numeric:tabular-nums;
+}
+#objectiveInsights .tf-budget-category-track{
+ margin-top:9px;display:block;width:100%;height:9px;overflow:hidden;
+ background:#eaf0f7;border-radius:999px;
+}
+#objectiveInsights .tf-budget-category-track i{
+ display:block;height:100%;min-width:0;border-radius:inherit;
+ background:linear-gradient(90deg,#1767ef,#19b8d4);
+ box-shadow:0 0 7px rgba(25,126,212,.18);
+ transition:width .3s ease-out;
+}
+#objectiveInsights .tf-budget-category:nth-of-type(3n) .tf-budget-category-track i{
+ background:linear-gradient(90deg,#3a80de,#32c4ce)
+}
+#objectiveInsights .tf-budget-no-data{
+ color:#6c819a;font-size:12px;line-height:1.5;margin:0;
+}
+#objectiveInsights .tf-budget-disclaimer{
+ display:flex;gap:9px;align-items:flex-start;
+ margin:0;padding:14px 24px 16px;background:#f7faff;
+ border-top:1px solid #e9f0f8;color:#637d97;font-size:11px;line-height:1.5;
+}
+#objectiveInsights .tf-budget-disclaimer span{color:#2878c8;font-weight:900}
+@media(max-width:860px){
+ #objectiveInsights .tf-budget-summary{padding:20px 20px 19px}
+ #objectiveInsights .tf-budget-body{padding:19px 20px 20px}
+ #objectiveInsights .tf-budget-disclaimer{padding:13px 20px 15px}
+}
+@media(max-width:440px){
+ #objectiveInsights .tf-budget-summary h3{font-size:15px;margin-bottom:13px}
+ #objectiveInsights .tf-budget-total strong{font-size:clamp(27px,8vw,35px)}
+ #objectiveInsights .tf-budget-summary{padding:18px 18px 19px}
+ #objectiveInsights .tf-budget-body{padding:18px 18px 21px}
+ #objectiveInsights .tf-budget-disclaimer{padding:13px 18px}
+ #objectiveInsights .tf-budget-category-line span{font-size:12px}
+ #objectiveInsights .tf-budget-category-line strong{font-size:12px}
+}
+
 </style>
 <script defer src="./ads-crystal-hero.js?v=20261106-crystal-1"></script>
 </head>
@@ -1861,7 +1964,37 @@ function fitSummaryMetricValues(){
  }
 }
 
+
+/* El gráfico del presupuesto solo lee la configuración aprobada y activa;
+   no calcula pagos, cargos, ingresos ni resultados de anuncios. */
+function dailyBudgetSpotlight(){
+ const types=['awareness','traffic','engagement','leads','sales','app'];
+ const eligible=campaigns.filter(c=>c.status==='active'&&c.approvalStatus==='approved'&&c.budgetType==='daily');
+ const categories=types.map(type=>({
+  type,
+  amount:eligible.filter(c=>(c.objective||'awareness')===type).reduce((sum,c)=>sum+Math.max(0,Number(c.budget)||0),0),
+  count:eligible.filter(c=>(c.objective||'awareness')===type).length
+ }));
+ const total=categories.reduce((sum,x)=>sum+x.amount,0);
+ const configured=categories.filter(x=>x.amount>0);
+ const mainTitle='Presupuesto diario de campañas aprobadas y activas';
+ const plural=eligible.length===1?'campaña configurada':'campañas configuradas';
+ const entries=configured.map(x=>{
+  const percentage=total>0?100*x.amount/total:0;
+  const label=escapeHtml(objectiveLabel(x.type));
+  const value=escapeHtml(money(x.amount));
+  return '<div class="tf-budget-category" aria-label="'+label+': '+value+'"><div class="tf-budget-category-line"><span>'+label+'</span><strong>'+value+'</strong></div><div class="tf-budget-category-track" role="meter" aria-label="'+label+', proporción del presupuesto diario" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percentage.toFixed(2)+'"><i style="width:'+percentage.toFixed(2)+'%"></i></div></div>';
+ }).join('');
+ return '<section class="tf-chart-panel tf-budget-spotlight" aria-label="'+escapeHtml(mainTitle)+'">'+
+  '<div class="tf-budget-summary"><span class="tf-budget-eyebrow"><i aria-hidden="true"></i> Planificación publicitaria</span><h3>'+escapeHtml(mainTitle)+'</h3>'+
+  '<div class="tf-budget-total"><strong>'+escapeHtml(money(total))+'</strong><span>por día</span></div>'+
+  '<div class="tf-budget-context">'+eligible.length+' '+plural+' · '+configured.length+' '+(configured.length===1?'objetivo':'objetivos')+' con presupuesto</div></div>'+
+  '<div class="tf-budget-body"><h4>Distribución por objetivo</h4>'+
+  (entries||'<p class="tf-budget-no-data">No hay campañas aprobadas y activas con presupuesto diario configurado.</p>')+'</div>'+
+  '<p class="tf-budget-disclaimer"><span aria-hidden="true">ⓘ</span> Importes configurados, no gastos ni cobros realizados.</p></section>';
+}
 function objectiveChartMarkup(mode){
+ if(mode==='budget')return dailyBudgetSpotlight();
  const types=['awareness','traffic','engagement','leads','sales','app'];
  const amounts=types.map(type=>{
   const own=campaigns.filter(c=>(c.objective||'awareness')===type);
