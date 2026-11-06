@@ -666,7 +666,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 <div class="review" id="review"></div>
 </section>
 <footer class="wizard-footer"><button class="secondary" disabled="" id="backBtn" type="button">Atrás</button><div class="wizard-right"><button class="ghost" id="draftBtn" type="button">Guardar borrador</button><button class="primary" id="nextBtn" type="button">Continuar</button></div></footer>
-<p class="form-message" id="campaignMessage"></p>
+<p class="form-message" id="campaignMessage" role="status" aria-live="polite"></p>
 </form>
 </div>
 </div>
@@ -1036,6 +1036,17 @@ const CAMPAIGN_CACHE_KEY='tf_ads_manager_campaigns_prod_';
 // La integración opcional se autentica y procesa exclusivamente en el servidor.
 const MEDIA_SERVICE_URL='https://us-central1-taskflow-b0ece.cloudfunctions.net/taskflowAdsMedia';
 const MEDIA_MAX_BYTES=20*1024*1024;
+const MEDIA_UPLOAD_LIMIT_MS=120000;
+const MEDIA_UPLOAD_IDLE_MS=45000;
+const ADS_REMOTE_WRITE_MS=20000;
+// Una operación pendiente no debe bloquear indefinidamente el formulario.
+function withDeadline(operation,ms,message){
+ let timer;
+ return Promise.race([
+  Promise.resolve(operation),
+  new Promise((_,reject)=>{timer=setTimeout(()=>{const e=new Error(message||'La operación tardó demasiado. Comprueba tu conexión e inténtalo de nuevo.');e.code='ads/timeout';reject(e)},ms)})
+ ]).finally(()=>clearTimeout(timer));
+}
  let registrationGate=null;
 let fbApp=null,fbAuth=null,fbDb=null,fbStorage=null,currentUser=null,campaigns=[],step=1,objective='awareness',editingId=null,pendingMedia=null,existingMediaMeta=null,currentPreviewUrl=null,managerLevel='campaigns',selectedCampaignIds=new Set(),adDrafts=[],currentAdDraftId=null,isAdsAdmin=false,authReady=false;
 const placementSpecs={banner:{label:'Banner',width:1200,height:180,accept:'image/jpeg,image/png,image/webp,image/gif',formats:'JPG · PNG · WEBP · GIF',specFormat:'Imagen / GIF',duration:'No aplica',frame:'banner'},entry:{label:'Anuncio de ingreso',width:1080,height:1920,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'10 s si es video',frame:'vertical'},interaction:{label:'Por interacción',width:1080,height:1920,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'10 s si es video',frame:'vertical'}};
@@ -1126,6 +1137,9 @@ function initFirebase(){
  if(!window.firebase)throw new Error('Firebase no está disponible.');
  if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
  fbApp=firebase.app();fbAuth=firebase.auth();fbDb=firebase.firestore();fbStorage=firebase.storage();
+ // Restringe los reintentos automáticos para que el navegador recupere el control.
+ if(typeof fbStorage.setMaxUploadRetryTime==='function')fbStorage.setMaxUploadRetryTime(45000);
+ if(typeof fbStorage.setMaxOperationRetryTime==='function')fbStorage.setMaxOperationRetryTime(20000);
  fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
  try{fbDb.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(_){}
 }
@@ -1195,9 +1209,26 @@ async function loadCampaigns(){
 }
 function saveCampaigns(){if(currentUser)writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns)}
 async function syncCampaignDoc(c){
- if(!currentUser||!fbDb)return false;
- const payload=JSON.parse(JSON.stringify(c));payload.ownerUid=currentUser.id;payload.businessName=currentUser.company||'';payload.updatedAtServer=firebase.firestore.FieldValue.serverTimestamp();
- await campaignsRef(currentUser.id).doc(c.id).set(payload,{merge:true});return true
+ if(!currentUser||!fbDb)throw new Error('No hay sesión activa para guardar los cambios.');
+ const ref=campaignsRef(currentUser.id).doc(c.id);
+ const payload=JSON.parse(JSON.stringify(c));
+ const requestId='save_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+ payload.ownerUid=currentUser.id;payload.businessName=currentUser.company||'';
+ payload.updatedAtServer=firebase.firestore.FieldValue.serverTimestamp();payload.lastSaveRequestId=requestId;
+ try{
+  await withDeadline(ref.set(payload,{merge:true}),ADS_REMOTE_WRITE_MS,'No se confirmó el guardado. Comprueba la conexión e inténtalo de nuevo.');
+  return true;
+ }catch(error){
+  // La escritura puede terminar en el servidor mientras vence el plazo local.
+  // Solo confirmamos éxito si recuperamos la misma operación desde el servidor.
+  if(error?.code==='ads/timeout'){
+   try{
+    const snap=await withDeadline(ref.get({source:'server'}),7000,'No se pudo verificar el guardado.');
+    if(snap.exists&&snap.data()?.lastSaveRequestId===requestId)return true;
+   }catch(_){ }
+  }
+  throw error;
+ }
 }
 function toPublicCampaign(c){
  const n=normalizeCampaign(c);
@@ -1207,10 +1238,10 @@ async function syncPublicCampaign(c){
  if(!fbDb||!c)return false;
  const allowed=c.status==='active'&&c.approvalStatus==='approved'&&campaignReady(c);
  if(allowed){
-  try{await publicCampaignRef(c.id).set(toPublicCampaign(c),{merge:false});return true}
-  catch(error){console.warn('No se completó la publicación del anuncio:',error?.code||error?.message);throw new Error('No fue posible completar la publicación de la campaña. Inténtalo nuevamente.')}
+  try{await withDeadline(publicCampaignRef(c.id).set(toPublicCampaign(c),{merge:false}),ADS_REMOTE_WRITE_MS,'La publicación no pudo confirmarse. Revisa tu conexión.');return true}
+  catch(error){console.warn('No se completó la publicación del anuncio:',error?.code||error?.message);throw new Error('No fue posible confirmar la publicación de la campaña. Comprueba tu conexión e inténtalo de nuevo.')}
  }
- try{await publicCampaignRef(c.id).delete()}catch(error){console.warn('No se pudo limpiar la publicación anterior:',error?.code||error?.message)}
+ try{await withDeadline(publicCampaignRef(c.id).delete(),9000,'No se pudo confirmar la limpieza del anuncio anterior.')}catch(error){console.warn('No se pudo limpiar la publicación anterior:',error?.code||error?.message)}
  return false;
 }
 async function enterApp(){
@@ -1404,7 +1435,7 @@ async function mediaProxyRequest(action,campaignId,ad,blob,placement){
  try{response=await fetch(MEDIA_SERVICE_URL,{method:action==='upload'?'POST':'DELETE',headers,body:action==='upload'?blob:undefined,cache:'no-store',signal:controller.signal})}
  catch(_){throw new Error('El servicio de archivos no está disponible.');}
  finally{clearTimeout(timeout)}
- let data={};try{data=await response.json()}catch(_){}
+ let data={};try{data=await withDeadline(response.json(),5000,'El servicio de archivos no respondió.')}catch(_){}
  if(!response.ok)throw new Error('El servicio de archivos rechazó la operación.');
  return data;
 }
@@ -1412,6 +1443,7 @@ function mediaUploadError(error){
  const code=String(error?.code||'');
  if(code==='storage/unauthorized'||code==='storage/unauthenticated')return 'No fue posible autorizar la carga del archivo. Comprueba los permisos de tu cuenta.';
  if(code==='storage/quota-exceeded')return 'El almacenamiento de archivos está temporalmente lleno.';
+ if(code==='ads/upload-timeout'||code==='ads/timeout')return 'La carga del archivo tardó demasiado. Comprueba la conexión y vuelve a intentarlo.';
  if(code==='storage/canceled')return 'La carga del archivo se interrumpió.';
  if(code==='storage/retry-limit-exceeded'||code==='storage/unknown')return 'La conexión falló al guardar el archivo. Intenta nuevamente.';
  return 'No se pudo almacenar el archivo de manera segura. Intenta nuevamente.';
@@ -1435,8 +1467,30 @@ async function storeMediaInFirebase(campaignId,ad,placement){
  const path='ads/'+uid+'/'+campaignId+'/'+ad.id+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,9)+'_'+name.replace(/\.[a-zA-Z0-9]+$/,'')+'.'+ext;
  const ref=fbStorage.ref(path);
  try{
-  const result=await ref.put(ad._blob,{contentType:mime,cacheControl:'public,max-age=3600'});
-  const url=await result.ref.getDownloadURL();
+  const task=ref.put(ad._blob,{contentType:mime,cacheControl:'public,max-age=3600'});
+  // El SDK puede seguir reintentando sin devolver control; monitorizamos el avance real.
+  const result=await new Promise((resolve,reject)=>{
+   let done=false,unsub=null,idleTimer=null,totalTimer=null,bytesSeen=-1;
+   const cleanup=()=>{clearTimeout(idleTimer);clearTimeout(totalTimer);if(typeof unsub==='function')try{unsub()}catch(_){ }};
+   const finish=(error,snapshot)=>{if(done)return;done=true;cleanup();if(error)reject(error);else resolve(snapshot)};
+   const timeout=()=>{
+    const error=new Error('La carga tardó demasiado.');error.code='ads/upload-timeout';
+    try{task.cancel()}catch(_){ }
+    finish(error);
+   };
+   const resetIdle=()=>{clearTimeout(idleTimer);idleTimer=setTimeout(timeout,MEDIA_UPLOAD_IDLE_MS)};
+   totalTimer=setTimeout(timeout,MEDIA_UPLOAD_LIMIT_MS);
+   resetIdle();
+   unsub=task.on(firebase.storage.TaskEvent.STATE_CHANGED,snapshot=>{
+    const sent=Number(snapshot.bytesTransferred)||0,total=Number(snapshot.totalBytes)||0;
+    if(sent>bytesSeen){bytesSeen=sent;resetIdle()}
+    const percent=total?Math.min(100,Math.round(100*sent/total)):0;
+    setMediaStatus('Cargando archivo: '+percent+' % · '+(ad.mediaMeta?.name||'Creativo'));
+    if(!$('campaignModal').hidden)msg('Cargando archivo publicitario: '+percent+' %...');
+   },error=>finish(error),()=>finish(null,task.snapshot));
+   if(done)cleanup();
+  });
+  const url=await withDeadline(result.ref.getDownloadURL(),15000,'No se pudo comprobar el archivo guardado.');
   if(!/^https:\/\//i.test(url))throw new Error('No se pudo verificar la dirección del archivo.');
   return {src:url,storagePath:path};
  }catch(error){console.warn('No se completó la carga del creativo:',error?.code||error?.message);throw error}
@@ -1538,20 +1592,42 @@ function review(){
  commitCurrentAd();
  const p=selectedPlacement(),spec=placementSpecs[p],mode=currentBudgetMode(),count=adDrafts.length;
  const ready=adDrafts.filter(a=>a.mediaMeta).length;
- $('review').innerHTML='<b>'+escapeHtml(clean($('campaignName').value)||'Campaña sin nombre')+'</b><br>Objetivo: '+escapeHtml(objectiveLabel(objective))+'<br>Formato de la campaña: '+escapeHtml(spec.label)+' · '+spec.width+'×'+spec.height+'<br>Audiencia: '+escapeHtml(locationLabel({city:$('city').value,region:$('region').value,country:$('country').value}))+' · '+escapeHtml($('ageMin').value)+'–'+escapeHtml($('ageMax').value)+' años<br>Presupuesto: '+escapeHtml(money($('budgetAmount').value))+' '+($('budgetType').value==='daily'?'diario':'total')+'<br>Distribución: '+(mode==='system'?'Optimización automática de TaskFlow':'Partes iguales')+'<br>Anuncios: '+count+' creados · '+ready+' con creativo validado<br>Estado al guardar: Borrador';
+ $('review').innerHTML='<b>'+escapeHtml(clean($('campaignName').value)||'Campaña sin nombre')+'</b><br>Objetivo: '+escapeHtml(objectiveLabel(objective))+'<br>Formato de la campaña: '+escapeHtml(spec.label)+' · '+spec.width+'×'+spec.height+'<br>Audiencia: '+escapeHtml(locationLabel({city:$('city').value,region:$('region').value,country:$('country').value}))+' · '+escapeHtml($('ageMin').value)+'–'+escapeHtml($('ageMax').value)+' años<br>Presupuesto: '+escapeHtml(money($('budgetAmount').value))+' '+($('budgetType').value==='daily'?'diario':'total')+'<br>Distribución: '+(mode==='system'?'Optimización automática de TaskFlow':'Partes iguales')+'<br>Anuncios: '+count+' creados · '+ready+' con creativo validado<br>Estado al guardar: '+escapeHtml((editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='active'?'Activa (pendiente de revisión al editar)':(editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='paused'?'Pausada':'Borrador')+'<br>La publicación requiere activación y aprobación.';
  renderAdDraftList();
 }
 async function saveCampaign(){
- if(step===4)commitCurrentAd();if(!validateStep())return;const existing=editingId?campaigns.find(c=>c.id===editingId):null,id=editingId||makeId(),mode=currentBudgetMode();const previousAds=normalizeCampaign(existing||{}).ads||[];
- $('nextBtn').disabled=true;$('draftBtn').disabled=true;msg('Guardando y sincronizando campaña...');
+ if(step===4)commitCurrentAd();if(!validateStep())return;
+ const existing=editingId?campaigns.find(c=>c.id===editingId):null;
+ const id=editingId||makeId(),mode=currentBudgetMode();
+ const previousAds=normalizeCampaign(existing||{}).ads||[];
+ $('nextBtn').disabled=true;$('draftBtn').disabled=true;
  try{
   const cleanAds=[];
-  for(let i=0;i<adDrafts.length;i++){const a=adDrafts[i];await uploadCreative(id,a,selectedPlacement());cleanAds.push({id:a.id,name:clean(a.name)||('Anuncio '+(i+1)),destination:clean(a.destination),sound:!!a.sound,mediaMeta:a.mediaMeta||null,src:a.src||'',storagePath:a.storagePath||'',createdAt:a.createdAt||now(),updatedAt:now()})}
+  for(let i=0;i<adDrafts.length;i++){
+   const a=adDrafts[i];
+   msg('Preparando archivo '+(i+1)+' de '+adDrafts.length+'...');
+   await uploadCreative(id,a,selectedPlacement());
+   cleanAds.push({id:a.id,name:clean(a.name)||('Anuncio '+(i+1)),destination:clean(a.destination),sound:!!a.sound,mediaMeta:a.mediaMeta||null,src:a.src||'',storagePath:a.storagePath||'',createdAt:a.createdAt||now(),updatedAt:now()});
+  }
+  msg('Guardando datos de la campaña...');
   const first=cleanAds[0]||{},approvalStatus=existing?.approvalStatus==='approved'?'pending':(existing?.approvalStatus||'pending');
   const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
-  await syncCampaignDoc(c);await syncPublicCampaign(c);for(const old of previousAds){const retained=cleanAds.find(a=>a.id===old.id);if(!retained||retained.storagePath!==old.storagePath)await deleteCreative(id,old)}const idx=campaigns.findIndex(x=>x.id===id);if(idx>=0)campaigns[idx]=c;else campaigns.unshift(c);campaigns.sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));saveCampaigns();await clearDraftMedia(id);renderAll();closeModal();showView('campaigns');toast(existing?'Campaña actualizada y enviada nuevamente a revisión.':'Campaña guardada y enviada a revisión.');editingId=null
- }catch(e){console.error(e);msg('No fue posible completar el guardado: '+(e?.message||'Comprueba tu conexión e inténtalo de nuevo.'),'error')}
- finally{$('nextBtn').disabled=false;$('draftBtn').disabled=false}
+  await syncCampaignDoc(c);
+  msg('Confirmando el estado de la campaña...');
+  await syncPublicCampaign(c);
+  const idx=campaigns.findIndex(x=>x.id===id);
+  if(idx>=0)campaigns[idx]=c;else campaigns.unshift(c);
+  campaigns.sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  saveCampaigns();renderAll();msg('');closeModal();showView('campaigns');editingId=null;
+  // La limpieza de archivos antiguos no interviene en el resultado del guardado.
+  const stale=previousAds.filter(old=>{const kept=cleanAds.find(a=>a.id===old.id);return !kept||kept.storagePath!==old.storagePath});
+  if(stale.length)Promise.allSettled(stale.map(old=>withDeadline(deleteCreative(id,old),5000,'Limpieza aplazada.'))).catch(()=>{});
+  withDeadline(clearDraftMedia(id),5000,'Limpieza aplazada.').catch(()=>{});
+  toast(c.status==='draft'?'Cambios guardados. Activa la campaña para solicitar su publicación.':c.approvalStatus==='approved'?'Cambios guardados y campaña activa.':'Cambios guardados; pendiente de aprobación.');
+ }catch(e){
+  console.warn('No se completó el guardado:',e?.code||e?.message);
+  msg('No se pudieron confirmar los cambios. '+(e?.message||'Comprueba la conexión e inténtalo de nuevo.')+' Se conservaron en el formulario.','error');
+ }finally{$('nextBtn').disabled=false;$('draftBtn').disabled=false}
 }
 async function saveDraft(){
  // Los borradores no requieren subir archivos ni presupuesto completo.
@@ -1579,8 +1655,8 @@ async function saveDraft(){
  try{
   // Para NO perder el archivo antes de cerrar el formulario, se almacena localmente en IndexedDB.
   if(adDrafts.some(a=>a._blob||a.pendingMediaLocal)){
-   try{await storeDraftMedia(id,adDrafts)}catch(e){throw new Error('No se pudo conservar el archivo seleccionado en este dispositivo: '+(e?.message||'almacenamiento no disponible.'))}
-  }else if(existing){await clearDraftMedia(id)}
+   try{await withDeadline(storeDraftMedia(id,adDrafts),10000,'No se pudo conservar el archivo en este dispositivo.')}catch(e){throw new Error('No se pudo conservar el archivo seleccionado en este dispositivo: '+(e?.message||'almacenamiento no disponible.'))}
+  }else if(existing){await withDeadline(clearDraftMedia(id),5000,'No se pudieron limpiar los archivos anteriores.').catch(()=>{})}
   let remoteSaved=false;
   try{remoteSaved=await syncCampaignDoc(c)}catch(error){console.warn('Borrador remoto pendiente:',error)}
   c.localPendingSync=!remoteSaved;
@@ -1620,7 +1696,8 @@ async function prepareCreativeForActivation(c){
  if(!campaignReady(changed))throw new Error('Uno de los archivos todavía no está disponible. Revisa los creativos de la campaña.');
  if(updated){
   await syncCampaignDoc(changed);
-  Object.assign(c,changed);saveCampaigns();await clearDraftMedia(c.id);
+  Object.assign(c,changed);saveCampaigns();
+  withDeadline(clearDraftMedia(c.id),5000,'Limpieza aplazada.').catch(()=>{});
  }
  return true;
 }
