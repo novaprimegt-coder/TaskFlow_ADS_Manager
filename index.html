@@ -601,6 +601,22 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 .tf-goal-action b{font-size:12px;color:#0e5fc8;line-height:1.3}
 @media(max-width:700px){#objectiveGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}#objectiveGrid .choice{padding:14px 10px}#objectiveGrid .choice b{font-size:12px}#objectiveGrid .choice span{font-size:10px}#campaignModal .field{min-width:0}}
 </style>
+<style id="tfAdsChartUI2026">
+.tf-objective-insights,.tf-report-chart{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:15px 0 20px}
+.tf-chart-panel{min-width:0;padding:18px 19px;background:#fff;border:1px solid #e0e6ef;border-radius:17px;box-shadow:0 4px 18px rgba(25,44,76,.045)}
+.tf-chart-head{display:flex;align-items:center;justify-content:space-between;gap:9px;padding-bottom:12px;border-bottom:1px solid #edf1f7}
+.tf-chart-head div{min-width:0}.tf-chart-head small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.065em;color:#8190a4;font-weight:750}
+.tf-chart-head h3{font-size:14px;line-height:1.35;margin:4px 0 0;color:#243248}
+.tf-chart-head strong{font-variant-numeric:tabular-nums;font-size:14px;color:#1458ae;white-space:nowrap;max-width:48%;overflow:hidden;text-overflow:ellipsis}
+.tf-chart-rows{display:grid;gap:12px;padding:15px 0 9px}
+.tf-chart-row{display:grid;grid-template-columns:minmax(85px,125px) minmax(0,1fr) minmax(35px,85px);align-items:center;gap:10px}
+.tf-chart-row>span{font-size:11px;color:#65758b;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tf-chart-row>b{font-size:11px;color:#344257;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.tf-chart-track{height:10px;border-radius:999px;background:#edf2f9;overflow:hidden}
+.tf-chart-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#166fed,#42bccb);min-width:0;transition:width .2s}
+.tf-chart-note{color:#8b98a7;font-size:10px;line-height:1.5;margin:3px 0 0}
+@media(max-width:860px){.tf-objective-insights,.tf-report-chart{grid-template-columns:1fr}.tf-chart-panel{padding:16px}.tf-chart-row{grid-template-columns:94px minmax(0,1fr) 70px;gap:8px}}
+</style>
 </head>
 <body>
 
@@ -771,7 +787,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:var(--meta-text)}
 <section class="view active" id="overviewView">
 <div class="heading"><div><span class="eyebrow">Centro comercial</span><h2>Resumen de publicidad</h2><p>Gestiona campañas, presupuesto, aprobación y creativos desde un mismo panel.</p></div><div class="tf-overview-actions"><button class="secondary" id="refreshBtn" type="button">Actualizar</button><button class="primary" type="button" data-new>Crear campaña</button></div></div>
 <div class="metrics"><article class="metric"><span>Campañas</span><strong id="metricCampaigns">0</strong><small>Total guardadas</small></article><article class="metric"><span>Activas</span><strong id="metricActive">0</strong><small>En circulación</small></article><article class="metric"><span>Presupuesto diario</span><strong id="metricBudget">Q0.00</strong><small>Campañas activas</small></article><article class="metric"><span>Formatos</span><strong id="metricFormats">0</strong><small>Tipos utilizados</small></article></div>
-<div class="tf-approval-summary" aria-label="Resumen de aprobación"><span>Estado de aprobación</span><button type="button" data-approval-shortcut="approved">Aprobadas <strong id="summaryApproved">0</strong></button><button type="button" data-approval-shortcut="pending">En revisión <strong id="summaryPending">0</strong></button><button type="button" data-approval-shortcut="rejected">Rechazadas <strong id="summaryRejected">0</strong></button></div>
+<div class="tf-objective-insights" id="objectiveInsights" aria-label="Gráficos de configuración de campañas"></div><div class="tf-approval-summary" aria-label="Resumen de aprobación"><span>Estado de aprobación</span><button type="button" data-approval-shortcut="approved">Aprobadas <strong id="summaryApproved">0</strong></button><button type="button" data-approval-shortcut="pending">En revisión <strong id="summaryPending">0</strong></button><button type="button" data-approval-shortcut="rejected">Rechazadas <strong id="summaryRejected">0</strong></button></div>
 <div class="dashboard">
 <article class="panel"><div class="panel-head"><div><span class="eyebrow">Actividad reciente</span><h3>Campañas</h3></div><button class="secondary" data-view-link="campaigns">Ver todas</button></div><div class="empty" id="recentCampaigns">Aún no hay campañas.</div></article>
 <article class="panel"><div class="panel-head"><div><span class="eyebrow">TaskFlow</span><h3>Formatos publicitarios</h3></div><span class="badge ok">3 tipos</span></div><div class="side-list"><div class="side-row"><div><b>Banner</b><span>HD recomendado: 2400 × 360 px. Estándar: 1200 × 180 px.</span></div><span class="place-code">2400×360 HD</span></div><div class="side-row"><div><b>Anuncio de ingreso</b><span>HD recomendado: 2160 × 3840 px. Estándar: 1080 × 1920 px.</span></div><span class="place-code">2160×3840 HD</span></div><div class="side-row"><div><b>Por interacción</b><span>HD recomendado: 2160 × 3840 px. Estándar: 1080 × 1920 px.</span></div><span class="place-code">2160×3840 HD</span></div></div></article>
@@ -1529,7 +1545,7 @@ function publicationState(c){
  if(!campaignReady(c))return 'Archivo pendiente · sin entrega';
  return 'Aprobada · habilitada según audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
-function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary()}
+function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary();renderObjectiveInsights()}
 function fitSummaryMetricValues(){
  // Mantiene las cifras completas cuando caben; usa formato compacto solo si es necesario.
  // No estira ni deforma números y conserva el dato íntegro en título accesible.
@@ -1561,6 +1577,30 @@ function fitSummaryMetricValues(){
   el.setAttribute('aria-label',full);
   el.dataset.lastMetricDisplay=el.textContent||'';
  }
+}
+
+function objectiveChartMarkup(mode){
+ const types=['awareness','traffic','engagement','leads','sales','app'];
+ const amounts=types.map(type=>{
+  const own=campaigns.filter(c=>(c.objective||'awareness')===type);
+  const amount=own.filter(c=>c.status==='active'&&c.approvalStatus==='approved'&&c.budgetType==='daily').reduce((sum,c)=>sum+(Number(c.budget)||0),0);
+  return {type,count:own.length,amount};
+ });
+ const max=Math.max(1,...amounts.map(x=>mode==='budget'?x.amount:x.count));
+ const total=amounts.reduce((sum,x)=>sum+(mode==='budget'?x.amount:x.count),0);
+ const label=mode==='budget'?'Presupuesto diario de campañas aprobadas y activas':'Campañas registradas por objetivo';
+ const expl=mode==='budget'?'Importes configurados, no gastos cobrados':'Número de campañas, no resultados ni conversiones';
+ const rows=amounts.map(x=>{
+  const val=mode==='budget'?x.amount:x.count;
+  const percent=Math.max(0,Math.min(100,100*val/max));
+  const value=mode==='budget'?money(val):String(val);
+  return '<div class="tf-chart-row"><span>'+escapeHtml(objectiveLabel(x.type))+'</span><div class="tf-chart-track" role="meter" aria-label="'+escapeHtml(objectiveLabel(x.type))+'" aria-valuemin="0" aria-valuemax="'+max+'" aria-valuenow="'+val+'"><i style="width:'+percent.toFixed(2)+'%"></i></div><b title="'+escapeHtml(value)+'">'+escapeHtml(value)+'</b></div>';
+ }).join('');
+ return '<section class="tf-chart-panel" aria-label="'+escapeHtml(label)+'"><div class="tf-chart-head"><div><small>Datos de campañas</small><h3>'+escapeHtml(label)+'</h3></div><strong>'+escapeHtml(mode==='budget'?money(total):String(total))+'</strong></div><div class="tf-chart-rows">'+rows+'</div><p class="tf-chart-note">'+escapeHtml(expl)+'</p></section>';
+}
+function renderObjectiveInsights(){
+ const holder=$('objectiveInsights');
+ if(holder)holder.innerHTML=objectiveChartMarkup('count')+objectiveChartMarkup('budget');
 }
 function renderMetrics(){const active=campaigns.filter(c=>c.status==='active'),budget=active.filter(c=>c.budgetType==='daily').reduce((s,c)=>s+Number(c.budget||0),0),formats=new Set(campaigns.map(c=>c.placement));$('metricCampaigns').textContent=campaigns.length;$('metricActive').textContent=active.length;$('metricBudget').textContent=money(budget);$('metricFormats').textContent=formats.size;for(const status of ['approved','pending','rejected']){const el=$('summary'+status.charAt(0).toUpperCase()+status.slice(1));if(el)el.textContent=String(campaigns.filter(c=>(c.approvalStatus||'pending')===status).length)}fitSummaryMetricValues()}
 let summaryMetricsObserver=null;
@@ -1663,7 +1703,7 @@ function renderModule(name){const root=$('moduleContent');if(!root)return;const 
    root.innerHTML='<div class="module-kpis"><article class="module-card"><span>Creativos guardados</span><strong>'+list.length+'</strong><small>Archivos vinculados</small></article><article class="module-card"><span>Banner</span><strong>'+list.filter(x=>x.c.placement==='banner').length+'</strong><small>HD 2400×360 / 1200×180</small></article><article class="module-card"><span>Verticales</span><strong>'+list.filter(x=>x.c.placement==='entry'||x.c.placement==='interaction').length+'</strong><small>HD 2160×3840 / 1080×1920</small></article><article class="module-card"><span>Campañas con anuncios</span><strong>'+campaigns.filter(c=>normalizeCampaign(c).ads.length).length+'</strong><small>Hasta 12 anuncios por campaña</small></article></div><div class="module-list"><div class="module-list-head"><b>Biblioteca de creativos</b><span>Todos los anuncios guardados</span></div>'+(rows||'<div class="empty">Aún no hay creativos guardados.</div>')+'</div>';
  }else if(name==='reports'){
    const rows=campaigns.map(c=>'<div class="module-row"><div><b>'+escapeHtml(c.name)+'</b><span>'+escapeHtml(objectiveLabel(c.objective))+' · '+escapeHtml(placementLabel(c.placement))+'</span></div><small>'+escapeHtml(statusLabel(c.status))+'</small><small>'+escapeHtml(money(c.budget))+' '+(c.budgetType==='daily'?'diario':'total')+'</small></div>').join('');
-   root.innerHTML='<div class="module-kpis"><article class="module-card"><span>Campañas activas</span><strong>'+active.length+'</strong><small>En circulación</small></article><article class="module-card"><span>Borradores</span><strong>'+draft.length+'</strong><small>Pendientes de activación</small></article><article class="module-card"><span>Pausadas</span><strong>'+paused.length+'</strong><small>Detenidas temporalmente</small></article><article class="module-card"><span>Presupuesto diario activo</span><strong>'+escapeHtml(money(daily))+'</strong><small>Configuración actual</small></article></div><div class="module-grid"><div class="module-list"><div class="module-list-head"><b>Estado de campañas</b><span>Resumen operativo</span></div>'+(rows||'<div class="empty">Aún no hay campañas para analizar.</div>')+'</div>'+moduleEmpty('Métricas de entrega','Impresiones, clics, alcance, CTR y conversiones aparecerán cuando el motor de entrega publicitaria de TaskFlow esté conectado al administrador.')+'</div>';
+   root.innerHTML='<div class="module-kpis"><article class="module-card"><span>Campañas activas</span><strong>'+active.length+'</strong><small>En circulación</small></article><article class="module-card"><span>Borradores</span><strong>'+draft.length+'</strong><small>Pendientes de activación</small></article><article class="module-card"><span>Pausadas</span><strong>'+paused.length+'</strong><small>Detenidas temporalmente</small></article><article class="module-card"><span>Presupuesto diario activo</span><strong>'+escapeHtml(money(daily))+'</strong><small>Configuración actual</small></article></div><div class="tf-report-chart">'+objectiveChartMarkup('count')+objectiveChartMarkup('budget')+'</div><div class="module-grid"><div class="module-list"><div class="module-list-head"><b>Estado de campañas</b><span>Resumen operativo</span></div>'+(rows||'<div class="empty">Aún no hay campañas para analizar.</div>')+'</div>'+moduleEmpty('Métricas de entrega','Impresiones, clics, alcance, CTR y conversiones aparecerán cuando el motor de entrega publicitaria de TaskFlow esté conectado al administrador.')+'</div>';
  }else if(name==='billing'){
    root.innerHTML='<div class="module-kpis"><article class="module-card"><span>Presupuesto configurado</span><strong>'+escapeHtml(money(configured))+'</strong><small>Suma de campañas</small></article><article class="module-card"><span>Presupuesto diario activo</span><strong>'+escapeHtml(money(daily))+'</strong><small>Campañas activas</small></article><article class="module-card"><span>Moneda</span><strong>GTQ</strong><small>Quetzal guatemalteco</small></article><article class="module-card"><span>Movimientos</span><strong>0</strong><small>Sin cobros procesados aquí</small></article></div><div class="module-grid"><div class="module-list"><div class="module-list-head"><b>Control presupuestario</b><span>Configuración por campaña</span></div>'+(campaigns.map(c=>'<div class="module-row"><div><b>'+escapeHtml(c.name)+'</b><span>'+escapeHtml(c.budgetType==='daily'?'Presupuesto diario':'Presupuesto total')+'</span></div><small>'+escapeHtml(money(c.budget))+'</small><small>'+escapeHtml(statusLabel(c.status))+'</small></div>').join('')||'<div class="empty">Aún no hay presupuestos configurados.</div>')+'</div>'+moduleEmpty('Facturación externa','Los métodos de pago, cargos, facturas fiscales y conciliación deben conectarse a un servicio de pagos antes de operar públicamente.')+'</div>';
  }else if(name==='settings'){
