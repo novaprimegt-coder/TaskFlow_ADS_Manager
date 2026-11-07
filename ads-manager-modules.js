@@ -10,7 +10,7 @@ const safe=v=>{try{const u=new URL(String(v||''));return u.protocol==='https:'&&
 const objective={awareness:'Reconocimiento',traffic:'Tráfico',engagement:'Interacción',leads:'Clientes potenciales',sales:'Ventas',app:'Aplicación'};
 const cta={awareness:'Conocer la marca',traffic:'Visitar sitio web',engagement:'Participar',leads:'Solicitar información',sales:'Comprar ahora',app:'Descargar aplicación'};
 const specs={banner:'1200×180 / 2400×360',entry:'1080×1920 / 2160×3840',interaction:'1080×1920 / 2160×3840'};
-let current=null,view='',metricCache=null,metricOwner='',metricAt=0,pendingMetrics=null,revision=0;
+let current=null,view='',metricCache=null,metricOwner='',metricKey='',metricAt=0,pendingMetrics=null,revision=0,campaignMetricsRevision=0;
 let audiencePresets=[],audienceOwner='',audienceLoaded=false;
 const mounted=new WeakSet();
 function section(title,body){return '<section class="tf-tool-panel"><div class="tf-tool-heading"><h3>'+esc(title)+'</h3></div>'+body+'</section>'}
@@ -20,11 +20,12 @@ function campaignIds(api){return [...new Set(api.campaigns.map(x=>x.id).filter(i
 async function getMetrics(api,refresh){
  const owner=api.currentUser?.id||'';
  if(!owner||!api.fbAuth?.currentUser||api.fbAuth.currentUser.uid!==owner)throw new Error('Sesión no disponible.');
- if(!refresh&&metricCache&&metricOwner===owner&&Date.now()-metricAt<45000)return metricCache;
- if(!refresh&&pendingMetrics&&metricOwner===owner)return pendingMetrics;
- metricOwner=owner;
+ const ids=campaignIds(api),key=ids.slice().sort().join(',');
+ if(!refresh&&metricCache&&metricOwner===owner&&metricKey===key&&Date.now()-metricAt<45000)return metricCache;
+ if(!refresh&&pendingMetrics&&metricOwner===owner&&metricKey===key)return pendingMetrics;
+ metricOwner=owner;metricKey=key;
  const job=(async()=>{
-  const ids=campaignIds(api),token=await api.fbAuth.currentUser.getIdToken(),all={},failures=[];
+  const token=await api.fbAuth.currentUser.getIdToken(),all={},failures=[];
   for(let i=0;i<ids.length;i+=12){
    const batch=ids.slice(i,i+12);
    try{
@@ -38,12 +39,49 @@ async function getMetrics(api,refresh){
    }catch(e){failures.push(...batch);console.warn('TaskFlow ADS métricas:',e.message||e)}
   }
   const result={campaigns:all,failed:failures,at:Date.now(),periodDays:30};
-  if(metricOwner===owner){metricCache=result;metricAt=Date.now()}
+  if(metricOwner===owner&&metricKey===key){metricCache=result;metricAt=Date.now()}
   return result;
  })();
  pendingMetrics=job;
  try{return await job}finally{if(pendingMetrics===job)pendingMetrics=null}
 }
+
+/* Rendimiento por campaña y por anuncio:
+   se utiliza únicamente la medición confirmada del servidor, sin combinar campañas. */
+function campaignPerformanceMarkup(m,adId){
+ if(!m||m.error)return '<span class="tf-performance-unavailable" title="No se pudo verificar la medición">— <small>Sin datos verificados</small></span>';
+ const src=adId?(m.byAd&&m.byAd[adId]||{impressions:0,clicks:0}):m;
+ const impressions=Number(src.impressions),clicks=Number(src.clicks);
+ if(!Number.isFinite(impressions)||!Number.isFinite(clicks)||impressions<0||clicks<0)return '<span class="tf-performance-unavailable">— <small>Datos no disponibles</small></span>';
+ const ctr=impressions>0?100*clicks/impressions:0;
+ const stat=(label,value)=>'<span class="tf-performance-stat"><small>'+label+'</small><b>'+esc(value)+'</b></span>';
+ return '<span class="tf-performance-stats" aria-label="Impresiones '+esc(number(impressions))+', clics '+esc(number(clicks))+', CTR '+esc(ctr.toFixed(2))+' por ciento">'+
+ stat('Impresiones',number(impressions))+stat('Clics',number(clicks))+stat('CTR',ctr.toFixed(2)+' %')+'</span>'+
+ '<small class="tf-performance-foot'+(m.partial?' tf-performance-partial':'')+'">'+
+ (m.partial?'Medición parcial: faltan eventos':'Últimos 30 días · confirmados')+'</small>';
+}
+async function paintCampaignMetrics(api,refresh=false){
+ const holder=document.getElementById('campaignBody');
+ if(!holder||!api?.currentUser?.id||!holder.querySelector('[data-tf-campaign-metric]'))return;
+ const owner=api.currentUser.id,ticket=++campaignMetricsRevision;
+ try{
+  const data=await getMetrics(api,refresh);
+  if(ticket!==campaignMetricsRevision||!holder.isConnected||owner!==current?.currentUser?.id)return;
+  holder.querySelectorAll('[data-tf-campaign-metric]').forEach(cell=>{
+   const id=cell.getAttribute('data-tf-campaign-metric');
+   const adId=cell.getAttribute('data-tf-ad-metric')||'';
+   if(!api.campaigns.some(c=>c.id===id&&(adId?Array.isArray(c.ads)&&c.ads.some(a=>a.id===adId):true)))return;
+   cell.innerHTML=campaignPerformanceMarkup(data.campaigns[id],adId);
+  });
+ }catch(error){
+  if(ticket!==campaignMetricsRevision||!holder.isConnected)return;
+  holder.querySelectorAll('[data-tf-campaign-metric]').forEach(cell=>{
+   cell.innerHTML='<span class="tf-performance-unavailable">— <small>No fue posible consultar el servidor</small></span>';
+  });
+  console.warn('TaskFlow ADS rendimiento por campaña:',error?.message||error);
+ }
+}
+
 function totals(metrics){
  const r={impressions:0,clicks:0,known:0,partial:false};
  for(const m of Object.values(metrics.campaigns)){r.known++;r.impressions+=Number(m.impressions)||0;r.clicks+=Number(m.clicks)||0;if(m.partial)r.partial=true}
@@ -242,7 +280,7 @@ function reportContent(api,data){
  for(const m of Object.values(data.campaigns))for(const [day,row] of Object.entries(m.byDay||{})){if(!/^\d{8}$/.test(day))continue;const d=daily[day]||(daily[day]={impressions:0,clicks:0});d.impressions+=Number(row.impressions)||0;d.clicks+=Number(row.clicks)||0}
  const days=Object.keys(daily).sort().slice(-14),max=Math.max(1,...days.map(d=>daily[d].impressions));
  const bars=days.map(day=>'<div class="tf-tool-bar-item" title="'+esc(day)+' · '+esc(number(daily[day].impressions))+' impresiones / '+esc(number(daily[day].clicks))+' clics"><i style="height:'+Math.max(2,Math.round(daily[day].impressions/max*100))+'%"></i><small>'+day.slice(6,8)+'/'+day.slice(4,6)+'</small></div>').join('');
- const rows=api.campaigns.map(c=>{const m=data.campaigns[c.id];return '<tr><td><b>'+esc(c.name)+'</b><small>'+esc(objective[c.objective]||c.objective||'')+'</small></td><td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td><td>'+(m?esc((Number(m.ctr)||0).toFixed(2))+' %':'—')+'</td><td>'+esc(c.placement||'—')+'</td></tr>'}).join('');
+ const rows=api.campaigns.map(c=>{const m=data.campaigns[c.id];return '<tr><td><b>'+esc(c.name)+'</b><small>'+esc(objective[c.objective]||c.objective||'')+'</small>'+(m?.partial?'<small class="tf-tool-warning">Datos parciales</small>':'')+'</td><td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td><td>'+(m?esc((Number(m.ctr)||0).toFixed(2))+' %':'—')+'</td><td>'+esc(c.placement||'—')+'</td></tr>'}).join('');
  const perAd=api.campaigns.flatMap(c=>{const m=data.campaigns[c.id];return (c.ads||[]).map(a=>({c,a,m:m?(m.byAd?.[a.id]||{impressions:0,clicks:0}):null}))}).map(({c,a,m})=>'<tr><td>'+esc(a.name||'Anuncio')+'<small>'+esc(c.name)+'</small></td><td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td><td>'+(m&&Number(m.impressions)?(100*Number(m.clicks||0)/Number(m.impressions)).toFixed(2)+' %':m?'0.00 %':'—')+'</td></tr>').join('');
  return '<div class="tf-tool-kpis">'+mini(hasAny&&!t.known?'—':number(t.impressions),'Impresiones','Eventos confirmados')+mini(hasAny&&!t.known?'—':number(t.clicks),'Clics','Clics confirmados')+mini(hasAny&&!t.known?'—':t.ctr.toFixed(2)+' %','CTR','Clics / impresiones')+mini(t.known+'/'+api.campaigns.length,'Campañas consultadas')+'</div>'+
  (data.failed.length?'<p class="tf-tool-warning">'+data.failed.length+' campaña(s) con métricas no disponibles. No se muestran datos estimados.</p>':'')+
@@ -339,7 +377,7 @@ function wire(root){
   else if(action==='report-refresh')void reports(current,true);
   else if(action==='report-csv')void getMetrics(current,false).then(data=>{
    const rows=[['Campaña','ID','Objetivo','Impresiones','Clics','CTR %','Estado de datos']];
-   current.campaigns.forEach(c=>{const m=data.campaigns[c.id];rows.push([c.name,c.id,objective[c.objective]||c.objective,m?.impressions??'',m?.clicks??'',m?.ctr??'',m?'registrado':'no disponible'])});
+   current.campaigns.forEach(c=>{const m=data.campaigns[c.id];rows.push([c.name,c.id,objective[c.objective]||c.objective,m?.impressions??'',m?.clicks??'',m?.ctr??'',m?(m.partial?'parcial':'registrado'):'no disponible'])});
    csvDownload('taskflow-ads-informe-30-dias.csv',rows);
   }).catch(err=>current.toast('No se pudo exportar: '+err.message));
   else if(action==='budget-save')void changeBudget(btn,id);
@@ -371,5 +409,5 @@ function render(name,api){
  else return false;
  return true;
 }
-window.TaskFlowADSModules=Object.freeze({render,paintOverview});
+window.TaskFlowADSModules=Object.freeze({render,paintOverview,paintCampaignMetrics});
 })();
