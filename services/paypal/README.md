@@ -2,7 +2,7 @@
 
 ## Arquitectura actual
 
-La cuenta receptora indicada es `taskflowgt.oficial@gmail.com`.
+La cuenta receptora se configura únicamente en las variables privadas del servicio; no se publica en esta documentación.
 
 **Frontend:** TaskFlow ADS Manager → Presupuestos → Saldo publicitario.
 
