@@ -5,13 +5,13 @@ const BOUND=new WeakSet();
 let api=null,busy=false,returning=false,processed='';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const message={
- PAYMENTS_DISABLED:'Los cobros todavía no están habilitados.',
+ PAYMENTS_DISABLED:'Las recargas no están disponibles por el momento.',
  PAYMENT_NOT_COMPLETED:'PayPal todavía no confirma esta recarga.',
  ORDER_NOT_FOUND:'Esta orden no pertenece a la cuenta actual.',
- PAYPAL_MERCHANT_UNVERIFIED:'No fue posible comprobar al receptor del pago.',
+ PAYPAL_MERCHANT_UNVERIFIED:'No fue posible completar la operación.',
  AUTH_INVALID:'La sesión no pudo verificarse.',
  ACCOUNT_NOT_ACTIVE:'Esta cuenta no está activa.',
- PAYMENT_SERVICE_UNAVAILABLE:'El servicio de pagos no pudo confirmar la operación.'
+ PAYMENT_SERVICE_UNAVAILABLE:'No se pudo completar la operación. Inténtalo más tarde.'
 };
 function fail(err){return message[err?.message]||'No fue posible completar la operación. Revisa la conexión.'}
 function eligible(){return !!api?.currentUser?.id&&api.fbAuth?.currentUser?.uid===api.currentUser.id}
@@ -36,7 +36,7 @@ function shell(){
  '<button id="tfWalletPayButton" type="submit" disabled>Verificando PayPal…</button></form></div>'+
  '<div class="tf-wallet-movements"><div class="tf-wallet-movement-head"><h4>Movimientos confirmados</h4><button type="button" id="tfWalletRefreshButton">Actualizar</button></div><div id="tfWalletMovements">Consultando movimientos…</div></div></div>'+
  '<p class="tf-wallet-feedback" id="tfWalletFeedback" role="status" aria-live="polite"></p>'+
- '<footer class="tf-wallet-footnote">Solo se acredita dinero después de una captura verificada. Las campañas mantienen presupuestos en GTQ; este saldo se registra en USD, sin conversiones ni descuentos publicitarios automáticos mientras no exista una tarifa definida.</footer></section>';
+ '<footer class="tf-wallet-footnote">Tu saldo se actualizará cuando se confirme cada recarga. Consulta tus movimientos en esta sección.</footer></section>';
 }
 function text(id,value){const x=document.getElementById(id);if(x)x.textContent=value}
 function notice(value){text('tfWalletFeedback',value)}
@@ -50,18 +50,18 @@ function history(items){
 async function refresh(){
  if(!eligible()||!document.getElementById('tfAdsPayPalWallet'))return;
  const uid=api.currentUser.id;
- state('Consultando saldo en el servidor…',false);
+ state('Consultando saldo…',false);
  let status;
- try{status=await call('status','GET',undefined,false)}
- catch(e){state('Servicio de PayPal no disponible.',false);notice(fail(e));return}
+ try{status=await call('status')}
+ catch(e){state('No se pudo consultar el servicio.',false);notice(fail(e));return}
  if(!eligible()||api.currentUser.id!==uid)return;
  try{
   const wallet=await call('wallet');
   if(!eligible()||api.currentUser.id!==uid)return;
   text('tfWalletAmount','US$ '+wallet.balance);
   history(wallet.transactions);
-  state(status.checkoutAvailable?'Saldo verificado':'Saldo verificado; cobros aún no habilitados.',!!status.checkoutAvailable);
-  notice(status.checkoutAvailable?'':status.connectionVerified?'La cuenta PayPal está enlazada con Supabase. Las recargas reales permanecen bloqueadas hasta completar las verificaciones de pagos y webhooks.':'PayPal todavía no pudo confirmar su conexión con el servicio.');
+  state(status.checkoutAvailable?'Saldo actualizado':'Saldo actualizado',!!status.checkoutAvailable);
+  notice(status.checkoutAvailable?'':'Las recargas no están disponibles por el momento.');
  }catch(e){state('Saldo pendiente de verificación.',false);notice(fail(e));history(null)}
 }
 async function pay(form){
@@ -70,7 +70,7 @@ async function pay(form){
  if(!/^(?:0|[1-9]\d{0,5})(?:\.\d{1,2})?$/.test(amount)||Number(amount)<.01||Number(amount)>10000){
   notice('Introduce de US$ 0.01 a US$ 10,000.00, con máximo dos decimales.');return;
  }
- busy=true;state('Creando la solicitud de pago…',false);notice('PayPal solicitará tu autorización antes de cualquier cobro.');
+ busy=true;state('Creando la solicitud de pago…',false);notice('Revisa y confirma el importe antes de realizar el pago.');
  try{
   const result=await call('orders','POST',{amount});
   const u=new URL(result.approveUrl);
@@ -93,7 +93,7 @@ async function afterReturn(ctx,manual=false){
  if(!/^[a-zA-Z0-9]{10,40}$/.test(orderId))return;
  if(processed===orderId&&!manual)return;
  processed=orderId;returning=true;
- api.showView?.('billing');notice('Confirmando el pago con PayPal…');
+ api.showView?.('billing');notice('Confirmando la operación…');
  try{
   const result=await call('capture','POST',{orderId});
   if(result.credited){
