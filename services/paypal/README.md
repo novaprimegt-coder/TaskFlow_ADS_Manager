@@ -1,70 +1,57 @@
-# TaskFlow ADS — saldo publicitario con PayPal Business
+# TaskFlow ADS — integración PayPal independiente
 
-## Modalidad aprobada
-- **Cuenta receptora Live indicada:** `taskflowgt.oficial@gmail.com`.
-- Cobro **por recarga individual de monto libre**, no suscripción automática.
-- El anunciante elige el importe en **USD** (desde 0.01 hasta 10,000.00, límite preventivo del servicio), aprueba cada compra en PayPal, y el servidor acredita únicamente importes capturados y verificados.
-- El saldo y los movimientos se consultan en **Presupuestos → Saldo publicitario** de TaskFlow ADS Manager.
-- El plan/suscripción de TaskFlow que el titular ya tiene **no se sustituye ni modifica**.
+## Arquitectura actual
 
-## Estado
-- Backend Vercel: `taskflow-ads-payments`. Primer despliegue realizado con `PAYPAL_PAYMENTS_ENABLED=false`.
-- Interfaz de saldo integrada en `ads-paypal-wallet.js` y `ads-paypal-wallet.css`.
-- Backend: endpoints `/api/status`, `/api/wallet`, `/api/orders`, `/api/capture`, `/api/webhook`.
-- **No hay cobros habilitados.** Falta configurar claves privadas y validar la recepción de dinero en Sandbox antes de activar Live.
-- No se han trasladado fondos ni asociado automáticamente ninguna suscripción existente.
+La cuenta receptora indicada es `taskflowgt.oficial@gmail.com`.
 
-## Operación segura
-1. Firebase Authentication autentica al anunciante ante el gateway; el servidor verifica su ID token.
-2. El servidor verifica que exista la cuenta comercial activa en Firestore.
-3. Al crear la recarga, genera una orden PayPal Orders v2 con importe exacto USD calculado desde centavos enteros y registra su dueño.
-4. El anunciante es redirigido a PayPal y **aprueba explícitamente el pago**.
-5. PayPal captura el dinero. El servidor consulta directamente la orden, verifica su estado COMPLETED, ID de captura, importe, moneda, orden original y receptor.
-6. Una transacción atómica en Firestore registra la captura global, el movimiento y el incremento del saldo. Clics repetidos/retornos repetidos no duplican el crédito.
-7. Un webhook firmado puede conciliar pagos completados cuando el navegador se cierra. Los reembolsos firmados ajustan el saldo.
-8. Un fallo de verificación no añade saldo. Las peticiones del navegador no pueden escribir el saldo.
+**Frontend:** TaskFlow ADS Manager → Presupuestos → Saldo publicitario.
 
-## Configuración privada en Vercel
-Proyecto: `taskflow-ads-payments` (no reutilizar las credenciales de `taskflow-ads-media`).
+**Servidor activo preparado:** Supabase Edge Function `taskflow-ads-paypal` en el mismo proyecto de Supabase en que está `taskflow-noads`. El código fuente está en `services/paypal/supabase-edge/index.ts`.
 
-| Variable | Función |
-|---|---|
-| `PAYPAL_MODE` | `sandbox` durante pruebas; `live` tras pasar a producción |
-| `PAYPAL_CLIENT_ID` | Client ID REST de la aplicación PayPal del entorno elegido |
-| `PAYPAL_CLIENT_SECRET` | Client Secret REST, exclusivo de Vercel |
-| `PAYPAL_MERCHANT_EMAIL` | Email de cuenta **receptora del entorno elegido**. Sandbox usa un correo de prueba distinto al Live |
-| `PAYPAL_MERCHANT_ID` | Opcional: ID de comerciante de PayPal para contrastar el receptor |
-| `PAYPAL_WEBHOOK_ID` | ID del webhook configurado en PayPal Developer |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | Service account JSON del proyecto Firebase `taskflow-b0ece` como variable cifrada de Vercel |
-| `PAYPAL_PAYMENTS_ENABLED` | `false` hasta terminar las pruebas; `true` cuando se autorice la captura real |
+La función de ADS lee las mismas variables privadas `TF_PAYPAL_MODE`, `TF_PAYPAL_CLIENT_ID` y `TF_PAYPAL_CLIENT_SECRET` utilizadas por la suscripción **TaskFlow sin anuncios**; los valores **nunca** salen de Supabase. La función original `taskflow-noads` no se ha editado y suscripciones, precios y renovaciones no se han modificado.
 
-El webhook debe apuntar a:
-`https://taskflow-ads-payments.vercel.app/api/webhook`
+**Frontend y llamadas:** `ads-paypal-wallet.js` consulta a `https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-paypal`. Rutas: `GET /status`, `GET /wallet`, `POST /orders`, `POST /capture`, `POST /webhook`.
 
-Eventos configurables en PayPal:
-- `PAYMENT.CAPTURE.COMPLETED`
-- `PAYMENT.CAPTURE.REFUNDED`
-- `PAYMENT.CAPTURE.REVERSED`
+## Estado real
 
-**Nunca copiar secretos ni el JSON de servicio a GitHub o al chat.** Configurar directamente en Vercel.
+- Base de datos de saldo prepago y movimientos creada en Supabase; RLS habilitado, sin permisos directos de cliente.
+- OAuth PayPal disponible mediante las variables privadas existentes. La prueba de conexión real se hace al consultar `/status`.
+- Crédito idempotente en PostgreSQL: una captura PayPal nunca incrementa dos veces el saldo.
+- Ajuste de reembolsos con idempotencia y conciliación de capturas.
+- Token de Firebase del usuario verificado usando JWT RS256 y JWKS oficiales, como en `taskflow-noads`.
+- **Los cobros Live siguen deliberadamente deshabilitados** hasta registrar el webhook de Live de ADS y completar pruebas de Sandbox. No se han cobrado ni transferido fondos.
+- El Webhook ID configurado antes en Vercel corresponde a **Sandbox**, no a Live y no debe mezclarse.
+- La cartera está expresada en USD; las campañas conservan sus presupuestos GTQ. No se descuenta automáticamente el presupuesto del saldo mientras no exista una política monetaria definida.
 
-## Saldo y presupuestos de campañas
-- El saldo se almacena en **USD**.
-- Los presupuestos de campañas existentes siguen expresados en **GTQ**.
-- **No se ha habilitado conversión automática de moneda, tarifa por impresión/clic, cobro por entrega ni débito de campañas.** Es necesario fijar una política de precios y conversión antes de tratar el saldo como dinero disponible para consumo publicitario.
-- No se marcan anuncios como pagados únicamente por recibir una URL de retorno.
+## El proyecto Vercel de pruebas
 
-## Modelo de datos Firestore
-- `users/{uid}/adsWallet/main` — saldo acumulado en centavos, solo administrador servidor.
-- `users/{uid}/adsPaymentLedger/{orderId}` — recargas/reembolsos.
-- `adsPaymentOrders/{orderId}` — titular, importe y estado.
-- `adsPaymentCaptures/{captureId}` — índice global para impedir duplicados.
-- `adsPaymentRefunds/{refundId}` — reembolsos verificados.
+`taskflow-ads-payments` permanece como prototipo deshabilitado. El frontend ya no lo utiliza para el saldo: utiliza Supabase para evitar copiar credenciales secretas desde la suscripción sin anuncios. No eliminar este proyecto ni modificar el servicio `taskflow-ads-media` por este cambio.
 
-Las rutas deben protegerse contra escrituras directas desde el cliente en las reglas Firestore de producción; el Admin SDK del gateway opera desde servidor. Revisar posibles reglas generales que permitan escrituras en `users/{uid}/**`.
+## Seguridad
 
-## Recursos oficiales
-- https://developer.paypal.com/checkout/integrate
-- https://developer.paypal.com/api/orders/v2/
+- Los tokens PayPal nunca se envían al navegador.
+- El cliente no crea ni incrementa saldos directamente.
+- PayPal debe confirmar status COMPLETED, importe, moneda, receptor, identificador de orden y captura antes de acreditar.
+- Se previene doble acreditación mediante identificadores únicos y función SQL transaccional.
+- Los webhooks deben superar verificación de firma en PayPal.
+- El pago requiere aprobación individual del comprador, sin recurrencia.
+- Las credenciales de Live y Sandbox son independientes. La aplicación de Sandbox creada por el titular en PayPal Developer **no comparte automáticamente** las claves de la aplicación existente usada por `taskflow-noads`.
+
+## Datos SQL
+
+`taskflow_ads_balances`, `taskflow_ads_orders`, `taskflow_ads_captures`, `taskflow_ads_payment_ledger`, `taskflow_ads_refunds`.
+
+Las funciones `taskflow_ads_credit_capture` y `taskflow_ads_apply_refund` solo pueden ejecutarse con el rol `service_role`. Se probaron con operaciones simuladas dentro de una transacción revertida. No se registró dinero real en esa prueba.
+
+## Requisitos antes de activar Live
+
+1. Verificar en `/status` que la cuenta PayPal existente responde con OAuth válido.
+2. Registrar/validar el webhook Live de esta integración, separado del webhook de la suscripción.
+3. Completar una recarga de prueba controlada y reconciliar el saldo, captura y devolución.
+4. Confirmar un método verificable de conversión GTQ/USD y política de consumo publicitario si el saldo va a financiar la entrega de anuncios.
+5. Solo entonces habilitar el cobro Live, sin exponer claves al navegador o repositorio.
+
+## Documentación
+
 - https://developer.paypal.com/api/rest/webhooks/
-- https://developer.paypal.com/api/codes/currency/
+- https://developer.paypal.com/api/orders/v2/
