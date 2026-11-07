@@ -60,8 +60,8 @@ async function refresh(){
   if(!eligible()||api.currentUser.id!==uid)return;
   text('tfWalletAmount','US$ '+wallet.balance);
   history(wallet.transactions);
-  state(status.checkoutAvailable?'Saldo actualizado':'Saldo actualizado',!!status.checkoutAvailable);
-  notice(status.checkoutAvailable?'':'Las recargas no están disponibles por el momento.');
+  state('Saldo actualizado',!!status.checkoutAvailable);
+  notice('');
  }catch(e){state('Saldo pendiente de verificación.',false);notice(fail(e));history(null)}
 }
 async function pay(form){
