@@ -89,3 +89,43 @@
   #campaignsView .tf-performance-stat small{font-size:8px}
   #campaignsView .tf-performance-stat b{font-size:11px}
 }
+
+
+/* Actividad reciente: resumen de rendimiento individual, sin mezclar campañas. */
+#overviewView .tf-recent-item .tf-recent-copy .tf-recent-performance{
+ display:flex;
+ flex-direction:column;
+ align-items:flex-start;
+ gap:3px;
+ max-width:100%;
+ min-width:0;
+ margin-top:6px;
+ white-space:normal;
+ overflow:visible;
+ text-overflow:clip;
+ line-height:1.4;
+}
+#overviewView .tf-recent-item .tf-recent-performance small{
+ display:block;
+ font-size:9px;
+ font-weight:700;
+ color:#7189a5;
+ white-space:normal;
+ line-height:1.4;
+}
+#overviewView .tf-recent-item .tf-recent-performance strong{
+ display:block;
+ width:100%;
+ max-width:100%;
+ color:#1765b7;
+ font-size:10.5px;
+ font-weight:850;
+ white-space:normal;
+ overflow-wrap:anywhere;
+ line-height:1.4;
+ font-variant-numeric:tabular-nums;
+}
+@media(max-width:640px){
+ #overviewView .tf-recent-item .tf-recent-performance strong{font-size:10px}
+ #overviewView .tf-recent-item .tf-recent-performance small{font-size:8.5px}
+}
