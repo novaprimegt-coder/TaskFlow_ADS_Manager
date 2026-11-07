@@ -92,6 +92,7 @@
 #tfAdsPayPalWallet .tf-wallet-tip{font-size:10px;color:#8196ac}
 #tfAdsPayPalWallet .tf-wallet-feedback{margin:0;padding:0 22px;color:#9b6624;font-size:11px;line-height:1.55}
 #tfAdsPayPalWallet .tf-wallet-feedback:not(:empty){padding:12px 22px;background:#fff9eb;border-top:1px solid #f6ead2}
+#tfAdsPayPalWallet #tfWalletRetryPayment{display:block;margin:8px 0 0;min-height:34px;border:1px solid #d9b66f;background:#fff;color:#85571a;border-radius:9px;padding:6px 12px;font-size:11px;font-weight:800}
 #tfAdsPayPalWallet .tf-wallet-footnote{
  display:block;margin:0;padding:16px 22px;background:#f7faff;border-top:1px solid #eaf0f7;color:#73879c;font-size:10px;line-height:1.65
 }
