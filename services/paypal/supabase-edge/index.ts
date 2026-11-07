@@ -11,7 +11,7 @@ const CLIENT_ID = Deno.env.get("TF_PAYPAL_CLIENT_ID")||"";
 const CLIENT_SECRET = Deno.env.get("TF_PAYPAL_CLIENT_SECRET")||"";
 const API_BASE = MODE==="live"?"https://api-m.paypal.com":"https://api-m.sandbox.paypal.com";
 const SANDBOX_EMAIL = Deno.env.get("TF_PAYPAL_ADS_SANDBOX_EMAIL")||"";
-const MERCHANT_EMAIL = MODE==="live"?"taskflowgt.oficial@gmail.com":SANDBOX_EMAIL;
+const MERCHANT_EMAIL = MODE==="live"?(Deno.env.get("TF_PAYPAL_ADS_LIVE_MERCHANT_EMAIL")||""):SANDBOX_EMAIL;
 // No activar cobros live sin webhook Live e integración de reembolsos verificados.
 const ENABLE_LIVE_CHECKOUT = false;
 const ENABLE_CHECKOUT = !!CLIENT_ID && !!CLIENT_SECRET && !!MERCHANT_EMAIL && (MODE==="sandbox" || ENABLE_LIVE_CHECKOUT);
@@ -206,16 +206,11 @@ Deno.serve(async req=>{
   return new Response(null,{status:204,headers:h});
  }
  try{
-  if(req.method==="GET"&&path==="/status"){
-   let linked=false;
-   try{linked=!!(await accessToken())}catch{}
-   return reply(req,200,{provider:"PayPal",mode:MODE,currency:CURRENCY,
-    subscriptionCredentialsReused:!!CLIENT_ID&&!!CLIENT_SECRET,
-    connectionVerified:linked,checkoutAvailable:ENABLE_CHECKOUT,
-    note:"Función exclusiva de anuncios. No modifica la suscripción sin anuncios."});
-  }
   if(req.method==="POST"&&path==="/webhook")return reply(req,200,await webhook(req));
   const uid=await authUser(req);
+  // No exponer públicamente entorno, configuración de claves ni arquitectura.
+  if(req.method==="GET"&&path==="/status")
+   return reply(req,200,{checkoutAvailable:ENABLE_CHECKOUT});
   if(req.method==="GET"&&path==="/wallet")return reply(req,200,await wallet(uid));
   if(req.method==="POST"&&path==="/orders")return reply(req,201,await create(uid,(await parse(req)).amount));
   if(req.method==="POST"&&path==="/capture")return reply(req,200,await verifyAndCredit(String((await parse(req)).orderId||""),uid));
@@ -223,6 +218,6 @@ Deno.serve(async req=>{
  }catch(e){
   const code=String(e?.message||"PAYMENT_SERVICE_UNAVAILABLE");
   console.error("TaskFlow ADS PayPal:",code);
-  return reply(req,e?.status||503,{error:/^(AUTH_|INVALID_|ORDER_NOT_FOUND|PAYMENTS_DISABLED|PAYMENT_NOT_COMPLETED|PAYPAL_RECEIVER_MISMATCH)/.test(code)?code:"PAYMENT_SERVICE_UNAVAILABLE"});
+  return reply(req,e?.status||503,{error:/^(AUTH_|INVALID_|ORDER_NOT_FOUND|PAYMENTS_DISABLED|PAYMENT_NOT_COMPLETED)/.test(code)?code:"PAYMENT_SERVICE_UNAVAILABLE"});
  }
 });
