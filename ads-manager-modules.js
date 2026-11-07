@@ -366,7 +366,7 @@ function render(name,api){
  if(name==='audiences'){root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
  else if(name==='creatives')root.innerHTML=creatives(api);
  else if(name==='reports'){root.innerHTML=wrap('Informes de rendimiento','Impresiones, clics, CTR y desglose de los eventos registrados, sin estimaciones ni compras inventadas.','<div class="tf-tool-buttons"><button type="button" data-tf-action="report-refresh">Actualizar métricas</button><button type="button" data-tf-action="report-csv">Exportar CSV</button></div><div id="tfAdsReportsPayload"></div>');void reports(api,false)}
- else if(name==='billing')root.innerHTML=budgets(api);
+ else if(name==='billing'){root.innerHTML=budgets(api);window.TaskFlowADSWallet?.mount?.(api)}
  else if(name==='settings')root.innerHTML=settings(api);
  else return false;
  return true;
