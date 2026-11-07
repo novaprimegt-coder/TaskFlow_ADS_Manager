@@ -1085,6 +1085,8 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 </style>
 <script defer src="./ads-crystal-hero.js?v=20261106-crystal-2"></script>
 <link rel="stylesheet" href="./ads-settings-theme.css?v=20261106-settings-1">
+<link rel="stylesheet" href="./ads-paypal-wallet.css?v=20261107-1">
+<script defer src="./ads-paypal-wallet.js?v=20261107-1"></script>
 </head>
 <body>
 
@@ -2015,8 +2017,8 @@ function publicationState(c){
  if(!campaignReady(c))return 'Archivo pendiente · sin entrega';
  return 'Aprobada · habilitada según audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
-function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,renderAll,toast}}
-function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary();renderObjectiveInsights();if(window.TaskFlowADSModules?.paintOverview&&currentUser)void window.TaskFlowADSModules.paintOverview(adsModulesContext(),false)}
+function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,renderAll,showView,toast}}
+function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary();renderObjectiveInsights();if(window.TaskFlowADSModules?.paintOverview&&currentUser)void window.TaskFlowADSModules.paintOverview(adsModulesContext(),false);if(window.TaskFlowADSWallet?.onAuth&&currentUser)window.TaskFlowADSWallet.onAuth(adsModulesContext())}
 function fitSummaryMetricValues(){
  // Mantiene las cifras completas cuando caben; usa formato compacto solo si es necesario.
  // No estira ni deforma números y conserva el dato íntegro en título accesible.
