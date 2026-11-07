@@ -1,0 +1,91 @@
+/* Resultados por campaña, conjunto y anuncio — datos confirmados, ventana de 30 días. */
+#campaignsView .tf-performance-cell {
+  min-width:205px;
+  max-width:245px;
+  white-space:normal;
+  vertical-align:middle;
+  padding:12px 10px;
+  background:linear-gradient(100deg,rgba(242,248,255,.48),rgba(255,255,255,0));
+  color:#617894;
+  font-size:11px;
+  text-align:center;
+}
+#campaignsView .tf-performance-stats {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:center;
+  gap:6px;
+  width:100%;
+  min-width:0;
+}
+#campaignsView .tf-performance-stat {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-width:0;
+  padding:8px 3px;
+  background:#f1f7ff;
+  border:1px solid #e0ebf8;
+  border-radius:9px;
+}
+#campaignsView .tf-performance-stat small{
+  display:block;
+  font-size:9px;
+  line-height:1.1;
+  font-weight:750;
+  color:#687f9a;
+}
+#campaignsView .tf-performance-stat b{
+  display:block;
+  width:100%;
+  color:#164c87;
+  font-size:12px;
+  font-weight:850;
+  font-variant-numeric:tabular-nums;
+  line-height:1.2;
+  white-space:nowrap;
+}
+#campaignsView .tf-performance-stat:nth-child(2){
+  background:#effafc;
+  border-color:#d9f1f3;
+}
+#campaignsView .tf-performance-stat:nth-child(2) b{color:#117b93}
+#campaignsView .tf-performance-stat:nth-child(3){
+  background:#f6f7fc;
+  border-color:#e7eaf5;
+}
+#campaignsView .tf-performance-stat:nth-child(3) b{color:#415b8f}
+#campaignsView .tf-performance-foot{
+  display:block;
+  padding-top:7px;
+  text-align:center;
+  font-size:9px;
+  font-weight:650;
+  color:#788aa0;
+  line-height:1.25;
+}
+#campaignsView .tf-performance-foot.tf-performance-partial{
+  color:#9b6520;
+  font-weight:800;
+}
+#campaignsView .tf-performance-unavailable{
+  display:grid;
+  justify-items:center;
+  gap:4px;
+  font-weight:800;
+  color:#657b96;
+}
+#campaignsView .tf-performance-unavailable small{
+  font-size:9px;
+  font-weight:600;
+  color:#8696a9;
+}
+@media(max-width:700px){
+  #campaignsView .tf-performance-cell{min-width:190px;max-width:215px;padding:10px 8px}
+  #campaignsView .tf-performance-stats{gap:5px}
+  #campaignsView .tf-performance-stat{padding:7px 2px}
+  #campaignsView .tf-performance-stat small{font-size:8px}
+  #campaignsView .tf-performance-stat b{font-size:11px}
+}
