@@ -1,6 +1,6 @@
 /* TaskFlow ADS: recargas individuales PayPal, saldo leído exclusivamente del servidor. */
 (()=>{'use strict';
-const BASE='https://taskflow-ads-payments.vercel.app';
+const BASE='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-paypal';
 const BOUND=new WeakSet();
 let api=null,busy=false,returning=false,processed='';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -21,7 +21,7 @@ async function call(route,method='GET',body,auth=true){
  if(body!==undefined)headers['Content-Type']='application/json';
  const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),16000);
  try{
-  const res=await fetch(BASE+'/api/'+route,{method,headers,credentials:'omit',cache:'no-store',signal:abort.signal,...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const res=await fetch(BASE+'/'+route,{method,headers,credentials:'omit',cache:'no-store',signal:abort.signal,...(body===undefined?{}:{body:JSON.stringify(body)})});
   const data=await res.json().catch(()=>({}));
   if(!res.ok)throw Error(data.error||'PAYMENT_SERVICE_UNAVAILABLE');
   return data;
@@ -61,7 +61,7 @@ async function refresh(){
   text('tfWalletAmount','US$ '+wallet.balance);
   history(wallet.transactions);
   state(status.checkoutAvailable?'Saldo verificado':'Saldo verificado; cobros aún no habilitados.',!!status.checkoutAvailable);
-  notice(status.checkoutAvailable?'':'El servidor de cobros necesita sus credenciales privadas de PayPal y Firebase.');
+  notice(status.checkoutAvailable?'':status.connectionVerified?'La cuenta PayPal está enlazada con Supabase. Las recargas reales permanecen bloqueadas hasta completar las verificaciones de pagos y webhooks.':'PayPal todavía no pudo confirmar su conexión con el servicio.');
  }catch(e){state('Saldo pendiente de verificación.',false);notice(fail(e));history(null)}
 }
 async function pay(form){
