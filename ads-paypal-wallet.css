@@ -1,0 +1,111 @@
+/* TaskFlow ADS - saldo PayPal. Diseño restringido a #tfAdsPayPalWallet. */
+#moduleContent #tfAdsPayPalWallet{
+ --wallet-ink:#213c5e;
+ box-sizing:border-box;width:100%;min-width:0;max-width:100%;margin:0 0 18px;
+ overflow:hidden;isolation:isolate;
+ border:1px solid #d9e7f7;border-radius:21px;background:#fff;
+ box-shadow:0 13px 38px rgba(24,58,100,.075);
+}
+#tfAdsPayPalWallet *{box-sizing:border-box}
+#tfAdsPayPalWallet .tf-wallet-head{
+ display:flex;align-items:center;gap:13px;padding:20px 22px;
+ background:linear-gradient(111deg,#eff7ff 0%,#fff 79%);border-bottom:1px solid #e5eef9;
+}
+#tfAdsPayPalWallet .tf-wallet-logo{
+ width:43px;height:43px;border-radius:12px;display:grid;place-items:center;flex:none;
+ background:linear-gradient(136deg,#0865d9,#19b4db);color:#fff;
+ box-shadow:0 5px 15px #0865d92b;font-weight:950;font-size:22px;font-style:italic;
+}
+#tfAdsPayPalWallet .tf-wallet-head>div:nth-child(2){flex:1;min-width:0}
+#tfAdsPayPalWallet .tf-wallet-head small{
+ display:block;font-size:10px;letter-spacing:.12em;font-weight:850;color:#6389b2;
+}
+#tfAdsPayPalWallet .tf-wallet-head h3{margin:4px 0 0;color:#1a3c62;font-size:clamp(17px,3vw,20px);font-weight:850}
+#tfAdsPayPalWallet .tf-wallet-head>span{
+ padding:7px 10px;color:#2173c7;background:#e4f1ff;border:1px solid #d3e5fa;border-radius:999px;font-size:11px;font-weight:900
+}
+#tfAdsPayPalWallet .tf-wallet-main{
+ position:relative;overflow:hidden;padding:22px;
+ background:radial-gradient(ellipse at 90% 10%,rgba(35,202,213,.17),transparent 56%),linear-gradient(140deg,#08264c,#104987 65%,#085d9e);
+}
+#tfAdsPayPalWallet .tf-wallet-main:after{
+ content:"";position:absolute;right:-70px;top:-70px;width:185px;height:185px;border-radius:50%;
+ border:1px solid rgba(255,255,255,.16);box-shadow:0 0 0 38px rgba(255,255,255,.045),0 0 0 76px rgba(255,255,255,.025);pointer-events:none;
+}
+#tfAdsPayPalWallet .tf-wallet-main>small{display:block;color:#bbd7f7;font-weight:750;font-size:11px}
+#tfAdsPayPalWallet .tf-wallet-main>strong{
+ position:relative;z-index:1;display:block;margin:8px 0 3px;color:#fff;
+ font-size:clamp(28px,5vw,36px);font-weight:900;letter-spacing:-.035em;line-height:1.17;
+ overflow-wrap:anywhere;font-variant-numeric:tabular-nums;
+}
+#tfAdsPayPalWallet .tf-wallet-main>p{
+ position:relative;z-index:1;margin:9px 0 0;color:#d3e6ff;font-size:11px;line-height:1.5
+}
+#tfAdsPayPalWallet .tf-wallet-columns{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;
+}
+#tfAdsPayPalWallet .tf-wallet-recharge,#tfAdsPayPalWallet .tf-wallet-movements{min-width:0;padding:23px}
+#tfAdsPayPalWallet .tf-wallet-recharge{border-right:1px solid #edf1f7}
+#tfAdsPayPalWallet h4{margin:0;color:#253f5c;font-size:14px;font-weight:850}
+#tfAdsPayPalWallet .tf-wallet-recharge>p{
+ margin:8px 0 17px;color:#7890a7;font-size:11px;line-height:1.6
+}
+#tfAdsPayPalWallet #tfWalletRechargeForm{display:grid;gap:10px}
+#tfAdsPayPalWallet #tfWalletRechargeForm label{
+ font-size:11px;color:#4a6684;font-weight:800;line-height:1.4
+}
+#tfAdsPayPalWallet .tf-wallet-input{
+ display:flex;align-items:center;overflow:hidden;min-height:47px;border:1px solid #d2e0ee;border-radius:12px;background:#fafdff;
+}
+#tfAdsPayPalWallet .tf-wallet-input:focus-within{border-color:#3e88ed;box-shadow:0 0 0 3px rgba(48,133,231,.12)}
+#tfAdsPayPalWallet .tf-wallet-input>span{
+ display:grid;place-items:center;min-height:47px;padding:0 13px;background:#f1f6fc;border-right:1px solid #d2e0ee;color:#3b6b9f;font-weight:850;font-size:12px;flex:none
+}
+#tfAdsPayPalWallet .tf-wallet-input input{
+ display:block;flex:1;min-width:0;width:100%;margin:0!important;border:0!important;background:transparent!important;
+ padding:10px 12px!important;box-shadow:none!important;outline:none!important;color:#244b76;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;
+}
+#tfAdsPayPalWallet #tfWalletRechargeForm button{
+ min-height:47px;padding:11px 14px;border:1px solid #1165e1;border-radius:12px;
+ background:linear-gradient(115deg,#0663ee,#1585ef 66%,#14afd8);color:#fff;
+ font-weight:850;font-size:12px;box-shadow:0 6px 15px rgba(5,104,238,.16)
+}
+#tfAdsPayPalWallet #tfWalletRechargeForm button:hover:not(:disabled){filter:brightness(1.07)}
+#tfAdsPayPalWallet #tfWalletRechargeForm button:disabled{
+ cursor:not-allowed;opacity:.72;background:#edf3fa;border-color:#d6e0ed;color:#738ba4;box-shadow:none
+}
+#tfAdsPayPalWallet .tf-wallet-movement-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+#tfAdsPayPalWallet .tf-wallet-movement-head button{
+ min-height:29px;padding:6px 9px;font-size:10px;background:#edf6ff;border:1px solid #d4e6fa;border-radius:8px;color:#2066b2
+}
+#tfAdsPayPalWallet #tfWalletMovements{
+ min-height:50px;max-height:244px;overflow-y:auto;
+ color:#7a8ea2;font-size:11px;line-height:1.6;
+}
+#tfAdsPayPalWallet .tf-wallet-movement{
+ display:flex;justify-content:space-between;gap:8px;padding:11px 0;border-top:1px solid #edf1f7;align-items:center;
+}
+#tfAdsPayPalWallet .tf-wallet-movement>div{min-width:0}
+#tfAdsPayPalWallet .tf-wallet-movement b{display:block;color:#294761;font-size:11px}
+#tfAdsPayPalWallet .tf-wallet-movement small{display:block;color:#8a9db1;font-size:10px}
+#tfAdsPayPalWallet .tf-wallet-movement>strong{font-size:11px;font-weight:850;color:#168360;white-space:nowrap}
+#tfAdsPayPalWallet .tf-wallet-tip{font-size:10px;color:#8196ac}
+#tfAdsPayPalWallet .tf-wallet-feedback{margin:0;padding:0 22px;color:#9b6624;font-size:11px;line-height:1.55}
+#tfAdsPayPalWallet .tf-wallet-feedback:not(:empty){padding:12px 22px;background:#fff9eb;border-top:1px solid #f6ead2}
+#tfAdsPayPalWallet .tf-wallet-footnote{
+ display:block;margin:0;padding:16px 22px;background:#f7faff;border-top:1px solid #eaf0f7;color:#73879c;font-size:10px;line-height:1.65
+}
+@media(max-width:780px){
+ #tfAdsPayPalWallet .tf-wallet-columns{grid-template-columns:minmax(0,1fr)}
+ #tfAdsPayPalWallet .tf-wallet-recharge{border-right:0;border-bottom:1px solid #edf1f7}
+ #tfAdsPayPalWallet .tf-wallet-recharge,#tfAdsPayPalWallet .tf-wallet-movements{padding:19px}
+ #tfAdsPayPalWallet .tf-wallet-head{padding:17px 18px}
+ #tfAdsPayPalWallet .tf-wallet-main{padding:20px 19px}
+ #tfAdsPayPalWallet .tf-wallet-footnote{padding:14px 19px}
+}
+@media(max-width:420px){
+ #tfAdsPayPalWallet{border-radius:16px}
+ #tfAdsPayPalWallet .tf-wallet-logo{width:38px;height:38px;border-radius:10px}
+ #tfAdsPayPalWallet .tf-wallet-head h3{font-size:17px}
+ #tfAdsPayPalWallet .tf-wallet-head>span{padding:6px 8px}
+}
