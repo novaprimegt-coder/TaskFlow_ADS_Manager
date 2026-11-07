@@ -1,0 +1,23 @@
+// TaskFlow ADS PayPal: fragmentos de seguridad para FUSIONAR con reglas Firestore existentes.
+// Admin SDK en backend ignora reglas, por diseño.
+// IMPORTANTE: reglas Firestore son aditivas (OR). Una regla comodín con allow write
+// sobre users/{uid}/** puede seguir dejando escribir la cartera aunque aquí pongamos false.
+// Auditar y restringir el comodín, no sobrescribir automáticamente reglas de TaskFlow.
+
+// Dentro de match /databases/{database}/documents {
+match /users/{uid}/adsWallet/{documentId} {
+  allow read, write: if false;
+}
+match /users/{uid}/adsPaymentLedger/{documentId} {
+  allow read, write: if false;
+}
+match /adsPaymentOrders/{orderId} {
+  allow read, write: if false;
+}
+match /adsPaymentCaptures/{captureId} {
+  allow read, write: if false;
+}
+match /adsPaymentRefunds/{refundId} {
+  allow read, write: if false;
+}
+// }
