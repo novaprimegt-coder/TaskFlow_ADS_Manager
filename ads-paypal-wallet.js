@@ -83,7 +83,7 @@ function clearQuery(){
  historyReplace(u.pathname+u.search+u.hash);
 }
 function historyReplace(relative){window.history.replaceState(window.history.state,'',relative)}
-async function afterReturn(ctx){
+async function afterReturn(ctx,manual=false){
  if(!ctx?.currentUser?.id||returning)return;
  const u=new URL(window.location.href),mode=u.searchParams.get('tfads_payment');
  if(mode!=='return'&&mode!=='cancel')return;
@@ -91,7 +91,7 @@ async function afterReturn(ctx){
  if(mode==='cancel'){clearQuery();api.showView?.('billing');notice('Operación cancelada: no se añadió saldo.');return}
  const orderId=String(u.searchParams.get('token')||'');
  if(!/^[a-zA-Z0-9]{10,40}$/.test(orderId))return;
- if(processed===orderId)return;
+ if(processed===orderId&&!manual)return;
  processed=orderId;returning=true;
  api.showView?.('billing');notice('Confirmando el pago con PayPal…');
  try{
@@ -99,13 +99,13 @@ async function afterReturn(ctx){
   if(result.credited){
    clearQuery();await refresh();notice('PayPal confirmó el pago. Saldo acreditado correctamente.');
   }else throw Error('PAYMENT_NOT_COMPLETED');
- }catch(e){notice(fail(e)+' Sin confirmación, no se añade saldo. Puedes actualizar y volver a verificar.')}
+ }catch(e){notice(fail(e)+' Sin confirmación, no se añade saldo.');const note=document.getElementById('tfWalletFeedback');if(note){const button=document.createElement('button');button.type='button';button.id='tfWalletRetryPayment';button.textContent='Volver a verificar el pago';note.appendChild(button)}}
  finally{returning=false}
 }
 function bind(root){
  if(BOUND.has(root))return;BOUND.add(root);
  root.addEventListener('submit',e=>{if(e.target.id==='tfWalletRechargeForm'){e.preventDefault();void pay(e.target)}});
- root.addEventListener('click',e=>{if(e.target.closest('#tfWalletRefreshButton'))void refresh()});
+ root.addEventListener('click',e=>{if(e.target.closest('#tfWalletRefreshButton'))void refresh();if(e.target.closest('#tfWalletRetryPayment'))void afterReturn(api,true)});
 }
 function mount(ctx){
  if(!ctx?.root||!ctx?.currentUser)return;
