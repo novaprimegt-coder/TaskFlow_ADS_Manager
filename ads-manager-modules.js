@@ -90,6 +90,23 @@ function totals(metrics){
 function metricValue(m,key){return m&&!m.error&&Number.isFinite(Number(m[key]))?number(m[key]):'—'}
 function csvCell(s){return '"'+String(s==null?'':s).replace(/"/g,'""')+'"'}
 function csvDownload(name,rows){const csv='\uFEFF'+rows.map(row=>row.map(csvCell).join(';')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(href),3000)}
+
+/* Resultados recientes por campaña: reutiliza únicamente la consulta verificada del Resumen. */
+function paintRecentCampaignMetrics(data){
+ document.querySelectorAll('[data-tf-recent-metric]').forEach(node=>{
+  const id=node.getAttribute('data-tf-recent-metric');
+  const m=data?.campaigns?.[id];
+  const impressions=Number(m?.impressions),clicks=Number(m?.clicks);
+  if(!m||m.error||!Number.isFinite(impressions)||!Number.isFinite(clicks)||impressions<0||clicks<0){
+   node.innerHTML='<small>Resultados no disponibles</small>';
+   return;
+  }
+  const ctr=impressions>0?100*clicks/impressions:0;
+  node.innerHTML='<small>Últimos 30 días</small><strong>'+esc(number(impressions))+' impresiones · '+esc(number(clicks))+' clics</strong>'+
+   '<small>CTR '+esc(ctr.toFixed(2))+' %'+(m.partial?' · Datos parciales':'')+'</small>';
+ });
+}
+
 async function paintOverview(api,refresh){current=api;
  const overview=document.getElementById('overviewView');if(!overview||!api.currentUser)return;
  let slot=document.getElementById('tfAdsLiveOverview');
@@ -101,7 +118,8 @@ async function paintOverview(api,refresh){current=api;
   if(token!==revision||!slot.isConnected||api.currentUser.id!==current?.currentUser?.id)return;
   const t=totals(data),empty=!api.campaigns.length;
   slot.innerHTML='<div class="tf-tool-topline"><strong>Rendimiento publicitario real · últimos 30 días</strong><span><button type="button" data-tf-overview-refresh>Actualizar estadísticas</button> <button type="button" data-tf-overview-delivery>Comprobar entrega</button></span></div><div class="tf-tool-kpis">'+mini(empty?'0':t.known?number(t.impressions):'—','Impresiones','Confirmadas por el servidor')+mini(empty?'0':t.known?number(t.clicks):'—','Clics en anuncios','Confirmados por el servidor')+mini(empty?'0 %':t.known?t.ctr.toFixed(2)+' %':'—','CTR','Clics ÷ impresiones')+'</div>'+(data.failed.length?'<p class="tf-tool-warning">No se pudieron consultar '+data.failed.length+' campaña(s). Los valores no disponibles no se han inventado.</p>':'')+(t.partial?'<p class="tf-tool-warning">El servicio devolvió una medición parcial.</p>':'')+'<p class="tf-tool-note">Los clics no acreditan ventas, formularios enviados ni instalaciones. Sin costo de entrega confirmado no se calcula CPC o gasto.</p>';
- }catch(e){if(slot.isConnected)slot.innerHTML='<div class="tf-tool-error">No se pudieron consultar las métricas: '+esc(e.message)+'</div>'}
+  paintRecentCampaignMetrics(data);
+ }catch(e){paintRecentCampaignMetrics({campaigns:{}});if(slot.isConnected)slot.innerHTML='<div class="tf-tool-error">No se pudieron consultar las métricas: '+esc(e.message)+'</div>'}
 }
 
 async function resyncDelivery(api,button){
