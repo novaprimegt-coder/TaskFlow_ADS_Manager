@@ -217,7 +217,7 @@ async function loadAudiencePresets(api,force){
   }catch(e){
    console.warn('ADS audiencias guardadas:',e);
    const target=api.root.querySelector('#tfAdsAudiencePresets');
-   if(target){target.innerHTML='<p class="tf-tool-warning">No se pudieron consultar las plantillas. '+esc(e.message||'Comprueba tu conexión.')+'</p>'}
+   if(target){target.innerHTML='<p class="tf-tool-warning">No se pudieron consultar las audiencias guardadas. Comprueba la conexión e inténtalo nuevamente.</p>'}
    return;
   }
  }
@@ -231,16 +231,47 @@ async function saveAudiencePreset(){
  if(name.length<3||!country||country.length>40||!Number.isInteger(ageMin)||!Number.isInteger(ageMax)||ageMin<18||ageMax>65||ageMin>ageMax){label.textContent='Revisa el nombre, el país y las edades de 18 a 65 años.';return}
  if(audiencePresets.length>=50){label.textContent='Se alcanzó el máximo de 50 audiencias guardadas.';return}
  const btn=form.querySelector('[type="submit"]');btn.disabled=true;label.textContent='Guardando audiencia…';
- const next=[...audiencePresets,{id:'aud_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9),name,country,region,city,ageMin,ageMax}];
- try{await api.withDeadline(presetRef(api).update({audiencePresets:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),20000,'No se confirmó el guardado.');audiencePresets=next;api.root.querySelector('#tfAdsAudiencePresets').innerHTML=presetMarkup(api);api.toast('Audiencia guardada y disponible para otras campañas.')}
- catch(e){label.textContent='No se pudo guardar la audiencia: '+(e.message||'Error de conexión');btn.disabled=false}
+ const newPreset={id:'aud_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9),name,country,region,city,ageMin,ageMax};
+ const uid=api.currentUser.id,ref=presetRef(api);
+ try{
+  let saved=[];
+  await api.withDeadline(api.fbDb.runTransaction(async tx=>{
+   const snap=await tx.get(ref);
+   const stored=snap.exists&&Array.isArray(snap.data()?.audiencePresets)?snap.data().audiencePresets:[];
+   if(snap.exists&&snap.data()?.ownerUid!==uid)throw new Error('ACCOUNT_OWNERSHIP_MISMATCH');
+   if(stored.length>=50)throw new Error('AUDIENCE_LIMIT_REACHED');
+   saved=[...stored,newPreset];
+   const updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+   if(snap.exists){
+    tx.update(ref,{audiencePresets:saved,updatedAt});
+   }else{
+    // Restablece el documento comercial faltante con el propietario autenticado.
+    tx.set(ref,{
+     ownerUid:uid,ownerName:api.currentUser.name||'',
+     ownerEmail:api.currentUser.email||'',businessName:api.currentUser.company||'',
+     country:'GT',accountStatus:'active',
+     audiencePresets:saved,createdAt:updatedAt,updatedAt
+    });
+   }
+  }),20000,'No se confirmó el guardado.');
+  if(current?.currentUser.id!==uid)return;
+  audiencePresets=saved;
+  api.root.querySelector('#tfAdsAudiencePresets').innerHTML=presetMarkup(api);
+  api.toast('Audiencia guardada y disponible para otras campañas.');
+ }catch(e){
+  console.warn('ADS guardado de audiencias:',e?.code||e?.message);
+  label.textContent=e?.message==='AUDIENCE_LIMIT_REACHED'?'Se alcanzó el máximo de 50 audiencias guardadas.':
+   e?.code==='permission-denied'?'No tienes permiso para guardar esta audiencia. Comprueba la sesión.':
+   'No se pudo guardar la audiencia. Comprueba la conexión e inténtalo nuevamente.';
+  btn.disabled=false;
+ }
 }
 async function deleteAudiencePreset(button,id){
  const api=current,p=audiencePresets.find(x=>x.id===id);if(!p)return;
  if(button.dataset.confirm!=='true'){button.dataset.confirm='true';button.textContent='Confirmar eliminación';return}
  button.disabled=true;const next=audiencePresets.filter(x=>x.id!==id);
  try{await api.withDeadline(presetRef(api).update({audiencePresets:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),20000,'No se confirmó la eliminación.');audiencePresets=next;api.root.querySelector('#tfAdsAudiencePresets').innerHTML=presetMarkup(api);api.toast('Plantilla de audiencia eliminada.')}
- catch(e){api.toast('No se pudo eliminar: '+(e.message||'Error de conexión'));button.disabled=false;button.dataset.confirm='false';button.textContent='Eliminar plantilla'}
+ catch(e){console.warn('ADS eliminación de audiencia:',e?.code||e?.message);api.toast('No se pudo eliminar la audiencia. Comprueba la conexión e inténtalo nuevamente.');button.disabled=false;button.dataset.confirm='false';button.textContent='Eliminar plantilla'}
 }
 async function applyAudiencePreset(button,id){
  const api=current,p=audiencePresets.find(x=>x.id===id);
