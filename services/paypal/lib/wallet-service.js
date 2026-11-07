@@ -134,7 +134,7 @@ export async function createTopup(uid,cents){
   });
   return {orderId:order.id,approveUrl:approval,currency:CURRENCY,amount:total};
 }
-function verifiedCapture(order,record,config){
+export function verifiedCapture(order,record,config){
   if(order?.id!==record.id||order?.status!=='COMPLETED')throw new Error('PAYMENT_NOT_COMPLETED');
   if(!Array.isArray(order.purchase_units)||order.purchase_units.length!==1)throw new Error('PAYPAL_ORDER_MISMATCH');
   const unit=order.purchase_units[0];
