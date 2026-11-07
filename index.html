@@ -800,7 +800,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 }
 
 </style>
-<script defer src="./ads-manager-modules.js?v=20261107-campaign-results-2"></script>
+<script defer src="./ads-manager-modules.js?v=20261107-campaign-results-privacy-3"></script>
 <style id="tfAdsCrystalizedHero2026">
 /* Fondo animado exclusivo del encabezado de inicio de sesión; no modifica el formulario. */
 #authView .auth-hero{
@@ -1086,7 +1086,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 <script defer src="./ads-crystal-hero.js?v=20261106-crystal-2"></script>
 <link rel="stylesheet" href="./ads-settings-theme.css?v=20261106-settings-1">
 <link rel="stylesheet" href="./ads-paypal-wallet.css?v=20261107-2">
-<script defer src="./ads-paypal-wallet.js?v=20261107-privacy-4"></script>
+<script defer src="./ads-paypal-wallet.js?v=20261107-privacy-5"></script>
 <link rel="stylesheet" href="./ads-campaign-performance.css?v=20261107-campaign-results-2">
 </head>
 <body>
@@ -1809,7 +1809,7 @@ function resetPasswordVisibility(){
 }
 function initFirebase(){
  if(fbAuth)return;
- if(!window.firebase)throw new Error('Firebase no está disponible.');
+ if(!window.firebase)throw new Error('No se pudo iniciar el servicio. Inténtalo nuevamente.');
  if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
  fbApp=firebase.app();fbAuth=firebase.auth();fbDb=firebase.firestore();fbStorage=firebase.storage();
  // Restringe los reintentos automáticos para que el navegador recupere el control.
