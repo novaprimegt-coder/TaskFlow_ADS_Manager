@@ -12,6 +12,7 @@ export function paypalConfig() {
     clientId: env.PAYPAL_CLIENT_ID || '',
     clientSecret: env.PAYPAL_CLIENT_SECRET || '',
     merchantEmail: env.PAYPAL_MERCHANT_EMAIL || '',
+    merchantId: env.PAYPAL_MERCHANT_ID || '',
     enabled: env.PAYPAL_PAYMENTS_ENABLED === 'true'
   };
 }
