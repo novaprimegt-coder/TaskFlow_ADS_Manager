@@ -1,0 +1,1 @@
+TaskFlow ADS Payments API — frontend estático vacío; utilizar /api/status.
