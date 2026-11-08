@@ -800,7 +800,20 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 }
 
 </style>
-<script defer src="./ads-manager-modules.js?v=20261108-delivery-1"></script>
+<style id="tfAdsBudgetModulePrivate2026">
+/* Afecta exclusivamente a los controles del módulo Presupuestos. */
+#moduleContent .tf-budget-row{display:block;padding:16px 2px}
+#moduleContent .tf-budget-row>div:first-child{margin-bottom:12px}
+#moduleContent .tf-budget-row>div:first-child small{line-height:1.55}
+#moduleContent .tf-budget-row .tf-tool-budget-edit{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end}
+#moduleContent .tf-budget-row .tf-tool-budget-edit label{display:block;min-width:0;font-size:11px;font-weight:750;color:#526d8a}
+#moduleContent .tf-budget-row .tf-tool-budget-edit input,
+#moduleContent .tf-budget-row .tf-tool-budget-edit select{display:block;width:100%;min-width:0;min-height:42px;margin-top:6px;padding:9px 10px;background:#fff;border:1px solid #d3e0ee;border-radius:9px;color:#1b334d;font-size:12px}
+#moduleContent .tf-budget-row .tf-tool-budget-edit button{grid-column:1/-1;justify-self:end;min-width:160px}
+@media(max-width:690px){#moduleContent .tf-budget-row .tf-tool-budget-edit{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:390px){#moduleContent .tf-budget-row .tf-tool-budget-edit{grid-template-columns:minmax(0,1fr)}#moduleContent .tf-budget-row .tf-tool-budget-edit button{width:100%;justify-self:stretch}}
+</style>
+<script defer src="./ads-manager-modules.js?v=20261108-budget-controls-1"></script>
 <style id="tfAdsCrystalizedHero2026">
 /* Fondo animado exclusivo del encabezado de inicio de sesión; no modifica el formulario. */
 #authView .auth-hero{
