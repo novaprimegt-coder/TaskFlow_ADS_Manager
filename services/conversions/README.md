@@ -10,7 +10,7 @@ Este módulo **no es un sistema de cobro** y no garantiza ventas. Permite atribu
 4. Guardar la clave en una variable de entorno del **servidor del anunciante**. Nunca incrustarla en páginas HTML, aplicaciones móviles ni JavaScript del navegador.
 5. Instalar la llamada de confirmación únicamente cuando el evento de negocio haya ocurrido y pueda comprobarse.
 
-Las URLs que TaskFlow entrega para estos objetivos incluyen `tf_ads_click` y `tf_ads_campaign`. No contienen nombre, correo, hábitos o tareas. Para atribuir una compra posterior, conserva `tf_ads_click` en una sesión de servidor o almacenamiento propio con consentimiento, según la legislación aplicable.
+Las URLs de sitios propios que TaskFlow entrega para estos objetivos incluyen `tf_ads_click` y `tf_ads_campaign`. No contienen nombre, correo, hábitos o tareas. Los enlaces directos de Google Play, App Store y mensajerías externas conservan sus parámetros originales; las instalaciones requieren un mecanismo de atribución compatible configurado por el desarrollador. Para atribuir una compra posterior, conserva `tf_ads_click` en una sesión de servidor o almacenamiento propio con consentimiento, según la legislación aplicable.
 
 ## Endpoint de recepción de resultados
 
