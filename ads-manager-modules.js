@@ -285,7 +285,7 @@ async function applyAudiencePreset(button,id){
   const batch=api.fbDb.batch();batch.update(ref,data);
   if(c.approvalStatus==='approved')batch.delete(api.fbDb.collection('adsPublicCampaigns').doc(c.id));
   await api.withDeadline(batch.commit(),20000,'La segmentación no pudo confirmarse.');
-  Object.assign(c,data);api.saveCampaigns();api.renderAll();api.toast('Audiencia aplicada. '+(data.approvalStatus==='pending'?'La campaña requiere nueva aprobación.':'Configuración actualizada.'));
+  Object.assign(c,data);void api.syncPrivateDelivery?.(c.id);api.saveCampaigns();api.renderAll();api.toast('Audiencia aplicada. '+(data.approvalStatus==='pending'?'La campaña requiere nueva aprobación.':'Configuración actualizada.'));
   if(view==='audiences'){api.root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
  }catch(e){api.toast('No se pudo aplicar: '+(e.message||'Comprueba la conexión.'));button.disabled=false;button.textContent='Aplicar segmentación'}
 }
@@ -377,7 +377,7 @@ async function changeBudget(button,id){
   const batch=api.fbDb.batch();batch.update(ref,data);
   if(c.approvalStatus==='approved')batch.delete(api.fbDb.collection('adsPublicCampaigns').doc(c.id));
   await api.withDeadline(batch.commit(),20000,'No se pudo confirmar el presupuesto.');
-  Object.assign(c,data);api.saveCampaigns();api.renderAll();api.toast('Presupuesto actualizado correctamente.');if(view==='billing')api.root.innerHTML=budgets(api);
+  Object.assign(c,data);void api.syncPrivateDelivery?.(c.id);api.saveCampaigns();api.renderAll();api.toast('Presupuesto actualizado correctamente.');if(view==='billing')api.root.innerHTML=budgets(api);
  }catch(e){api.toast('No se pudo guardar: '+(e.message||'Comprueba tu conexión.'));button.disabled=false;button.textContent='Guardar presupuesto'}
 }
 function previewCreative(id,adId){
