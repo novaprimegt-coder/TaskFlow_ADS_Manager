@@ -376,6 +376,7 @@ function impressionStatus(m){
  if(!m)return 'No disponible';
  return {
   not_synced:'Sin sincronización · sin compromiso',
+  overdue:'Plazo vencido: faltan impresiones confirmadas',
   suspended:'Entrega suspendida · necesita nueva evaluación',
   authorized:'Meta autorizada · aún no completada',
   completed:'Meta completada según registro confirmado',
@@ -455,7 +456,7 @@ function reportContent(api,data){
  section('Desglose por formato',formatBreakdown)+
  section('Desglose por objetivo',objectiveBreakdown)+
  section('Desglose por anuncio','<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Anuncio</th><th>Impresiones</th><th>Clics</th><th>CTR</th></tr></thead><tbody>'+perAd+'</tbody></table></div>')+
- '<p class="tf-tool-note">Solo se muestran eventos confirmados por el servidor en los últimos 30 días. Los clics anteriores al inicio de la medición, o que no llegaron al servidor, no pueden reconstruirse ni contarse como reales. No se atribuyen conversiones, ventas, instalaciones, personas únicas ni gastos. '+(!allAvailable?'La descarga incluirá únicamente datos efectivamente disponibles.':'')+'</p>';
+ '<p class="tf-tool-note">Este archivo recoge eventos del método histórico sin verificación de selección. No acredita metas autorizadas ni equivale a impresiones verificadas. Los clics anteriores al inicio de la medición, o que no llegaron al servidor, no pueden reconstruirse ni contarse como reales. No se atribuyen conversiones, ventas, instalaciones, personas únicas ni gastos. '+(!allAvailable?'La descarga incluirá únicamente datos efectivamente disponibles.':'')+'</p>';
 }
 async function reports(api,refresh){
  const holder=document.getElementById('tfAdsReportsPayload');if(!holder)return;
@@ -465,7 +466,7 @@ async function reports(api,refresh){
  if(view!==version||version!=='reports'||owner!==current?.currentUser?.id||!holder.isConnected)return;
  const verified=privateReport.status==='fulfilled'?privateReport.value:null;
  const history=historical.status==='fulfilled'?reportContent(api,historical.value):section('Histórico de eventos','<p class="tf-tool-warning">El registro histórico no está disponible; los datos de entrega confirmada se muestran por separado.</p>');
- holder.innerHTML=verifiedSection(api,verified)+section('Historial anterior (sin comprobación de selección)','<p class="tf-tool-note">Estos registros se almacenaron con el método anterior. No se suman a la entrega verificada para evitar duplicaciones.</p>'+history);
+ holder.innerHTML=verifiedSection(api,verified)+'<details class="tf-ads-legacy-history"><summary>Consultar histórico anterior (no verificado)</summary>'+section('Historial anterior (sin comprobación de selección)','<p class="tf-tool-note">Estos registros se almacenaron con el método anterior. No se suman a la entrega verificada ni acreditan metas contratadas.</p>'+history)+'</details>';
 }
 function budgetDayCount(start,end){
  const valid=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||''))&&Number.isFinite(Date.parse(s+'T00:00:00Z'))&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
@@ -688,7 +689,7 @@ function render(name,api){
  if(name==='adsets')root.innerHTML=adSets(api);
   else if(name==='audiences'){root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
  else if(name==='creatives')root.innerHTML=creatives(api);
- else if(name==='reports'){root.innerHTML=wrap('Informes de rendimiento','Impresiones, clics, CTR y desglose de los eventos registrados, sin estimaciones ni compras inventadas.','<div class="tf-tool-buttons"><button type="button" data-tf-action="report-refresh">Actualizar métricas</button><button type="button" data-tf-action="report-csv">Exportar CSV</button><button type="button" data-tf-action="report-verified-csv">Exportar entrega confirmada</button></div><div id="tfAdsReportsPayload"></div>');void reports(api,false)}
+ else if(name==='reports'){root.innerHTML=wrap('Informes de rendimiento','Impresiones, clics, CTR y desglose de los eventos registrados, sin estimaciones ni compras inventadas.','<div class="tf-tool-buttons"><button type="button" data-tf-action="report-refresh">Actualizar métricas</button><button type="button" data-tf-action="report-verified-csv">Exportar impresiones confirmadas</button><button type="button" data-tf-action="report-csv">Exportar histórico no verificado</button></div><div id="tfAdsReportsPayload"></div>');void reports(api,false)}
  else if(name==='billing'){root.innerHTML=budgets(api);window.TaskFlowADSWallet?.mount?.(api);void paintImpressionCommitments(api)}
  else if(name==='settings')root.innerHTML=settings(api);
  else return false;
