@@ -299,6 +299,51 @@ function creativeRows(api,filter){
   return '<article class="tf-tool-creative"><div class="tf-tool-media">'+(image?'<img loading="lazy" decoding="async" alt="Creativo de '+esc(c.name)+'" src="'+esc(src)+'">':video?'<span class="tf-tool-play">VIDEO</span>':'<span>Sin archivo</span>')+'</div><div class="tf-tool-creative-data"><b>'+esc(a.name||'Anuncio')+'</b><span>'+esc(c.name)+'</span><small>'+esc((m.width||'—')+' × '+(m.height||'—'))+' · '+esc(spec)+'</small><small>'+esc(c.placement==='banner'?'Banner':c.placement==='entry'?'Ingreso':'Interacción')+' · '+esc(objective[c.objective]||'')+'</small><strong class="'+(valid?'tf-tool-success':'tf-tool-warning')+'">'+(valid?'Archivo conforme a formato':'Archivo pendiente o no conforme')+'</strong><div class="tf-tool-buttons"><button type="button" data-tf-action="creative-preview" data-id="'+esc(c.id)+'" data-ad="'+esc(a.id)+'" '+(!src?'disabled':'')+'>Vista previa</button><button type="button" data-tf-action="creative-edit" data-id="'+esc(c.id)+'" data-ad="'+esc(a.id)+'">Editar creativo</button></div></div></article>'
  }).join('')||'<p class="tf-tool-empty">No hay anuncios que coincidan.</p>';
 }
+
+/* Conjuntos: cada conjunto es una campaña operativa con segmentación y presupuesto propios.
+   campaignGroup solo agrupa los conjuntos de una campaña superior, sin publicar metadatos. */
+function adSets(api){
+ const grouped=new Map();
+ for(const c of api.campaigns){
+  const name=String(c.campaignGroup||c.name||'Sin agrupar').trim().slice(0,120)||'Sin agrupar';
+  if(!grouped.has(name))grouped.set(name,[]);
+  grouped.get(name).push(c);
+ }
+ const cards=[...grouped.entries()].map(([name,sets])=>{
+  const daily=sets.filter(c=>c.budgetType==='daily'&&c.status==='active').reduce((sum,c)=>sum+(Number(c.budget)||0),0);
+  const rows=sets.map(c=>{
+   const id=esc(c.id);
+   return '<article class="tf-adset-entry"><div class="tf-adset-entry-title"><b>'+esc(c.name)+'</b><small>'+esc(c.status==='active'?'Activa':c.status==='paused'?'Pausada':'Borrador')+' · '+esc(c.approvalStatus==='approved'?'Aprobado':c.approvalStatus==='rejected'?'Rechazado':'En revisión')+'</small></div>'+
+    '<div class="tf-adset-details">'+esc(c.placement||'—')+' · '+esc(c.budgetType==='total'?'Total':'Diario')+' '+esc(money(c.budget))+' · '+esc([c.city,c.region,c.country].filter(Boolean).join(', ')||'Ubicación general')+'</div>'+
+    '<div class="tf-adset-entry-tools"><label>Campaña superior<input data-tf-adset-group="'+id+'" maxlength="120" value="'+esc(c.campaignGroup||c.name||'')+'" aria-label="Agrupación de '+esc(c.name)+'"></label>'+
+    '<button type="button" data-tf-action="adset-group-save" data-id="'+id+'">Guardar grupo</button>'+
+    '<button type="button" data-tf-action="adset-edit" data-id="'+id+'">Editar conjunto</button>'+
+    '<button type="button" data-tf-action="adset-duplicate" data-id="'+id+'">Duplicar</button></div></article>';
+  }).join('');
+  return '<section class="tf-tool-panel tf-adset-group"><div class="tf-tool-heading"><h3>'+esc(name)+'</h3></div><p class="tf-tool-note">'+sets.length+' conjunto(s) · '+money(daily)+' en presupuestos diarios activos. Los presupuestos totales se contabilizan por separado.</p><div class="tf-adset-group-entries">'+rows+'</div><button type="button" data-tf-action="adset-new" data-group="'+esc(name)+'">Crear conjunto en este grupo</button></section>';
+ }).join('');
+ return '<div class="tf-tool-kpis">'+mini(grouped.size,'Campañas superiores')+mini(api.campaigns.length,'Conjuntos operativos')+mini(api.campaigns.filter(c=>c.status==='active'&&c.approvalStatus==='approved').length,'Conjuntos activos y aprobados')+'</div>'+
+ '<p class="tf-tool-note">Cada conjunto conserva su propia audiencia, presupuesto, calendario, formato y anuncios. La agrupación es administrativa; no combina ni redistribuye presupuestos de diferentes conjuntos.</p>'+
+ '<div class="tf-adsets-groups">'+(cards||'<p class="tf-tool-empty">Todavía no hay conjuntos. Crea una campaña para configurar el primero.</p>')+'</div>'+
+ '<button type="button" data-tf-action="adset-new">Crear conjunto nuevo</button>';
+}
+async function saveAdSetGroup(btn,id){
+ const api=current,c=api?.campaigns.find(x=>x.id===id);
+ if(!api||!c||!api.currentUser)return;
+ const input=api.root.querySelector('[data-tf-adset-group="'+CSS.escape(id)+'"]');
+ const name=String(input?.value||'').trim();
+ if(!name||name.length>120){api.toast('Escribe el nombre de la campaña superior.');return}
+ if(name===(c.campaignGroup||c.name)){api.toast('El conjunto ya pertenece a ese grupo.');return}
+ btn.disabled=true;
+ try{
+  const ref=api.fbDb.collection('users').doc(api.currentUser.id).collection('adsCampaigns').doc(id);
+  await api.withDeadline(ref.update({campaignGroup:name,updatedAt:new Date().toISOString()}),20000,'No se pudo guardar la agrupación.');
+  c.campaignGroup=name;api.saveCampaigns();api.renderAll();
+  if(view==='adsets')api.root.innerHTML=adSets(api);
+  api.toast('Conjunto agrupado correctamente.');
+ }catch(e){api.toast('No se pudo actualizar la agrupación: '+(e.message||'Error de conexión'))}
+ finally{if(btn.isConnected)btn.disabled=false}
+}
 function creatives(api){
  const entries=creativeData(api);
  return wrap('Biblioteca de creativos','Previsualiza archivos reales, comprueba tamaños y abre directamente el editor del anuncio seleccionado.',
@@ -485,7 +530,11 @@ function wire(root){
    current.campaigns.forEach(c=>{const m=data.campaigns[c.id];rows.push([c.name,c.id,objective[c.objective]||c.objective,m?.impressions??'',m?.clicks??'',m?.ctr??'',m?(m.partial?'parcial':'registrado'):'no disponible'])});
    csvDownload('taskflow-ads-informe-30-dias.csv',rows);
   }).catch(err=>current.toast('No se pudo exportar: '+err.message));
-  else if(action==='budget-save')void changeBudget(btn,id);
+  else if(action==='adset-group-save')void saveAdSetGroup(btn,id);
+   else if(action==='adset-edit')void current.openEdit(id);
+   else if(action==='adset-duplicate')void current.duplicateCampaign(id).then(()=>{if(view==='adsets')root.innerHTML=adSets(current)});
+   else if(action==='adset-new'){current.openNew();const field=document.getElementById('campaignGroup');if(field&&btn.dataset.group)field.value=btn.dataset.group}
+   else if(action==='budget-save')void changeBudget(btn,id);
   else if(action==='settings-recovery')void (async()=>{
    const message=root.querySelector('#tfAdsSecurityMessage');btn.disabled=true;
    try{await current.fbAuth.sendPasswordResetEmail(current.currentUser.email);message.textContent='Solicitud de recuperación enviada. Comprueba tu correo.'}
@@ -506,7 +555,8 @@ function wire(root){
 function render(name,api){
  const root=api.root;if(!root||!api.currentUser)return false;
  current=api;view=name;wire(root);
- if(name==='audiences'){root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
+ if(name==='adsets')root.innerHTML=adSets(api);
+  else if(name==='audiences'){root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
  else if(name==='creatives')root.innerHTML=creatives(api);
  else if(name==='reports'){root.innerHTML=wrap('Informes de rendimiento','Impresiones, clics, CTR y desglose de los eventos registrados, sin estimaciones ni compras inventadas.','<div class="tf-tool-buttons"><button type="button" data-tf-action="report-refresh">Actualizar métricas</button><button type="button" data-tf-action="report-csv">Exportar CSV</button></div><div id="tfAdsReportsPayload"></div>');void reports(api,false)}
  else if(name==='billing'){root.innerHTML=budgets(api);window.TaskFlowADSWallet?.mount?.(api)}
