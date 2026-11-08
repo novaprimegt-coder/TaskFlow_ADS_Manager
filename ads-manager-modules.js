@@ -724,6 +724,33 @@ function wire(root){
    })();
    else if(action==='impression-request')void requestImpressions(btn,id);
     else if(action==='budget-save')void changeBudget(btn,id);
+  else if(action==='conversion-setup'||action==='conversion-rotate')void (async()=>{
+    const api=current,rotate=action==='conversion-rotate',notice=root.querySelector('#tfAdsConversionStatus');
+    if(rotate&&!window.confirm('Rotar la clave invalida inmediatamente la anterior. ¿Confirmas?'))return;
+    btn.disabled=true;if(notice)notice.textContent='Verificando conexión y propiedad de campaña…';
+    try{
+     const result=await setupConversion(api,id,rotate);
+     if(view!=='conversions'||!root.isConnected)return;
+     const wrap=root.querySelector('#tfAdsConversionKeyWrap'),field=root.querySelector('#tfAdsConversionKey');
+     if(result.ok===true&&result.created===true&&typeof result.apiKey==='string'){
+      conversionOneTimeKey=result.apiKey;
+      if(field)field.textContent=result.apiKey;
+      if(wrap)wrap.hidden=false;
+      if(notice)notice.textContent='Clave creada y mostrada una única vez. Guárdala en tu servidor.';
+     }else if(result.ok===true&&result.configured){
+      if(notice)notice.textContent='Ya existe una clave privada. Para emitir una nueva debes rotarla.';
+     }else if(notice)notice.textContent=result.reason==='SYNCHRONIZATION_REQUIRED'?
+      'La campaña debe sincronizarse primero en Presupuestos.':
+      'No se pudo habilitar la integración para este objetivo.';
+     void paintConversions(api);
+    }catch(e){if(notice)notice.textContent='No se pudo completar la operación: '+String(e?.message||'Conexión no disponible')}
+    finally{btn.disabled=false}
+   })();
+   else if(action==='conversion-copy')void (async()=>{
+    if(!conversionOneTimeKey){current?.toast?.('La clave privada no está disponible.');return}
+    try{await navigator.clipboard.writeText(conversionOneTimeKey);current?.toast?.('Clave privada copiada.')}
+    catch(_){current?.toast?.('No fue posible copiar automáticamente.')}
+   })();
   else if(action==='settings-recovery')void (async()=>{
    const message=root.querySelector('#tfAdsSecurityMessage');btn.disabled=true;
    try{await current.fbAuth.sendPasswordResetEmail(current.currentUser.email);message.textContent='Solicitud de recuperación enviada. Comprueba tu correo.'}
@@ -743,6 +770,7 @@ function wire(root){
 }
 function render(name,api){
  const root=api.root;if(!root||!api.currentUser)return false;
+ if(name!=='conversions')conversionOneTimeKey='';
  current=api;view=name;wire(root);
  if(name==='conversions'){root.innerHTML=conversions(api);void paintConversions(api)}
  else if(name==='adsets')root.innerHTML=adSets(api);
