@@ -2,6 +2,7 @@ import {put,list} from '@vercel/blob';
 import {createHash} from 'node:crypto';
 import {jwtVerify,createRemoteJWKSet} from 'jose';
 const PID='taskflow-b0ece',ORIGIN='https://novaprimegt-coder.github.io',BASE='tfads-metrics/v1/';
+const PRIVATE_CONFIRM='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/confirm';
 const URL_BASE='https://firestore.googleapis.com/v1/projects/'+PID+'/databases/(default)/documents/';
 const JWKS=createRemoteJWKSet(new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'));
 const valid=x=>typeof x==='string'&&/^[a-zA-Z0-9_-]{3,128}$/.test(x);
@@ -34,12 +35,16 @@ export default async function handler(req,res){
  if(req.headers.origin&&req.headers.origin!==ORIGIN)return output(res,403,{error:'Origen no autorizado'});
  if(req.method==='POST'){
   if(req.headers.origin!==ORIGIN)return output(res,403,{error:'Origen inválido'});
-  const x=req.body||{},id=x.campaignId,ad=x.adId,type=x.event,slot=x.slot,session=x.sessionId;
-  if(!valid(id)||!valid(ad)||!['impression','click'].includes(type)||typeof slot!=='string'||! /^[a-zA-Z0-9_-]{2,50}$/.test(slot)||typeof session!=='string'||! /^[a-f0-9-]{24,80}$/i.test(session))return output(res,400,{error:'Evento inválido'});
+  const x=req.body||{},id=x.campaignId,ad=x.adId,type=x.event,slot=x.slot,session=x.sessionId,token=x.selectionToken;
+  if(!valid(id)||!valid(ad)||!['impression','click'].includes(type)||typeof slot!=='string'||! /^[a-zA-Z0-9_-]{2,50}$/.test(slot)||typeof session!=='string'||! /^[a-f0-9-]{24,80}$/i.test(session)||typeof token!=='string'||! /^[a-f0-9-]{36}$/i.test(token))return output(res,400,{error:'Evento inválido'});
   try{
    const c=await liveCampaign(id);if(!c||!c.ads.some(x=>x.id===ad))return output(res,404,{error:'Campaña no publicada'});
+   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),9000);
+   let verified;
+   try{const response=await fetch(PRIVATE_CONFIRM,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({selectionToken:token,campaignId:id,adId:ad,slot,sessionId:session,event:type}),signal:controller.signal,cache:'no-store'});if(!response.ok)throw Error('UNCONFIRMED');verified=await response.json()}finally{clearTimeout(timeout)}
+   if(verified?.ok!==true)return output(res,403,{error:'Entrega no confirmada'});
    const day=new Date().toISOString().slice(0,10).replace(/-/g,'');
-   const key=createHash('sha256').update([id,ad,slot,session,type,Math.floor(Date.now()/(type==='impression'?30000:2000))].join(':')).digest('hex');
+   const key=createHash('sha256').update([id,ad,slot,token,type].join(':')).digest('hex');
    const path=BASE+id+'/'+day+'/'+type+'/'+ad+'/'+key+'.json';
    try{await put(path,JSON.stringify({campaignId:id,adId:ad,placement:c.placement,type,at:new Date().toISOString()}),{access:'public',contentType:'application/json',addRandomSuffix:false,allowOverwrite:false})}
    catch(e){if(/conflict|exists|overwrite|409/i.test(String(e.message||'')))return output(res,200,{stored:true,duplicate:true});throw e}
