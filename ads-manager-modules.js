@@ -372,6 +372,64 @@ async function getVerifiedMetrics(api){
  }
  return output;
 }
+
+const CONVERSION_SETUP_URL='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/conversion/setup';
+let conversionOneTimeKey='';
+function goalResult(c,m){
+ const fields={awareness:['Impresiones visibles','impressions'],traffic:['Visitas al sitio','visits'],
+  engagement:['Clics','clicks'],leads:['Contactos','leads'],sales:['Compras','purchases'],app:['Instalaciones','installs']};
+ const goal=fields[c.objective]||fields.awareness;
+ if(!m)return {name:goal[0],value:'—',proof:'No disponible'};
+ const merchant=['traffic','leads','sales','app'].includes(c.objective);
+ if(merchant&&!m.trackingConfigured)return {name:goal[0],value:'—',proof:'Necesita conectar el servidor del anunciante'};
+ const n=Number(['impressions','clicks'].includes(goal[1])?m[goal[1]]:m.goalEvents?.[goal[1]]);
+ return {name:goal[0],value:Number.isSafeInteger(n)&&n>=0?number(n):'—',
+  proof:merchant?'Notificado desde la integración autenticada':'Confirmado por TaskFlow'};
+}
+function conversions(api){
+ conversionOneTimeKey='';
+ const campaigns=api.campaigns.filter(c=>['traffic','leads','sales','app'].includes(c.objective));
+ const buttons=campaigns.map(c=>'<tr><td><b>'+esc(c.name)+'</b></td><td>'+esc(objective[c.objective]||c.objective)+'</td><td><button type="button" data-tf-action="conversion-setup" data-id="'+esc(c.id)+'">Crear clave</button> <button type="button" data-tf-action="conversion-rotate" data-id="'+esc(c.id)+'">Rotar</button></td></tr>').join('');
+ return section('Resultados vinculados al objetivo',
+  '<p class="tf-tool-note">Una impresión y un clic no significan una compra ni una visita completada. Cada objetivo muestra únicamente el resultado que puede comprobarse. Las ventas y visitas finales requieren integración del servidor del anunciante.</p>'+
+  '<div id="tfAdsObjectiveResults">Consultando resultados confirmados…</div>')+
+  section('Conectar tu sitio o tienda',
+  '<p class="tf-tool-note">El enlace del anuncio incorpora <code>tf_ads_click</code> para atribuir la visita. Genera una clave privada y consérvala únicamente en el servidor de tu sitio, nunca en HTML público ni JavaScript visible. La clave se muestra una sola vez al generarse y deja de funcionar si la rotas.</p>'+
+  '<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Campaña</th><th>Objetivo</th><th>Integración</th></tr></thead><tbody>'+
+  (buttons||'<tr><td colspan="3">No existen campañas que requieran conexión comercial.</td></tr>')+'</tbody></table></div>'+
+  '<p id="tfAdsConversionStatus" role="status" class="tf-tool-note"></p><div id="tfAdsConversionKeyWrap" hidden>'+
+  '<p class="tf-tool-warning">Clave privada de un solo uso. Guárdala de inmediato como variable de entorno en el servidor de tu tienda.</p>'+
+  '<code id="tfAdsConversionKey" class="tf-ads-private-key"></code><button type="button" data-tf-action="conversion-copy">Copiar clave privada</button></div>')+
+  section('Confirmación por el servidor del anunciante',
+  '<p class="tf-tool-note">El sitio envía un POST HTTPS a <code>https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/conversion/record</code> con <code>Authorization: Bearer CLAVE_PRIVADA</code> y estos campos: <code>campaignId</code>, <code>clickId</code> (valor recibido en <code>tf_ads_click</code>), <code>event</code> (visit, lead, purchase o install), <code>externalId</code> (identificador único de la operación), <code>valueMinor</code> (centavos) y <code>currency</code> (p. ej. GTQ). Las compras deben confirmarse antes del envío; las compras duplicadas no se vuelven a contar.</p>');
+}
+async function paintConversions(api){
+ const target=api.root.querySelector('#tfAdsObjectiveResults'),owner=api.currentUser?.id;
+ if(!target)return;
+ try{
+  const data=await getVerifiedMetrics(api);
+  if(view!=='conversions'||owner!==current?.currentUser?.id||!target.isConnected)return;
+  target.innerHTML=(data.failed.length?'<p class="tf-tool-warning">No se pudo comprobar '+data.failed.length+' campaña(s).</p>':'')+
+  '<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Campaña</th><th>Objetivo</th><th>Indicador</th><th>Resultado 30 días</th><th>Estado de medición</th></tr></thead><tbody>'+
+  (api.campaigns.map(c=>{const m=data.campaigns[c.id],r=goalResult(c,m);
+   const revenue=c.objective==='sales'&&m?.trackingConfigured&&Number(m.goalEvents?.revenueGtqMinor)>0?
+    '<small>Valor de compras GTQ: '+esc(money(Number(m.goalEvents.revenueGtqMinor)/100))+'</small>':'';
+   return '<tr><td><b>'+esc(c.name)+'</b></td><td>'+esc(objective[c.objective]||c.objective||'')+'</td><td>'+esc(r.name)+'</td><td><b>'+esc(r.value)+'</b>'+revenue+'</td><td>'+esc(r.proof)+'</td></tr>'
+  }).join('')||'<tr><td colspan="5">No hay campañas.</td></tr>')+'</tbody></table></div>';
+ }catch(e){if(target.isConnected)target.textContent='No fue posible obtener un informe exacto del servidor.'}
+}
+async function setupConversion(api,id,rotate){
+ if(api?.fbAuth?.currentUser?.uid!==api?.currentUser?.id)throw Error('Sesión no disponible.');
+ const token=await api.fbAuth.currentUser.getIdToken(),abort=new AbortController(),timer=setTimeout(()=>abort.abort(),16000);
+ try{
+  const r=await fetch(CONVERSION_SETUP_URL,{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:abort.signal,
+   headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+   body:JSON.stringify({campaignId:id,action:rotate?'rotate':'create'})});
+  if(!r.ok)throw Error('Servicio de integración no disponible.');
+  return await r.json();
+ }finally{clearTimeout(timer)}
+}
+
 function impressionStatus(m){
  if(!m)return 'No disponible';
  return {
@@ -686,7 +744,8 @@ function wire(root){
 function render(name,api){
  const root=api.root;if(!root||!api.currentUser)return false;
  current=api;view=name;wire(root);
- if(name==='adsets')root.innerHTML=adSets(api);
+ if(name==='conversions'){root.innerHTML=conversions(api);void paintConversions(api)}
+ else if(name==='adsets')root.innerHTML=adSets(api);
   else if(name==='audiences'){root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
  else if(name==='creatives')root.innerHTML=creatives(api);
  else if(name==='reports'){root.innerHTML=wrap('Informes de rendimiento','Impresiones, clics, CTR y desglose de los eventos registrados, sin estimaciones ni compras inventadas.','<div class="tf-tool-buttons"><button type="button" data-tf-action="report-refresh">Actualizar métricas</button><button type="button" data-tf-action="report-verified-csv">Exportar impresiones confirmadas</button><button type="button" data-tf-action="report-csv">Exportar histórico no verificado</button></div><div id="tfAdsReportsPayload"></div>');void reports(api,false)}
