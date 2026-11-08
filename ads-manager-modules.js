@@ -331,12 +331,27 @@ function reportContent(api,data){
  const bars=days.map(day=>'<div class="tf-tool-bar-item" title="'+esc(day)+' · '+esc(number(daily[day].impressions))+' impresiones / '+esc(number(daily[day].clicks))+' clics"><i style="height:'+Math.max(2,Math.round(daily[day].impressions/max*100))+'%"></i><small>'+day.slice(6,8)+'/'+day.slice(4,6)+'</small></div>').join('');
  const rows=api.campaigns.map(c=>{const m=data.campaigns[c.id];return '<tr><td><b>'+esc(c.name)+'</b><small>'+esc(objective[c.objective]||c.objective||'')+'</small>'+(m?.partial?'<small class="tf-tool-warning">Datos parciales</small>':'')+'</td><td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td><td>'+(m?esc((Number(m.ctr)||0).toFixed(2))+' %':'—')+'</td><td>'+esc(c.placement||'—')+'</td></tr>'}).join('');
  const perAd=api.campaigns.flatMap(c=>{const m=data.campaigns[c.id];return (c.ads||[]).map(a=>({c,a,m:m?(m.byAd?.[a.id]||{impressions:0,clicks:0}):null}))}).map(({c,a,m})=>'<tr><td>'+esc(a.name||'Anuncio')+'<small>'+esc(c.name)+'</small></td><td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td><td>'+(m&&Number(m.impressions)?(100*Number(m.clicks||0)/Number(m.impressions)).toFixed(2)+' %':m?'0.00 %':'—')+'</td></tr>').join('');
+
+ // Datos confirmados; grupos no disponibles se muestran sin atribuciones inventadas.
+ const breakdownRows=(field,labels,values)=>values.map(key=>{
+  const group=api.campaigns.filter(c=>(c[field]||'')===key),known=group.filter(c=>data.campaigns[c.id]);
+  const impressions=known.reduce((sum,c)=>sum+(Number(data.campaigns[c.id].impressions)||0),0);
+  const clicks=known.reduce((sum,c)=>sum+(Number(data.campaigns[c.id].clicks)||0),0);
+  const partial=known.length<group.length||known.some(c=>data.campaigns[c.id].partial);
+  const has=known.length>0;
+  return '<tr><td><b>'+esc(labels[key]||key)+'</b><small>'+group.length+' campaña(s) · '+known.length+' con métricas'+(partial?' · parcial':'')+'</small></td><td>'+(has?number(impressions):group.length?'—':'0')+'</td><td>'+(has?number(clicks):group.length?'—':'0')+'</td><td>'+(has?((impressions?100*clicks/impressions:0).toFixed(2))+' %':group.length?'—':'0.00 %')+'</td></tr>';
+ }).join('');
+ const breakdownTable=rows=>'<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Grupo</th><th>Impresiones</th><th>Clics</th><th>CTR</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+ const formatBreakdown=breakdownTable(breakdownRows('placement',{banner:'Banner',entry:'Ingreso',interaction:'Interacción'},['banner','entry','interaction']));
+ const objectiveBreakdown=breakdownTable(breakdownRows('objective',objective,Object.keys(objective)));
  return '<div class="tf-tool-kpis">'+mini(hasAny&&!t.known?'—':number(t.impressions),'Impresiones','Eventos confirmados')+mini(hasAny&&!t.known?'—':number(t.clicks),'Clics','Clics confirmados')+mini(hasAny&&!t.known?'—':t.ctr.toFixed(2)+' %','CTR','Clics / impresiones')+mini(t.known+'/'+api.campaigns.length,'Campañas consultadas')+'</div>'+
  (data.failed.length?'<p class="tf-tool-warning">'+data.failed.length+' campaña(s) con métricas no disponibles. No se muestran datos estimados.</p>':'')+
  (t.partial?'<p class="tf-tool-warning">La consulta de eventos llegó al límite de paginación; algunas cifras pueden ser parciales.</p>':'')+
  localDeliveryEvidence()+
  section('Actividad registrada por día',days.length?'<div class="tf-tool-bars">'+bars+'</div><small class="tf-tool-note">Últimos 14 días con actividad dentro de los últimos 30 días · impresiones</small>':'<p class="tf-tool-empty">Todavía no hay impresiones registradas.</p>')+
  section('Rendimiento por campaña','<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Campaña</th><th>Impresiones</th><th>Clics</th><th>CTR</th><th>Formato</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+ section('Desglose por formato',formatBreakdown)+
+ section('Desglose por objetivo',objectiveBreakdown)+
  section('Desglose por anuncio','<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Anuncio</th><th>Impresiones</th><th>Clics</th><th>CTR</th></tr></thead><tbody>'+perAd+'</tbody></table></div>')+
  '<p class="tf-tool-note">Solo se muestran eventos confirmados por el servidor en los últimos 30 días. Los clics anteriores al inicio de la medición, o que no llegaron al servidor, no pueden reconstruirse ni contarse como reales. No se atribuyen conversiones, ventas, instalaciones, personas únicas ni gastos. '+(!allAvailable?'La descarga incluirá únicamente datos efectivamente disponibles.':'')+'</p>';
 }
