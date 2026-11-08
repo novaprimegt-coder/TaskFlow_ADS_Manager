@@ -484,6 +484,7 @@ function budgets(api){
   mini(money(total),'Presupuestos totales','Importes configurados; no son cobros')+
   mini(validTotal.length+'/'+totalActive.length,'Presupuestos totales programados',invalidTotal?'Revisar fechas faltantes':'Con fechas válidas')+'</div>'+
   section('Asignación por campaña','<p class="tf-tool-note">Para presupuestos totales son obligatorias las fechas de inicio y finalización. Modificar un presupuesto aprobado lo devuelve a revisión y suspende su publicación hasta una nueva aprobación.</p><div data-tf-budget-list>'+budgetRows(api)+'</div>')+
+  section('Integridad de entrega','<p class="tf-tool-note">Verifica que todas las campañas aprobadas y activas estén sincronizadas con el distribuidor privado. Sin esa confirmación, su publicación no puede darse por operativa.</p><button type="button" data-tf-action="delivery-resync">Verificar y sincronizar campañas activas</button><p role="status" id="tfDeliverySyncStatus" class="tf-tool-note"></p>')+
   '<p class="tf-tool-note">Los valores diarios orientativos no constituyen impresiones garantizadas, gastos ejecutados ni facturación. Las estrategias y límites de frecuencia afectan a oportunidades de selección, no a importes cobrados. La distribución entre campañas se determina en el servicio privado.</p>');
 }
 function settings(api){
@@ -579,6 +580,22 @@ function wire(root){
    else if(action==='adset-edit')void current.openEdit(id);
    else if(action==='adset-duplicate')void current.duplicateCampaign(id).then(()=>{if(view==='adsets')root.innerHTML=adSets(current)});
    else if(action==='adset-new'){current.openNew();const field=document.getElementById('campaignGroup');if(field&&btn.dataset.group)field.value=btn.dataset.group}
+   else if(action==='delivery-resync')void (async()=>{
+    const api=current,items=api?.campaigns.filter(c=>c.status==='active'&&c.approvalStatus==='approved')||[];
+    const note=root.querySelector('#tfDeliverySyncStatus');
+    if(!api?.fbAuth?.currentUser||!api.syncPrivateDelivery){api?.toast?.('La sesión no está disponible.');return}
+    if(!items.length){if(note)note.textContent='No hay campañas activas y aprobadas para sincronizar.';return}
+    btn.disabled=true;if(note)note.textContent='Verificando '+items.length+' campaña(s)…';
+    let ok=0,failed=0;
+    try{
+     for(let i=0;i<items.length;i+=3){
+      const results=await Promise.all(items.slice(i,i+3).map(async c=>api.syncPrivateDelivery(c.id).catch(()=>false)));
+      for(const r of results)r?ok++:failed++;
+     }
+     if(note&&note.isConnected)note.textContent=ok+' campaña(s) confirmada(s); '+failed+' sin confirmar.'+(failed?' Revisa la conexión y vuelve a intentarlo.':'');
+     api.toast(failed?'Algunas campañas no pudieron sincronizarse.':'Sincronización privada confirmada.');
+    }finally{btn.disabled=false}
+   })();
    else if(action==='budget-save')void changeBudget(btn,id);
   else if(action==='settings-recovery')void (async()=>{
    const message=root.querySelector('#tfAdsSecurityMessage');btn.disabled=true;
