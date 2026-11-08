@@ -1265,7 +1265,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 <aside class="sidebar">
 <div class="side-brand"><span class="logo-mark">TF</span><div class="side-brand-copy"><strong>ADS</strong><small>Manager</small></div></div>
 <div class="nav-section">Administración</div>
-<nav class="nav"><button class="nav-item active" data-view="overview"><svg class="tf-icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>Resumen</button><button class="nav-item" data-view="campaigns"><svg class="tf-icon" aria-hidden="true"><use href="#i-campaign"></use></svg>Campañas</button><button class="nav-item" data-view="audiences"><svg class="tf-icon" aria-hidden="true"><use href="#i-users"></use></svg>Audiencias</button><button class="nav-item" data-view="creatives"><svg class="tf-icon" aria-hidden="true"><use href="#i-image"></use></svg>Creativos</button><button class="nav-item" data-view="reports"><svg class="tf-icon" aria-hidden="true"><use href="#i-chart"></use></svg>Informes</button></nav>
+<nav class="nav"><button class="nav-item active" data-view="overview"><svg class="tf-icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>Resumen</button><button class="nav-item" data-view="campaigns"><svg class="tf-icon" aria-hidden="true"><use href="#i-campaign"></use></svg>Campañas</button><button class="nav-item" data-view="adsets"><svg class="tf-icon" aria-hidden="true"><use href="#i-columns"></use></svg>Conjuntos</button><button class="nav-item" data-view="audiences"><svg class="tf-icon" aria-hidden="true"><use href="#i-users"></use></svg>Audiencias</button><button class="nav-item" data-view="creatives"><svg class="tf-icon" aria-hidden="true"><use href="#i-image"></use></svg>Creativos</button><button class="nav-item" data-view="reports"><svg class="tf-icon" aria-hidden="true"><use href="#i-chart"></use></svg>Informes</button></nav>
 <div class="nav-section">Cuenta</div>
 <nav class="nav"><button class="nav-item" data-view="billing"><svg class="tf-icon" aria-hidden="true"><use href="#i-card"></use></svg>Presupuestos</button><button class="nav-item" data-view="settings"><svg class="tf-icon" aria-hidden="true"><use href="#i-settings"></use></svg>Configuración</button></nav>
 <div class="side-version"><span>TaskFlow ADS</span><b>Commercial Manager</b></div>
@@ -1307,7 +1307,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 <form class="wizard-body" id="campaignForm" novalidate="">
 <section class="wizard-page active" data-page="1">
 <div class="section-title"><span class="eyebrow">Configuración</span><h3>Objetivo de la campaña</h3></div>
-<div class="field"><label>Nombre de campaña</label><input id="campaignName" maxlength="120" placeholder="Ej. Lanzamiento noviembre"/></div>
+<div class="field"><label>Nombre de campaña</label><input id="campaignName" maxlength="120" placeholder="Ej. Lanzamiento noviembre"/></div><div class="field"><label>Campaña superior / agrupación</label><input id="campaignGroup" maxlength="120" placeholder="Dejar vacío para un grupo propio"/><small class="tf-goal-hint">Los conjuntos con el mismo nombre de agrupación aparecen juntos. Cada conjunto mantiene su propio presupuesto, audiencia, calendario y anuncios.</small></div>
 <div class="field"><label>Objetivo</label><div class="choice-grid" id="objectiveGrid"><button class="choice active" data-objective="awareness" type="button"><b>Reconocimiento</b><span>Dar visibilidad a una marca o servicio.</span></button><button class="choice" data-objective="traffic" type="button"><b>Tráfico</b><span>Llevar personas a una página o destino.</span></button><button class="choice" data-objective="engagement" type="button"><b>Interacción</b><span>Impulsar acciones sobre el anuncio.</span></button><button class="choice" data-objective="leads" type="button"><b>Clientes potenciales</b><span>Captar interés comercial.</span></button><button class="choice" data-objective="sales" type="button"><b>Ventas</b><span>Promover compras o conversiones.</span></button><button class="choice" data-objective="app" type="button"><b>Aplicación</b><span>Promover descargas o uso.</span></button></div><div class="tf-goal-explain" id="objectiveExplanation" aria-live="polite"><strong>Reconocimiento de marca</strong><p>Muestra tu marca y dirige a una página informativa. No equivale a registrar ventas.</p><small>Acción del anuncio: Conocer la marca</small></div></div>
 </section>
 <section class="wizard-page" data-page="2">
@@ -1812,7 +1812,7 @@ function initials(n,e){const p=(clean(n)||clean(e)||'TF').split(/\s+/).filter(Bo
   }]:[];
   const source=Array.isArray(c.ads)?c.ads:fallbackAd;
   const ads=source.map(normalizeAd);
-  return {...c,ads,adCount:ads.length,status:c.status||'draft',
+  return {...c,ads,adCount:ads.length,campaignGroup:clean(c.campaignGroup)||clean(c.name)||'Sin agrupar',status:c.status||'draft',
    approvalStatus:c.approvalStatus||'pending',budgetDistribution:c.budgetDistribution||'system',
    budgetType:c.budgetType||'daily',budget:Number(c.budget)||0,abTest:c.abTest===true,deliveryStrategy:['balanced','reach','steady'].includes(c.deliveryStrategy)?c.deliveryStrategy:'balanced',frequencyCap:[1,2,3].includes(Number(c.frequencyCap))?Number(c.frequencyCap):3};
  }
@@ -2062,7 +2062,7 @@ function publicationState(c){
  if(!campaignReady(c))return 'Archivo pendiente · sin entrega';
  return 'Aprobada · habilitada según audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
-function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,syncPrivateDelivery,renderAll,showView,toast}}
+function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,syncPrivateDelivery,renderAll,showView,duplicateCampaign,toast}}
 function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary();renderObjectiveInsights();if(window.TaskFlowADSModules?.paintOverview&&currentUser)void window.TaskFlowADSModules.paintOverview(adsModulesContext(),false);if(window.TaskFlowADSWallet?.onAuth&&currentUser)window.TaskFlowADSWallet.onAuth(adsModulesContext())}
 function fitSummaryMetricValues(){
  // Mantiene las cifras completas cuando caben; usa formato compacto solo si es necesario.
@@ -2381,7 +2381,7 @@ async function adminReviewCampaign(ownerUid,id,approve){
  void syncPrivateDelivery(id,ownerUid);
  toast(approve?(deliver?'Campaña aprobada y habilitada para entrega.':'Campaña aprobada; la entrega requiere activación y archivos válidos.'):'Campaña rechazada.');
 }
-function showView(name){if(name==='admin'&&(!isAdsAdmin||!currentUser))return;qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={audiences:['Audiencias','Guarda y aplica segmentaciones a tus campañas.'],creatives:['Creativos','Revisa, previsualiza y edita anuncios.'],reports:['Informes','Eventos publicitarios registrados durante los últimos 30 días.'],billing:['Presupuestos','Configura límites de campaña. No son cobros.'],settings:['Configuración','Administra tu perfil comercial y seguridad.'],admin:['Control ADS','Aprueba o rechaza campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp();requestAnimationFrame(fitSummaryMetricValues)}
+function showView(name){if(name==='admin'&&(!isAdsAdmin||!currentUser))return;qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={adsets:['Conjuntos de anuncios','Agrupa conjuntos con presupuesto, audiencia y calendario independientes.'],audiences:['Audiencias','Guarda y aplica segmentaciones a tus campañas.'],creatives:['Creativos','Revisa, previsualiza y edita anuncios.'],reports:['Informes','Eventos publicitarios registrados durante los últimos 30 días.'],billing:['Presupuestos','Configura límites de campaña. No son cobros.'],settings:['Configuración','Administra tu perfil comercial y seguridad.'],admin:['Control ADS','Aprueba o rechaza campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp();requestAnimationFrame(fitSummaryMetricValues)}
 
 function currentBudgetMode(){return qa('input[name="budgetDistribution"]').find(x=>x.checked)?.value||'system'}
 function equalBudgetShares(total,count){
@@ -2664,7 +2664,7 @@ function setStep(n){
 }
 function resetForm(){
  editingId=null;objective='awareness';pendingMedia=null;existingMediaMeta=null;adDrafts=[];currentAdDraftId=null;
- $('campaignForm').reset();$('campaignName').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';$('deliveryStrategy').value='balanced';$('frequencyCap').value='3';$('abTest').checked=false;
+ $('campaignForm').reset();$('campaignName').value='';$('campaignGroup').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';$('deliveryStrategy').value='balanced';$('frequencyCap').value='3';$('abTest').checked=false;
  updateObjectiveExperience();
  qa('input[name="placement"]').forEach((x,i)=>x.checked=i===0);
  const sys=qa('input[name="budgetDistribution"]').find(x=>x.value==='system');if(sys)sys.checked=true;
@@ -2677,7 +2677,7 @@ function openNew(){resetForm();$('campaignModal').hidden=false}
 async function openEdit(id){
  const c=campaigns.find(x=>x.id===id);if(!c)return;
  resetForm();editingId=id;objective=c.objective||'awareness';
- $('modalEyebrow').textContent='Editar campaña';$('modalTitle').textContent='Editar campaña publicitaria';$('campaignName').value=c.name||'';
+ $('modalEyebrow').textContent='Editar campaña';$('modalTitle').textContent='Editar campaña publicitaria';$('campaignName').value=c.name||'';$('campaignGroup').value=c.campaignGroup||c.name||'';
  updateObjectiveExperience();
  qa('input[name="placement"]').forEach(x=>x.checked=x.value===(c.placement||'banner'));
  $('country').value=c.country||'GT';$('region').value=c.region||'';$('city').value=c.city||'';$('radius').value=String(c.radius||0);$('ageMin').value=String(c.ageMin||18);$('ageMax').value=String(c.ageMax||65);
@@ -2738,7 +2738,7 @@ async function saveCampaign(){
   }
   msg('Guardando datos de la campaña...');
   const first=cleanAds[0]||{},approvalStatus=existing?.approvalStatus==='approved'?'pending':(existing?.approvalStatus||'pending');
-  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
+  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),campaignGroup:clean($('campaignGroup').value)||clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
   await syncCampaignDoc(c);
   msg('Confirmando el estado de la campaña...');
   await syncPublicCampaign(c);
@@ -2770,7 +2770,7 @@ async function saveDraft(){
   createdAt:a.createdAt||now(),updatedAt:now()
  }));
  const first=ads[0]||{};
- const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name,objective,
+ const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name,campaignGroup:clean($('campaignGroup').value)||name,objective,
   status:'draft',approvalStatus:existing?.approvalStatus==='rejected'?'rejected':'pending',
   placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),
   radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,
