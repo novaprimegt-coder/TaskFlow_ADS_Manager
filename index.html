@@ -1343,10 +1343,10 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 <div class="tf-ads-delivery-controls" aria-label="Estrategia de entrega"><div class="section-title"><span class="eyebrow">Entrega de anuncios</span><h3>Estrategia y frecuencia</h3></div><div class="formgrid"><div class="field"><label for="deliveryStrategy">Estrategia de entrega</label><select id="deliveryStrategy"><option value="balanced">Equilibrada (recomendada)</option><option value="reach">Maximizar oportunidades</option><option value="steady">Reducir repeticiones</option></select><small class="tf-goal-hint">La estrategia ajusta cómo se distribuyen oportunidades disponibles. No representa una puja ni garantiza conversiones.</small></div><div class="field"><label for="frequencyCap">Frecuencia máxima por campaña y sesión</label><select id="frequencyCap"><option value="1">1 selección por día</option><option value="2">2 selecciones por día</option><option value="3" selected>3 selecciones por día</option></select><small class="tf-goal-hint">Se aplica por sesión identificada y día. Una selección no equivale necesariamente a una impresión.</small></div></div></div>
 <div class="field tf-ads-ab-test-field"><label for="abTest"><input id="abTest" type="checkbox"> Prueba A/B de creativos</label><small class="tf-goal-hint">Distribuye las sesiones entre variantes para comparar impresiones, clics y CTR. Requiere dos o más anuncios; no garantiza conversiones.</small></div>
 <div class="budget-distribution-block">
-<div class="field"><label>Distribución del presupuesto entre anuncios</label>
+<div class="field"><label>Distribución prevista entre anuncios</label>
 <div class="budget-mode-grid" id="budgetModeGrid">
 <label class="budget-mode"><input checked name="budgetDistribution" type="radio" value="system"><span><b>Optimización automática</b><small>TaskFlow rota los anuncios de la campaña. Los resultados de conversiones todavía no determinan esta rotación.</small></span></label>
-<label class="budget-mode"><input name="budgetDistribution" type="radio" value="equal"><span><b>Partes iguales</b><small>El presupuesto se divide exactamente entre todos los anuncios creados dentro de la campaña.</small></span></label>
+<label class="budget-mode"><input name="budgetDistribution" type="radio" value="equal"><span><b>Partes iguales</b><small>Las oportunidades de mostrar los anuncios se reparten de forma equitativa. Los importes son planificación, no gasto facturado.</small></span></label>
 </div></div>
 <div class="budget-allocation-preview" id="budgetAllocationPreview"></div>
 </div>
@@ -2435,7 +2435,7 @@ function renderBudgetAllocation(){
    const shares=equalBudgetShares(amount,count);
    box.innerHTML='<div class="allocation-head"><b>Presupuesto dividido en partes iguales</b><span>'+count+' anuncio'+(count===1?'':'s')+'</span></div><div class="budget-allocation-list">'+shares.map((v,i)=>'<div class="budget-allocation-row"><span>'+escapeHtml(adDrafts[i]?.name||('Anuncio '+(i+1)))+'</span><b>'+escapeHtml(money(v))+' '+($('budgetType').value==='daily'?'por día':'total')+'</b></div>').join('')+'</div>';
  }
- const s=$('adBudgetSummary');if(s)s.innerHTML=mode==='system'?'<b>Distribución automática:</b> TaskFlow podrá rotar los '+count+' anuncios aprobados de la campaña. La rotación no depende de conversiones medidas y no representa gasto ejecutado.':'<b>Distribución igual:</b> '+escapeHtml(money(amount))+' se divide entre '+count+' anuncios. Cada anuncio recibe su parte calculada de forma exacta.';
+ const s=$('adBudgetSummary');if(s)s.innerHTML=mode==='system'?'<b>Distribución automática:</b> TaskFlow podrá rotar los '+count+' anuncios aprobados de la campaña. La rotación no depende de conversiones medidas y no representa gasto ejecutado.':'<b>Distribución igual:</b> '+escapeHtml(money(amount))+' se divide entre '+count+' anuncios. Esta es una asignación orientativa; la entrega se reparte entre creativos, no equivale a consumo monetario.';
 }
 function renderAdDraftList(){
  const root=$('adDraftList');if(!root)return;
