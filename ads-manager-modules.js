@@ -549,7 +549,7 @@ async function paintImpressionCommitments(api){
    const m=result.campaigns[c.id],goal=Number(m?.authorizedGoal)||0,delivered=Number(m?.deliveredSinceAuthorization)||0;
    return '<article class="tf-impression-progress-item"><b>'+esc(c.name)+'</b>'+
     '<span>'+esc(impressionStatus(m))+'</span>'+
-    '<small>Solicitadas: '+(m?number(m.requestedImpressions):'—')+
+    '<small>Impresiones confirmadas (últimos 30 días): '+(m?number(m.impressions):'—')+' · Solicitadas: '+(m?number(m.requestedImpressions):'—')+
     ' · Cupo autorizado: '+(m?number(goal):'—')+
     ' · Confirmadas desde autorización: '+(m&&goal?number(delivered):'—')+
     ' · Pendientes: '+(m&&goal?number(Math.max(0,goal-delivered)):'—')+'</small>'+
