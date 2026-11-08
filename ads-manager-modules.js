@@ -2,6 +2,7 @@
 (function(){
 'use strict';
 const METRICS_URL='https://taskflow-ads-media.vercel.app/api/analytics';
+const VERIFIED_METRICS_URL='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/metrics';
 const PUBLIC_URL='https://firestore.googleapis.com/v1/projects/taskflow-b0ece/databases/(default)/documents/adsPublicCampaigns?pageSize=100';
 const number=v=>new Intl.NumberFormat('es-GT').format(Number(v)||0);
 const money=v=>new Intl.NumberFormat('es-GT',{style:'currency',currency:'GTQ'}).format(Number(v)||0);
@@ -351,6 +352,39 @@ function creatives(api){
  section('Archivos por campaña','<label class="tf-tool-search">Buscar creativo<input type="search" data-tf-search="creatives" placeholder="Creativo, campaña o formato"></label><div class="tf-tool-gallery" data-tf-results="creatives">'+creativeRows(api,'')+'</div>'));
 }
 
+
+async function getVerifiedMetrics(api){
+ const ids=campaignIds(api);if(!ids.length)return {periodDays:30,campaigns:{},source:"verified-selections"};
+ const owner=api.currentUser?.id;
+ if(!owner||api.fbAuth?.currentUser?.uid!==owner)throw Error("Sesión no disponible");
+ const token=await api.fbAuth.currentUser.getIdToken();
+ const output={campaigns:{},periodDays:30,failed:[]};
+ for(let i=0;i<ids.length;i+=12){
+  const chunk=ids.slice(i,i+12),ctrl=new AbortController(),stop=setTimeout(()=>ctrl.abort(),17000);
+  try{
+   const u=VERIFIED_METRICS_URL+'?campaignIds='+encodeURIComponent(chunk.join(','));
+   const r=await fetch(u,{method:'GET',mode:'cors',headers:{Authorization:'Bearer '+token},credentials:'omit',cache:'no-store',signal:ctrl.signal});
+   if(!r.ok)throw Error("El servicio privado no respondió");
+   const data=await r.json();
+   if(data.source!=="verified-selections")throw Error("Fuente de datos inesperada");
+   for(const id of chunk){const m=data.campaigns?.[id];if(m&&!m.error)output.campaigns[id]=m;else output.failed.push(id)}
+  }finally{clearTimeout(stop)}
+ }
+ return output;
+}
+function verifiedSection(api,verified){
+ if(!verified)return section('Entrega confirmada','<p class="tf-tool-warning">El servicio de entrega verificada no respondió. No se estiman impresiones ni clics.</p>');
+ let impressions=0,clicks=0;
+ for(const m of Object.values(verified.campaigns)){impressions+=Number(m.impressions)||0;clicks+=Number(m.clicks)||0}
+ const rows=api.campaigns.map(c=>{const m=verified.campaigns[c.id];
+  return '<tr><td><b>'+esc(c.name)+'</b></td><td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td><td>'+(m?esc((Number(m.ctr)||0).toFixed(2))+' %':'—')+'</td><td>'+(m?.partial?'Parcial':m?'Verificado':'Sin datos')+'</td></tr>'
+ }).join('');
+ return section('Entrega confirmada por TaskFlow',
+  '<p class="tf-tool-note">Solo se cuentan oportunidades con confirmación de impresión o clic en el registro privado. No se incluyen selecciones sin mostrar, ventas, personas únicas ni conversiones externas.</p>'+
+  '<div class="tf-tool-kpis">'+mini(number(impressions),'Impresiones confirmadas')+mini(number(clicks),'Clics confirmados')+mini(impressions?(100*clicks/impressions).toFixed(2)+' %':'0.00 %','CTR confirmado')+'</div>'+
+  (verified.failed.length?'<p class="tf-tool-warning">'+verified.failed.length+' campaña(s) sin datos disponibles.</p>':'')+
+  '<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Campaña</th><th>Impresiones</th><th>Clics</th><th>CTR</th><th>Estado</th></tr></thead><tbody>'+rows+'</tbody></table></div>');
+}
 function localDeliveryEvidence(){
  try{
   const info=JSON.parse(localStorage.getItem('taskflow_ads_analytics_delivery_v1')||'null');
@@ -401,10 +435,14 @@ function reportContent(api,data){
  '<p class="tf-tool-note">Solo se muestran eventos confirmados por el servidor en los últimos 30 días. Los clics anteriores al inicio de la medición, o que no llegaron al servidor, no pueden reconstruirse ni contarse como reales. No se atribuyen conversiones, ventas, instalaciones, personas únicas ni gastos. '+(!allAvailable?'La descarga incluirá únicamente datos efectivamente disponibles.':'')+'</p>';
 }
 async function reports(api,refresh){
- const holder=document.getElementById('tfAdsReportsPayload');if(!holder)return;const version=view,owner=api.currentUser.id;
- holder.innerHTML='<div class="tf-tool-loading">Consultando impresiones y clics registrados…</div>';
- try{const metrics=await getMetrics(api,refresh);if(view!==version||version!=='reports'||owner!==current?.currentUser?.id||!holder.isConnected)return;holder.innerHTML=reportContent(api,metrics)}
- catch(e){if(holder.isConnected)holder.innerHTML='<div class="tf-tool-error">No se pudieron consultar las métricas: '+esc(e.message||'Error de conexión')+'</div>'}
+ const holder=document.getElementById('tfAdsReportsPayload');if(!holder)return;
+ const version=view,owner=api.currentUser.id;
+ holder.innerHTML='<div class="tf-tool-loading">Consultando entrega verificada e historial publicitario…</div>';
+ const [historical,privateReport]=await Promise.allSettled([getMetrics(api,refresh),getVerifiedMetrics(api)]);
+ if(view!==version||version!=='reports'||owner!==current?.currentUser?.id||!holder.isConnected)return;
+ const verified=privateReport.status==='fulfilled'?privateReport.value:null;
+ const history=historical.status==='fulfilled'?reportContent(api,historical.value):section('Histórico de eventos','<p class="tf-tool-warning">El registro histórico no está disponible; los datos de entrega confirmada se muestran por separado.</p>');
+ holder.innerHTML=verifiedSection(api,verified)+section('Historial anterior (sin comprobación de selección)','<p class="tf-tool-note">Estos registros se almacenaron con el método anterior. No se suman a la entrega verificada para evitar duplicaciones.</p>'+history);
 }
 function budgetDayCount(start,end){
  const valid=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||''))&&Number.isFinite(Date.parse(s+'T00:00:00Z'))&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
@@ -527,7 +565,12 @@ function wire(root){
   else if(action==='creative-preview')previewCreative(id,btn.dataset.ad);
   else if(action==='preview-close'){const d=btn.closest('dialog');if(d){if(d.close)d.close();else d.remove()}}
   else if(action==='report-refresh')void reports(current,true);
-  else if(action==='report-csv')void getMetrics(current,false).then(data=>{
+  else if(action==='report-verified-csv')void getVerifiedMetrics(current).then(data=>{
+    const rows=[['Campaña','ID','Impresiones confirmadas','Clics confirmados','CTR %','Estado']];
+    current.campaigns.forEach(c=>{const m=data.campaigns[c.id];rows.push([c.name,c.id,m?.impressions??'',m?.clicks??'',m?.ctr??'',m?(m.partial?'Parcial':'Verificado'):'No disponible'])});
+    csvDownload('taskflow-ads-entrega-confirmada-30-dias.csv',rows);
+   }).catch(e=>current.toast('No se pudo exportar entrega verificada: '+(e.message||'Error de conexión')));
+   else if(action==='report-csv')void getMetrics(current,false).then(data=>{
    const rows=[['Campaña','ID','Objetivo','Impresiones','Clics','CTR %','Estado de datos']];
    current.campaigns.forEach(c=>{const m=data.campaigns[c.id];rows.push([c.name,c.id,objective[c.objective]||c.objective,m?.impressions??'',m?.clicks??'',m?.ctr??'',m?(m.partial?'parcial':'registrado'):'no disponible'])});
    csvDownload('taskflow-ads-informe-30-dias.csv',rows);
@@ -560,7 +603,7 @@ function render(name,api){
  if(name==='adsets')root.innerHTML=adSets(api);
   else if(name==='audiences'){root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
  else if(name==='creatives')root.innerHTML=creatives(api);
- else if(name==='reports'){root.innerHTML=wrap('Informes de rendimiento','Impresiones, clics, CTR y desglose de los eventos registrados, sin estimaciones ni compras inventadas.','<div class="tf-tool-buttons"><button type="button" data-tf-action="report-refresh">Actualizar métricas</button><button type="button" data-tf-action="report-csv">Exportar CSV</button></div><div id="tfAdsReportsPayload"></div>');void reports(api,false)}
+ else if(name==='reports'){root.innerHTML=wrap('Informes de rendimiento','Impresiones, clics, CTR y desglose de los eventos registrados, sin estimaciones ni compras inventadas.','<div class="tf-tool-buttons"><button type="button" data-tf-action="report-refresh">Actualizar métricas</button><button type="button" data-tf-action="report-csv">Exportar CSV</button><button type="button" data-tf-action="report-verified-csv">Exportar entrega confirmada</button></div><div id="tfAdsReportsPayload"></div>');void reports(api,false)}
  else if(name==='billing'){root.innerHTML=budgets(api);window.TaskFlowADSWallet?.mount?.(api)}
  else if(name==='settings')root.innerHTML=settings(api);
  else return false;
