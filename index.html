@@ -2110,6 +2110,8 @@ function publicationState(c){
  if(c.approvalStatus==='rejected')return 'Rechazada · sin entrega';
  if(c.approvalStatus!=='approved')return 'Pendiente de aprobación · sin entrega';
  if(!campaignReady(c))return 'Archivo pendiente · sin entrega';
+ if(Number(c.radius||0)!==0)return 'Radio no verificable · sin entrega';
+ if((Number(c.ageMin)||18)>18||(Number(c.ageMax)||65)<65)return 'Edad no verificable · sin entrega';
  return 'Aprobada · habilitada según audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
 function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openNew,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,syncPrivateDelivery,renderAll,showView,duplicateCampaign,toast}}
