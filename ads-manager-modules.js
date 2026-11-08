@@ -350,7 +350,7 @@ function budgetDayCount(start,end){
  const valid=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||''))&&Number.isFinite(Date.parse(s+'T00:00:00Z'))&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
  if(!valid(start)||!valid(end))return 0;
  const days=Math.round((Date.parse(end+'T00:00:00Z')-Date.parse(start+'T00:00:00Z'))/86400000)+1;
- return days>=1&&days<=36525?days:0;
+ return days>=1?days:0;
 }
 function budgetRows(api){
  return api.campaigns.map(c=>{
