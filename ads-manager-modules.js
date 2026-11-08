@@ -367,6 +367,8 @@ function budgetRows(api){
    '<option value="daily"'+(kind==='daily'?' selected':'')+'>Diario</option><option value="total"'+(kind==='total'?' selected':'')+'>Total</option></select></label>'+
    '<label>Inicio<input aria-label="Inicio para '+name+'" data-tf-budget-start="'+id+'" type="date" value="'+esc(c.start||'')+'"></label>'+
    '<label>Finalización<input aria-label="Finalización para '+name+'" data-tf-budget-end="'+id+'" type="date" value="'+esc(c.end||'')+'"></label>'+
+   '<label>Estrategia<select aria-label="Estrategia de entrega para '+name+'" data-tf-budget-strategy="'+id+'"><option value="balanced"'+(!['reach','steady'].includes(c.deliveryStrategy)?' selected':'')+'>Equilibrada</option><option value="reach"'+(c.deliveryStrategy==='reach'?' selected':'')+'>Maximizar oportunidades</option><option value="steady"'+(c.deliveryStrategy==='steady'?' selected':'')+'>Reducir repeticiones</option></select></label>'+
+   '<label>Frecuencia<select aria-label="Máximo de selecciones por sesión para '+name+'" data-tf-budget-frequency="'+id+'">'+[1,2,3].map(n=>'<option value="'+n+'"'+(n===([1,2,3].includes(Number(c.frequencyCap))?Number(c.frequencyCap):3)?' selected':'')+'>'+n+' por sesión y día</option>').join('')+'</select></label>'+
    '<button data-tf-action="budget-save" data-id="'+id+'" type="button">Guardar presupuesto</button></div></article>';
  }).join('')||'<p class="tf-tool-empty">No hay campañas con presupuesto.</p>';
 }
@@ -383,7 +385,7 @@ function budgets(api){
   mini(money(total),'Presupuestos totales','Importes configurados; no son cobros')+
   mini(validTotal.length+'/'+totalActive.length,'Presupuestos totales programados',invalidTotal?'Revisar fechas faltantes':'Con fechas válidas')+'</div>'+
   section('Asignación por campaña','<p class="tf-tool-note">Para presupuestos totales son obligatorias las fechas de inicio y finalización. Modificar un presupuesto aprobado lo devuelve a revisión y suspende su publicación hasta una nueva aprobación.</p><div data-tf-budget-list>'+budgetRows(api)+'</div>')+
-  '<p class="tf-tool-note">Los valores diarios orientativos no constituyen impresiones garantizadas, gastos ejecutados ni facturación. La distribución entre campañas se determina en el servicio privado.</p>');
+  '<p class="tf-tool-note">Los valores diarios orientativos no constituyen impresiones garantizadas, gastos ejecutados ni facturación. Las estrategias y límites de frecuencia afectan a oportunidades de selección, no a importes cobrados. La distribución entre campañas se determina en el servicio privado.</p>');
 }
 function settings(api){
  return wrap('Cuenta y seguridad','Administra el perfil comercial y el acceso de esta cuenta; estas herramientas no modifican campañas.',
@@ -397,16 +399,18 @@ async function changeBudget(button,id){
  const field=k=>root.querySelector('[data-tf-'+k+'="'+CSS.escape(id)+'"]');
  const amount=Number(field('budget')?.value),kind=field('budget-type')?.value;
  const start=String(field('budget-start')?.value||'').trim(),end=String(field('budget-end')?.value||'').trim();
+  const deliveryStrategy=String(field('budget-strategy')?.value||''),frequencyCap=Number(field('budget-frequency')?.value);
  if(!Number.isFinite(amount)||amount<1||amount>10000000||Math.abs(Math.round(amount*100)-amount*100)>0.000001){api.toast('Introduce un presupuesto válido de Q1.00 a Q10,000,000.00, con máximo dos decimales.');return}
  if(!['daily','total'].includes(kind)){api.toast('Selecciona un tipo de presupuesto válido.');return}
  if(budgetDayCount(start,start)!==1){api.toast('Selecciona una fecha de inicio válida.');return}
  if(kind==='total'&&!end){api.toast('El presupuesto total necesita una fecha de finalización.');return}
  if(end&&!budgetDayCount(start,end)){api.toast('La fecha final debe ser válida y no anterior a la fecha de inicio.');return}
+  if(!['balanced','reach','steady'].includes(deliveryStrategy)||![1,2,3].includes(frequencyCap)){api.toast('Revisa la estrategia y frecuencia de entrega.');return}
  const equalAmount=Math.round(amount*100)===Math.round((Number(c.budget)||0)*100);
- if(equalAmount&&kind===(c.budgetType==='total'?'total':'daily')&&start===String(c.start||'')&&end===String(c.end||'')){api.toast('El presupuesto y su período ya tienen esos valores.');return}
+ if(equalAmount&&kind===(c.budgetType==='total'?'total':'daily')&&start===String(c.start||'')&&end===String(c.end||'')&&deliveryStrategy===(c.deliveryStrategy||'balanced')&&frequencyCap===([1,2,3].includes(Number(c.frequencyCap))?Number(c.frequencyCap):3)){api.toast('El presupuesto y su período ya tienen esos valores.');return}
  button.disabled=true;button.textContent='Guardando…';
  try{
-  const data={budget:amount,budgetType:kind,start,end,updatedAt:new Date().toISOString()};
+  const data={budget:amount,budgetType:kind,start,end,deliveryStrategy,frequencyCap,updatedAt:new Date().toISOString()};
   if(c.approvalStatus==='approved')data.approvalStatus='pending';
   const ref=api.fbDb.collection('users').doc(api.currentUser.id).collection('adsCampaigns').doc(c.id);
   const batch=api.fbDb.batch();batch.update(ref,data);
