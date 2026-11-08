@@ -2874,6 +2874,8 @@ async function saveDraft(){
  commitCurrentAd();
  const name=clean($('campaignName').value);
  if(!name){msg('Escribe el nombre de la campaña para identificar el borrador.','error');setStep(1);return}
+ const requested=Number($('requestedImpressions').value||0);
+ if(!Number.isSafeInteger(requested)||requested<0||requested>10000000){msg('La solicitud debe ser un entero entre 0 y 10,000,000.','error');setStep(3);return}
  const existing=editingId?campaigns.find(c=>c.id===editingId):null;
  const id=editingId||makeId();
  const ads=adDrafts.map((a,i)=>({
