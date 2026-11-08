@@ -819,7 +819,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #campaignModal .tf-ads-delivery-controls .section-title{margin-bottom:13px}
 #campaignModal .tf-ads-delivery-controls .tf-goal-hint{display:block;margin-top:7px;line-height:1.5}
 @media(max-width:600px){#campaignModal .tf-ads-delivery-controls{padding:12px}}
-</style>
+#campaignModal .tf-ads-ab-test-field{margin:16px 0 4px;padding:13px 15px;border:1px solid rgba(65,125,201,.2);border-radius:12px;background:rgba(40,105,184,.035)}#campaignModal .tf-ads-ab-test-field label{display:flex;gap:10px;align-items:center;font-size:13px;font-weight:750;cursor:pointer}#campaignModal .tf-ads-ab-test-field input{accent-color:#1c7ddc;width:18px;height:18px}#campaignModal .tf-ads-ab-test-field small{display:block;line-height:1.55;margin:7px 0 0 28px}</style>
 <script defer src="./ads-manager-modules.js?v=20261108-meta-delivery-v2"></script>
 <style id="tfAdsCrystalizedHero2026">
 /* Fondo animado exclusivo del encabezado de inicio de sesión; no modifica el formulario. */
@@ -1323,6 +1323,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 <div class="section-title"><span class="eyebrow">Control de gasto</span><h3>Presupuesto y calendario</h3></div>
 <div class="formgrid"><div class="field"><label>Tipo de presupuesto</label><select id="budgetType"><option value="daily">Diario</option><option value="total">Total</option></select></div><div class="field"><label>Monto (GTQ)</label><input id="budgetAmount" min="1" step="0.01" type="number" value="75"/></div><div class="field"><label>Fecha de inicio</label><input id="startDate" type="date"/></div><div class="field"><label>Fecha de finalización</label><input id="endDate" type="date"/></div></div>
 <div class="tf-ads-delivery-controls" aria-label="Estrategia de entrega"><div class="section-title"><span class="eyebrow">Entrega de anuncios</span><h3>Estrategia y frecuencia</h3></div><div class="formgrid"><div class="field"><label for="deliveryStrategy">Estrategia de entrega</label><select id="deliveryStrategy"><option value="balanced">Equilibrada (recomendada)</option><option value="reach">Maximizar oportunidades</option><option value="steady">Reducir repeticiones</option></select><small class="tf-goal-hint">La estrategia ajusta cómo se distribuyen oportunidades disponibles. No representa una puja ni garantiza conversiones.</small></div><div class="field"><label for="frequencyCap">Frecuencia máxima por campaña y sesión</label><select id="frequencyCap"><option value="1">1 selección por día</option><option value="2">2 selecciones por día</option><option value="3" selected>3 selecciones por día</option></select><small class="tf-goal-hint">Se aplica por sesión identificada y día. Una selección no equivale necesariamente a una impresión.</small></div></div></div>
+<div class="field tf-ads-ab-test-field"><label for="abTest"><input id="abTest" type="checkbox"> Prueba A/B de creativos</label><small class="tf-goal-hint">Distribuye las sesiones entre variantes para comparar impresiones, clics y CTR. Requiere dos o más anuncios; no garantiza conversiones.</small></div>
 <div class="budget-distribution-block">
 <div class="field"><label>Distribución del presupuesto entre anuncios</label>
 <div class="budget-mode-grid" id="budgetModeGrid">
@@ -1813,7 +1814,7 @@ function initials(n,e){const p=(clean(n)||clean(e)||'TF').split(/\s+/).filter(Bo
   const ads=source.map(normalizeAd);
   return {...c,ads,adCount:ads.length,status:c.status||'draft',
    approvalStatus:c.approvalStatus||'pending',budgetDistribution:c.budgetDistribution||'system',
-   budgetType:c.budgetType||'daily',budget:Number(c.budget)||0,deliveryStrategy:['balanced','reach','steady'].includes(c.deliveryStrategy)?c.deliveryStrategy:'balanced',frequencyCap:[1,2,3].includes(Number(c.frequencyCap))?Number(c.frequencyCap):3};
+   budgetType:c.budgetType||'daily',budget:Number(c.budget)||0,abTest:c.abTest===true,deliveryStrategy:['balanced','reach','steady'].includes(c.deliveryStrategy)?c.deliveryStrategy:'balanced',frequencyCap:[1,2,3].includes(Number(c.frequencyCap))?Number(c.frequencyCap):3};
  }
 
 
@@ -2663,7 +2664,7 @@ function setStep(n){
 }
 function resetForm(){
  editingId=null;objective='awareness';pendingMedia=null;existingMediaMeta=null;adDrafts=[];currentAdDraftId=null;
- $('campaignForm').reset();$('campaignName').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';$('deliveryStrategy').value='balanced';$('frequencyCap').value='3';
+ $('campaignForm').reset();$('campaignName').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';$('deliveryStrategy').value='balanced';$('frequencyCap').value='3';$('abTest').checked=false;
  updateObjectiveExperience();
  qa('input[name="placement"]').forEach((x,i)=>x.checked=i===0);
  const sys=qa('input[name="budgetDistribution"]').find(x=>x.value==='system');if(sys)sys.checked=true;
@@ -2680,7 +2681,7 @@ async function openEdit(id){
  updateObjectiveExperience();
  qa('input[name="placement"]').forEach(x=>x.checked=x.value===(c.placement||'banner'));
  $('country').value=c.country||'GT';$('region').value=c.region||'';$('city').value=c.city||'';$('radius').value=String(c.radius||0);$('ageMin').value=String(c.ageMin||18);$('ageMax').value=String(c.ageMax||65);
- $('budgetType').value=c.budgetType||'daily';$('budgetAmount').value=String(c.budget||0);$('startDate').value=c.start||'';$('endDate').value=c.end||'';$('deliveryStrategy').value=['balanced','reach','steady'].includes(c.deliveryStrategy)?c.deliveryStrategy:'balanced';$('frequencyCap').value=String([1,2,3].includes(Number(c.frequencyCap))?Number(c.frequencyCap):3);
+ $('budgetType').value=c.budgetType||'daily';$('budgetAmount').value=String(c.budget||0);$('startDate').value=c.start||'';$('endDate').value=c.end||'';$('deliveryStrategy').value=['balanced','reach','steady'].includes(c.deliveryStrategy)?c.deliveryStrategy:'balanced';$('frequencyCap').value=String([1,2,3].includes(Number(c.frequencyCap))?Number(c.frequencyCap):3);$('abTest').checked=c.abTest===true;
  const mode=qa('input[name="budgetDistribution"]').find(x=>x.value===(c.budgetDistribution||'system'));if(mode)mode.checked=true;
  const normalized=normalizeCampaign(c);adDrafts=normalized.ads.length?normalized.ads.map((a,i)=>({...normalizeAd(a,i),_blob:null})):[newAdDraft(0)];
  currentAdDraftId=null;await restoreDraftMedia(id,adDrafts);updateCreativeRules(false);setStep(1);$('campaignModal').hidden=false;
@@ -2702,6 +2703,7 @@ function validateStep(){
  if(step===4){
    commitCurrentAd();
    if(!adDrafts.length||adDrafts.length>12){msg('La campaña debe tener entre 1 y 12 anuncios.','error');return false}
+    if($('abTest').checked&&adDrafts.length<2){msg('La prueba A/B necesita al menos dos anuncios.','error');return false}
    for(let i=0;i<adDrafts.length;i++){
      const a=adDrafts[i],dest=clean(a.destination);
      if(!clean(a.name)){msg('El anuncio '+(i+1)+' necesita un nombre.','error');return false}
@@ -2717,7 +2719,7 @@ function review(){
  commitCurrentAd();
  const p=selectedPlacement(),spec=placementSpecs[p],mode=currentBudgetMode(),count=adDrafts.length;
  const ready=adDrafts.filter(a=>a.mediaMeta).length;
- $('review').innerHTML='<b>'+escapeHtml(clean($('campaignName').value)||'Campaña sin nombre')+'</b><br>Objetivo: '+escapeHtml(objectiveLabel(objective))+'<br>Acción al pulsar: '+escapeHtml(goalDetails(objective).cta)+'<br>Formato de la campaña: '+escapeHtml(spec.label)+' · '+spec.hdWidth+'×'+spec.hdHeight+' HD o '+spec.width+'×'+spec.height+' estándar<br>Audiencia: '+escapeHtml(locationLabel({city:$('city').value,region:$('region').value,country:$('country').value}))+' · '+escapeHtml($('ageMin').value)+'–'+escapeHtml($('ageMax').value)+' años<br>Presupuesto: '+escapeHtml(money($('budgetAmount').value))+' '+($('budgetType').value==='daily'?'diario':'total')+'<br>Distribución: '+(mode==='system'?'Rotación automática de anuncios':'Partes iguales')+'<br>Estrategia: '+escapeHtml(({balanced:'Equilibrada',reach:'Maximizar oportunidades',steady:'Reducir repeticiones'})[$('deliveryStrategy').value]||'Equilibrada')+'<br>Frecuencia: '+escapeHtml($('frequencyCap').value)+' por sesión y día<br>Anuncios: '+count+' creados · '+ready+' con creativo validado<br>Estado al guardar: '+escapeHtml((editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='active'?'Activa (pendiente de revisión al editar)':(editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='paused'?'Pausada':'Borrador')+'<br>La publicación requiere activación y aprobación.';
+ $('review').innerHTML='<b>'+escapeHtml(clean($('campaignName').value)||'Campaña sin nombre')+'</b><br>Objetivo: '+escapeHtml(objectiveLabel(objective))+'<br>Acción al pulsar: '+escapeHtml(goalDetails(objective).cta)+'<br>Formato de la campaña: '+escapeHtml(spec.label)+' · '+spec.hdWidth+'×'+spec.hdHeight+' HD o '+spec.width+'×'+spec.height+' estándar<br>Audiencia: '+escapeHtml(locationLabel({city:$('city').value,region:$('region').value,country:$('country').value}))+' · '+escapeHtml($('ageMin').value)+'–'+escapeHtml($('ageMax').value)+' años<br>Presupuesto: '+escapeHtml(money($('budgetAmount').value))+' '+($('budgetType').value==='daily'?'diario':'total')+'<br>Distribución: '+(mode==='system'?'Rotación automática de anuncios':'Partes iguales')+'<br>Estrategia: '+escapeHtml(({balanced:'Equilibrada',reach:'Maximizar oportunidades',steady:'Reducir repeticiones'})[$('deliveryStrategy').value]||'Equilibrada')+'<br>Frecuencia: '+escapeHtml($('frequencyCap').value)+' por sesión y día<br>Anuncios: '+count+' creados · '+ready+' con creativo validado<br>Prueba A/B: '+($('abTest').checked?'Activada':'Desactivada')+'<br>Estado al guardar: '+escapeHtml((editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='active'?'Activa (pendiente de revisión al editar)':(editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='paused'?'Pausada':'Borrador')+'<br>La publicación requiere activación y aprobación.';
  renderAdDraftList();
 }
 async function saveCampaign(){
@@ -2736,7 +2738,7 @@ async function saveCampaign(){
   }
   msg('Guardando datos de la campaña...');
   const first=cleanAds[0]||{},approvalStatus=existing?.approvalStatus==='approved'?'pending':(existing?.approvalStatus||'pending');
-  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
+  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
   await syncCampaignDoc(c);
   msg('Confirmando el estado de la campaña...');
   await syncPublicCampaign(c);
@@ -2773,7 +2775,7 @@ async function saveDraft(){
   placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),
   radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,
   budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,
-  budgetDistribution:currentBudgetMode(),deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),start:$('startDate').value,end:$('endDate').value,
+  budgetDistribution:currentBudgetMode(),abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),start:$('startDate').value,end:$('endDate').value,
   ads,adCount:ads.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,
   mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
  const btn=$('draftBtn'),next=$('nextBtn');btn.disabled=true;next.disabled=true;msg('Guardando borrador...');
