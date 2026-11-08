@@ -2351,7 +2351,7 @@ function renderAdminImpressionRequests(items){
  root.innerHTML=items.slice(0,100).map(c=>
   '<article class="tf-ads-campaign-row"><div class="tf-ads-campaign-title"><b>'+escapeHtml(c.name||'Campaña')+'</b><span>'+
   escapeHtml(c.businessName||'Anunciante')+' · '+escapeHtml(placementLabel(c.placement))+
-  '</span><span>Solicitadas: '+number(c.requestedImpressions)+' impresiones. No son una promesa.</span></div>'+
+  '</span><span>Solicitadas: '+new Intl.NumberFormat('es-GT').format(Number(c.requestedImpressions)||0)+' impresiones. No son una promesa.</span></div>'+
   '<div class="tf-ads-review-actions"><button type="button" class="tf-ads-approve" data-admin-goal="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Evaluar capacidad y autorizar</button></div>'+
   '<p class="tf-goal-hint" data-admin-goal-result role="status"></p></article>'
  ).join('');
