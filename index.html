@@ -1929,7 +1929,7 @@ async function syncPrivateDelivery(campaignId,ownerUid){
 }
 function toPublicCampaign(c){
  const n=normalizeCampaign(c);
- return {campaignId:c.id,objective:c.objective||'awareness',status:c.status,approvalStatus:c.approvalStatus||'pending',placement:c.placement,country:c.country||'',region:c.region||'',city:c.city||'',radius:Number(c.radius)||0,ageMin:Number(c.ageMin)||18,ageMax:Number(c.ageMax)||65,start:c.start||'',end:c.end||'',budgetDistribution:c.budgetDistribution||'system',ads:n.ads.filter(a=>a.src&&a.mediaMeta).map(a=>({id:a.id,name:a.name||'',src:a.src,type:a.mediaMeta?.kind==='video'?'video':(String(a.mediaMeta?.mime||'').toLowerCase()==='image/gif'?'gif':'image'),destination:a.destination||'',ctaLabel:goalDetails(c.objective).cta,sound:!!a.sound,width:Number(a.mediaMeta?.width)||0,height:Number(a.mediaMeta?.height)||0,duration:Number(a.mediaMeta?.duration)||0})),updatedAt:now()}
+ return {campaignId:c.id,objective:c.objective||'awareness',status:c.status,approvalStatus:c.approvalStatus||'pending',placement:c.placement,country:c.country||'',region:c.region||'',city:c.city||'',radius:Number(c.radius)||0,ageMin:Number(c.ageMin)||18,ageMax:Number(c.ageMax)||65,start:c.start||'',end:c.end||'',ads:n.ads.filter(a=>a.src&&a.mediaMeta).map(a=>({id:a.id,name:a.name||'',src:a.src,type:a.mediaMeta?.kind==='video'?'video':(String(a.mediaMeta?.mime||'').toLowerCase()==='image/gif'?'gif':'image'),destination:a.destination||'',ctaLabel:goalDetails(c.objective).cta,sound:!!a.sound,width:Number(a.mediaMeta?.width)||0,height:Number(a.mediaMeta?.height)||0,duration:Number(a.mediaMeta?.duration)||0})),updatedAt:now()}
 }
 // Notificación anónima a TaskFlow: solo avisa que cambió el catálogo público.
 function notifyTaskFlowAdsChanged(){
