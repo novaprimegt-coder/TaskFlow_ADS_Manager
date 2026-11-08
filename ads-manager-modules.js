@@ -66,7 +66,7 @@ async function paintCampaignMetrics(api,refresh=false){
  if(!holder||!api?.currentUser?.id||!holder.querySelector('[data-tf-campaign-metric]'))return;
  const owner=api.currentUser.id,ticket=++campaignMetricsRevision;
  try{
-  const data=await getMetrics(api,refresh);
+  const data=await getVerifiedMetrics(api);
   if(ticket!==campaignMetricsRevision||!holder.isConnected||owner!==current?.currentUser?.id)return;
   holder.querySelectorAll('[data-tf-campaign-metric]').forEach(cell=>{
    const id=cell.getAttribute('data-tf-campaign-metric');
@@ -115,7 +115,7 @@ async function paintOverview(api,refresh){current=api;
  const token=++revision;slot.innerHTML='<div class="tf-tool-topline"><strong>Rendimiento publicitario real · últimos 30 días</strong><span><button type="button" data-tf-overview-refresh>Actualizar estadísticas</button> <button type="button" data-tf-overview-delivery>Comprobar entrega</button></span></div><div class="tf-tool-kpis">'+mini('…','Impresiones')+mini('…','Clics en anuncios')+mini('…','CTR')+'</div>';
  if(!mounted.has(slot)){mounted.add(slot);slot.addEventListener('click',e=>{if(e.target.closest('[data-tf-overview-refresh]'))void paintOverview(current,true);else if(e.target.closest('[data-tf-overview-delivery]'))void checkDelivery(current);else{const b=e.target.closest('[data-tf-delivery-resync]');if(b)void resyncDelivery(current,b)}})}
  try{
-  const data=await getMetrics(api,refresh);
+  const data=await getVerifiedMetrics(api);
   if(token!==revision||!slot.isConnected||api.currentUser.id!==current?.currentUser?.id)return;
   const t=totals(data),empty=!api.campaigns.length;
   slot.innerHTML='<div class="tf-tool-topline"><strong>Rendimiento publicitario real · últimos 30 días</strong><span><button type="button" data-tf-overview-refresh>Actualizar estadísticas</button> <button type="button" data-tf-overview-delivery>Comprobar entrega</button></span></div><div class="tf-tool-kpis">'+mini(empty?'0':t.known?number(t.impressions):'—','Impresiones','Confirmadas por el servidor')+mini(empty?'0':t.known?number(t.clicks):'—','Clics en anuncios','Confirmados por el servidor')+mini(empty?'0 %':t.known?t.ctr.toFixed(2)+' %':'—','CTR','Clics ÷ impresiones')+'</div>'+(data.failed.length?'<p class="tf-tool-warning">No se pudieron consultar '+data.failed.length+' campaña(s). Los valores no disponibles no se han inventado.</p>':'')+(t.partial?'<p class="tf-tool-warning">El servicio devolvió una medición parcial.</p>':'')+'<p class="tf-tool-note">Los clics no acreditan ventas, formularios enviados ni instalaciones. Sin costo de entrega confirmado no se calcula CPC o gasto.</p>';
@@ -354,7 +354,7 @@ function creatives(api){
 
 
 async function getVerifiedMetrics(api){
- const ids=campaignIds(api);if(!ids.length)return {periodDays:30,campaigns:{},source:"verified-selections"};
+ const ids=campaignIds(api);if(!ids.length)return {periodDays:30,campaigns:{},failed:[],source:"verified-selections",exact:true};
  const owner=api.currentUser?.id;
  if(!owner||api.fbAuth?.currentUser?.uid!==owner)throw Error("Sesión no disponible");
  const token=await api.fbAuth.currentUser.getIdToken();
@@ -366,24 +366,47 @@ async function getVerifiedMetrics(api){
    const r=await fetch(u,{method:'GET',mode:'cors',headers:{Authorization:'Bearer '+token},credentials:'omit',cache:'no-store',signal:ctrl.signal});
    if(!r.ok)throw Error("El servicio privado no respondió");
    const data=await r.json();
-   if(data.source!=="verified-selections")throw Error("Fuente de datos inesperada");
+   if(data.source!=="verified-selections"||data.exact!==true)throw Error("No se pudo confirmar la exactitud del registro.");
    for(const id of chunk){const m=data.campaigns?.[id];if(m&&!m.error)output.campaigns[id]=m;else output.failed.push(id)}
   }finally{clearTimeout(stop)}
  }
  return output;
 }
+function impressionStatus(m){
+ if(!m)return 'No disponible';
+ return {
+  not_synced:'Sin sincronización · sin compromiso',
+  suspended:'Entrega suspendida · necesita nueva evaluación',
+  authorized:'Meta autorizada · aún no completada',
+  completed:'Meta completada según registro confirmado',
+  requested:'Solicitud en evaluación · sin compromiso',
+  no_goal:'Sin meta solicitada'
+ }[m.goalStatus]||'Estado no disponible';
+}
 function verifiedSection(api,verified){
- if(!verified)return section('Entrega confirmada','<p class="tf-tool-warning">El servicio de entrega verificada no respondió. No se estiman impresiones ni clics.</p>');
+ if(!verified||verified.exact!==true)return section('Entrega confirmada',
+  '<p class="tf-tool-warning">No fue posible obtener un conteo exacto del registro privado. No se muestran cifras estimadas.</p>');
  let impressions=0,clicks=0;
  for(const m of Object.values(verified.campaigns)){impressions+=Number(m.impressions)||0;clicks+=Number(m.clicks)||0}
- const rows=api.campaigns.map(c=>{const m=verified.campaigns[c.id];
-  return '<tr><td><b>'+esc(c.name)+'</b></td><td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td><td>'+(m?esc((Number(m.ctr)||0).toFixed(2))+' %':'—')+'</td><td>'+(m?.partial?'Parcial':m?'Verificado':'Sin datos')+'</td></tr>'
+ const rows=api.campaigns.map(c=>{
+  const m=verified.campaigns[c.id];const goal=Number(m?.authorizedGoal)||0,delivered=Number(m?.deliveredSinceAuthorization)||0;
+  return '<tr><td><b>'+esc(c.name)+'</b><small>'+esc(impressionStatus(m))+'</small></td>'+
+   '<td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td>'+
+   '<td>'+(m?esc((Number(m.ctr)||0).toFixed(2))+' %':'—')+'</td>'+
+   '<td>'+(m?number(m.requestedImpressions):'—')+'</td>'+
+   '<td>'+(m&&goal?number(goal):'—')+'</td>'+
+   '<td>'+(m&&goal?number(delivered):'—')+'</td>'+
+   '<td>'+(m&&goal?number(Math.max(0,goal-delivered)):'—')+'</td>'+
+   '<td>'+(m&&goal?(100*Math.min(goal,delivered)/goal).toFixed(2)+' %':'—')+'</td></tr>';
  }).join('');
  return section('Entrega confirmada por TaskFlow',
-  '<p class="tf-tool-note">Solo se cuentan oportunidades con confirmación de impresión o clic en el registro privado. No se incluyen selecciones sin mostrar, ventas, personas únicas ni conversiones externas.</p>'+
-  '<div class="tf-tool-kpis">'+mini(number(impressions),'Impresiones confirmadas')+mini(number(clicks),'Clics confirmados')+mini(impressions?(100*clicks/impressions).toFixed(2)+' %':'0.00 %','CTR confirmado')+'</div>'+
-  (verified.failed.length?'<p class="tf-tool-warning">'+verified.failed.length+' campaña(s) sin datos disponibles.</p>':'')+
-  '<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Campaña</th><th>Impresiones</th><th>Clics</th><th>CTR</th><th>Estado</th></tr></thead><tbody>'+rows+'</tbody></table></div>');
+  '<p class="tf-tool-note">Las impresiones y los clics corresponden a confirmaciones únicas de los últimos 30 días. La meta autorizada y su cumplimiento se contabilizan desde la autorización, sin mezclar períodos. Las solicitudes no son compromisos; las metas autorizadas aún no completadas no se anuncian como entregadas.</p>'+
+  '<div class="tf-tool-kpis">'+mini(number(impressions),'Impresiones confirmadas · 30 días')+
+  mini(number(clicks),'Clics confirmados · 30 días')+
+  mini(impressions?(100*clicks/impressions).toFixed(2)+' %':'0.00 %','CTR confirmado')+'</div>'+
+  (verified.failed.length?'<p class="tf-tool-warning">'+verified.failed.length+' campaña(s) sin datos exactos disponibles.</p>':'')+
+  '<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Campaña y estado</th><th>Impresiones (30 días)</th><th>Clics (30 días)</th><th>CTR</th><th>Solicitadas</th><th>Autorizadas</th><th>Entregadas desde autorización</th><th>Pendientes</th><th>Cumplimiento</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+  '<p class="tf-tool-note">No se garantizan ventas, instalaciones, clientes ni resultados futuros. Si la meta no se completa dentro del período, el informe debe mostrar el déficit real.</p>');
 }
 function localDeliveryEvidence(){
  try{
@@ -468,7 +491,8 @@ function budgetRows(api){
    '<label>Estrategia<select aria-label="Estrategia de entrega para '+name+'" data-tf-budget-strategy="'+id+'"><option value="balanced"'+(!['reach','steady'].includes(c.deliveryStrategy)?' selected':'')+'>Equilibrada</option><option value="reach"'+(c.deliveryStrategy==='reach'?' selected':'')+'>Maximizar oportunidades</option><option value="steady"'+(c.deliveryStrategy==='steady'?' selected':'')+'>Reducir repeticiones</option></select></label>'+
    '<label>Frecuencia<select aria-label="Máximo de selecciones por sesión para '+name+'" data-tf-budget-frequency="'+id+'">'+[1,2,3].map(n=>'<option value="'+n+'"'+(n===([1,2,3].includes(Number(c.frequencyCap))?Number(c.frequencyCap):3)?' selected':'')+'>'+n+' por sesión y día</option>').join('')+'</select></label>'+
    '<label class="tf-budget-ab-toggle">Prueba A/B<input aria-label="Prueba A/B para '+name+'" data-tf-budget-abtest="'+id+'" type="checkbox"'+(c.abTest===true?' checked':'')+((c.ads||[]).length<2?' disabled':'')+'></label>'+
-   '<button data-tf-action="budget-save" data-id="'+id+'" type="button">Guardar presupuesto</button></div></article>';
+   '<button data-tf-action="budget-save" data-id="'+id+'" type="button">Guardar presupuesto</button></div>'+
+    '<div class="tf-impression-request-row"><label>Meta de impresiones solicitada<input type="number" min="0" max="10000000" step="1" inputmode="numeric" aria-label="Impresiones solicitadas para '+name+'" data-tf-impression-request="'+id+'" value="'+esc(Number(c.requestedImpressions)||0)+'"></label><button type="button" data-tf-action="impression-request" data-id="'+id+'">Solicitar evaluación</button><small>No es una garantía: se valida el inventario histórico antes de autorizar un cupo.</small></div></article>';
  }).join('')||'<p class="tf-tool-empty">No hay campañas con presupuesto.</p>';
 }
 function budgets(api){
@@ -484,7 +508,7 @@ function budgets(api){
   mini(money(total),'Presupuestos totales','Importes configurados; no son cobros')+
   mini(validTotal.length+'/'+totalActive.length,'Presupuestos totales programados',invalidTotal?'Revisar fechas faltantes':'Con fechas válidas')+'</div>'+
   section('Asignación por campaña','<p class="tf-tool-note">Para presupuestos totales son obligatorias las fechas de inicio y finalización. Modificar un presupuesto aprobado lo devuelve a revisión y suspende su publicación hasta una nueva aprobación.</p><div data-tf-budget-list>'+budgetRows(api)+'</div>')+
-  section('Integridad de entrega','<p class="tf-tool-note">Verifica que todas las campañas aprobadas y activas estén sincronizadas con el distribuidor privado. Sin esa confirmación, su publicación no puede darse por operativa.</p><button type="button" data-tf-action="delivery-resync">Verificar y sincronizar campañas activas</button><p role="status" id="tfDeliverySyncStatus" class="tf-tool-note"></p>')+
+  section('Integridad de entrega','<p class="tf-tool-note">Verifica que todas las campañas aprobadas y activas estén sincronizadas con el distribuidor privado. Sin esa confirmación, su publicación no puede darse por operativa.</p><button type="button" data-tf-action="delivery-resync">Verificar y sincronizar campañas activas</button><p role="status" id="tfDeliverySyncStatus" class="tf-tool-note"></p><div id="tfImpressionProgress" aria-live="polite">Consultando entrega verificable…</div>')+
   '<p class="tf-tool-note">Los valores diarios orientativos no constituyen impresiones garantizadas, gastos ejecutados ni facturación. Las estrategias y límites de frecuencia afectan a oportunidades de selección, no a importes cobrados. La distribución entre campañas se determina en el servicio privado.</p>');
 }
 function settings(api){
@@ -492,6 +516,49 @@ function settings(api){
  section('Perfil comercial','<form id="tfAdsSettingsForm" class="tf-tool-form"><label>Responsable<input name="ownerName" maxlength="100" required value="'+esc(api.currentUser?.name||'')+'"></label><label>Nombre de la empresa<input name="businessName" maxlength="120" required value="'+esc(api.currentUser?.company||'')+'"></label><label>Correo electrónico (solo lectura)<input disabled value="'+esc(api.currentUser?.email||'')+'"></label><button type="submit">Guardar perfil</button><p id="tfAdsSettingsMessage" role="status"></p></form>')+
  section('Acceso y conexión','<div class="tf-tool-buttons"><button type="button" data-tf-action="settings-recovery">Enviar enlace para cambiar contraseña</button><button type="button" data-tf-action="settings-connection">Comprobar conexión</button><button type="button" data-settings-logout>Cerrar sesión</button></div><p id="tfAdsSecurityMessage" class="tf-tool-note" role="status">El enlace de recuperación se enviará al correo asociado con tu cuenta.</p>')+
  (api.isAdsAdmin?section('Administración de campañas','<button type="button" data-settings-admin>Ir a Control ADS</button>'):''));
+}
+async function requestImpressions(button,id){
+ const api=current,c=api?.campaigns.find(x=>x.id===id);
+ if(!api||!c||!api.currentUser||!api.fbDb)return;
+ const input=api.root.querySelector('[data-tf-impression-request="'+CSS.escape(id)+'"]');
+ if(!input)return;
+ const amount=Number(input.value);
+ if(!Number.isSafeInteger(amount)||amount<0||amount>10000000){
+  api.toast('La solicitud debe ser un número entero de 0 a 10,000,000 impresiones.');return;
+ }
+ if(amount===Number(c.requestedImpressions||0)){api.toast('La solicitud ya tiene esa cantidad.');return}
+ button.disabled=true;
+ try{
+  const ref=api.fbDb.collection('users').doc(api.currentUser.id).collection('adsCampaigns').doc(id);
+  await api.withDeadline(ref.update({requestedImpressions:amount,updatedAt:new Date().toISOString()}),20000,'No se pudo guardar la solicitud.');
+  c.requestedImpressions=amount;api.saveCampaigns();api.renderAll();
+  const synced=await api.syncPrivateDelivery?.(id);
+  if(view==='billing'){api.root.innerHTML=budgets(api);window.TaskFlowADSWallet?.mount?.(api);void paintImpressionCommitments(api)}
+  api.toast(synced?'Solicitud registrada; pendiente de evaluación de capacidad.':'Solicitud guardada; falta sincronizar el distribuidor privado.');
+ }catch(error){api.toast('No se pudo guardar la solicitud: '+String(error?.message||'Error de conexión'))}
+ finally{if(button.isConnected)button.disabled=false}
+}
+async function paintImpressionCommitments(api){
+ const target=api.root.querySelector('#tfImpressionProgress'),owner=api.currentUser?.id;
+ if(!target)return;
+ target.textContent='Consultando registro privado de impresiones…';
+ try{
+  const result=await getVerifiedMetrics(api);
+  if(view!=='billing'||current?.currentUser?.id!==owner||!target.isConnected)return;
+  target.innerHTML='<div class="tf-impression-progress-list">'+api.campaigns.map(c=>{
+   const m=result.campaigns[c.id],goal=Number(m?.authorizedGoal)||0,delivered=Number(m?.deliveredSinceAuthorization)||0;
+   return '<article class="tf-impression-progress-item"><b>'+esc(c.name)+'</b>'+
+    '<span>'+esc(impressionStatus(m))+'</span>'+
+    '<small>Solicitadas: '+(m?number(m.requestedImpressions):'—')+
+    ' · Cupo autorizado: '+(m?number(goal):'—')+
+    ' · Confirmadas desde autorización: '+(m&&goal?number(delivered):'—')+
+    ' · Pendientes: '+(m&&goal?number(Math.max(0,goal-delivered)):'—')+'</small>'+
+    (goal?'<meter min="0" max="'+goal+'" value="'+Math.min(delivered,goal)+'" aria-label="Cumplimiento de '+esc(c.name)+'"></meter>':'')+
+    '</article>';
+  }).join('')+'</div><p class="tf-tool-note">Los datos históricos anteriores a la autorización no aumentan su cumplimiento. Ningún número solicitado constituye automáticamente una promesa de entrega.</p>';
+ }catch(error){
+  if(target.isConnected)target.textContent='No fue posible verificar las impresiones. No se muestran cifras estimadas.';
+ }
 }
 async function changeBudget(button,id){
  const api=current,c=api?.campaigns.find(x=>x.id===id),root=api?.root;
@@ -518,7 +585,7 @@ async function changeBudget(button,id){
   if(c.approvalStatus==='approved')batch.delete(api.fbDb.collection('adsPublicCampaigns').doc(c.id));
   await api.withDeadline(batch.commit(),20000,'No se pudo confirmar el presupuesto.');
   Object.assign(c,data);void api.syncPrivateDelivery?.(c.id);api.saveCampaigns();api.renderAll();
-  if(view==='billing'){api.root.innerHTML=budgets(api);window.TaskFlowADSWallet?.mount?.(api)}
+  if(view==='billing'){api.root.innerHTML=budgets(api);window.TaskFlowADSWallet?.mount?.(api);void paintImpressionCommitments(api)}
   api.toast('Presupuesto y período guardados correctamente.');
  }catch(e){api.toast('No se pudo guardar: '+(e.message||'Comprueba tu conexión.'));button.disabled=false;button.textContent='Guardar presupuesto'}
 }
@@ -567,8 +634,8 @@ function wire(root){
   else if(action==='preview-close'){const d=btn.closest('dialog');if(d){if(d.close)d.close();else d.remove()}}
   else if(action==='report-refresh')void reports(current,true);
   else if(action==='report-verified-csv')void getVerifiedMetrics(current).then(data=>{
-    const rows=[['Campaña','ID','Impresiones confirmadas','Clics confirmados','CTR %','Estado']];
-    current.campaigns.forEach(c=>{const m=data.campaigns[c.id];rows.push([c.name,c.id,m?.impressions??'',m?.clicks??'',m?.ctr??'',m?(m.partial?'Parcial':'Verificado'):'No disponible'])});
+    const rows=[['Campaña','ID','Impresiones confirmadas (30 días)','Clics confirmados (30 días)','CTR %','Solicitadas','Cupo autorizado','Entregadas desde autorización','Pendientes','Estado']];
+    current.campaigns.forEach(c=>{const m=data.campaigns[c.id];rows.push([c.name,c.id,m?.impressions??'',m?.clicks??'',m?.ctr??'',m?.requestedImpressions??'',m?.authorizedGoal??'',m?.authorizedGoal?m.deliveredSinceAuthorization:'',m?.authorizedGoal?m.outstandingImpressions:'',impressionStatus(m)])});
     csvDownload('taskflow-ads-entrega-confirmada-30-dias.csv',rows);
    }).catch(e=>current.toast('No se pudo exportar entrega verificada: '+(e.message||'Error de conexión')));
    else if(action==='report-csv')void getMetrics(current,false).then(data=>{
@@ -596,7 +663,8 @@ function wire(root){
      api.toast(failed?'Algunas campañas no pudieron sincronizarse.':'Sincronización privada confirmada.');
     }finally{btn.disabled=false}
    })();
-   else if(action==='budget-save')void changeBudget(btn,id);
+   else if(action==='impression-request')void requestImpressions(btn,id);
+    else if(action==='budget-save')void changeBudget(btn,id);
   else if(action==='settings-recovery')void (async()=>{
    const message=root.querySelector('#tfAdsSecurityMessage');btn.disabled=true;
    try{await current.fbAuth.sendPasswordResetEmail(current.currentUser.email);message.textContent='Solicitud de recuperación enviada. Comprueba tu correo.'}
@@ -621,7 +689,7 @@ function render(name,api){
   else if(name==='audiences'){root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
  else if(name==='creatives')root.innerHTML=creatives(api);
  else if(name==='reports'){root.innerHTML=wrap('Informes de rendimiento','Impresiones, clics, CTR y desglose de los eventos registrados, sin estimaciones ni compras inventadas.','<div class="tf-tool-buttons"><button type="button" data-tf-action="report-refresh">Actualizar métricas</button><button type="button" data-tf-action="report-csv">Exportar CSV</button><button type="button" data-tf-action="report-verified-csv">Exportar entrega confirmada</button></div><div id="tfAdsReportsPayload"></div>');void reports(api,false)}
- else if(name==='billing'){root.innerHTML=budgets(api);window.TaskFlowADSWallet?.mount?.(api)}
+ else if(name==='billing'){root.innerHTML=budgets(api);window.TaskFlowADSWallet?.mount?.(api);void paintImpressionCommitments(api)}
  else if(name==='settings')root.innerHTML=settings(api);
  else return false;
  return true;
