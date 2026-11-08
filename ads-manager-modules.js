@@ -401,7 +401,7 @@ function verifiedSection(api,verified){
    '<td>'+(m&&goal?(100*Math.min(goal,delivered)/goal).toFixed(2)+' %':'—')+'</td></tr>';
  }).join('');
  return section('Entrega confirmada por TaskFlow',
-  '<p class="tf-tool-note">Las impresiones y los clics corresponden a confirmaciones únicas de los últimos 30 días. La meta autorizada y su cumplimiento se contabilizan desde la autorización, sin mezclar períodos. Las solicitudes no son compromisos; las metas autorizadas aún no completadas no se anuncian como entregadas.</p>'+
+  '<p class="tf-tool-note">Criterio técnico de impresión: material cargado, al menos 50 % del área visible de forma continua durante un segundo y confirmación única del servidor. Son eventos, no personas únicas ni certificación externa. Las cifras de los últimos 30 días se separan de las entregas acumuladas desde la autorización. Una solicitud no es un compromiso y una meta incompleta no se considera entregada.</p>'+
   '<div class="tf-tool-kpis">'+mini(number(impressions),'Impresiones confirmadas · 30 días')+
   mini(number(clicks),'Clics confirmados · 30 días')+
   mini(impressions?(100*clicks/impressions).toFixed(2)+' %':'0.00 %','CTR confirmado')+'</div>'+
@@ -510,7 +510,7 @@ function budgets(api){
   mini(validTotal.length+'/'+totalActive.length,'Presupuestos totales programados',invalidTotal?'Revisar fechas faltantes':'Con fechas válidas')+'</div>'+
   section('Asignación por campaña','<p class="tf-tool-note">Para presupuestos totales son obligatorias las fechas de inicio y finalización. Modificar un presupuesto aprobado lo devuelve a revisión y suspende su publicación hasta una nueva aprobación.</p><div data-tf-budget-list>'+budgetRows(api)+'</div>')+
   section('Integridad de entrega','<p class="tf-tool-note">Verifica que todas las campañas aprobadas y activas estén sincronizadas con el distribuidor privado. Sin esa confirmación, su publicación no puede darse por operativa.</p><button type="button" data-tf-action="delivery-resync">Verificar y sincronizar campañas activas</button><p role="status" id="tfDeliverySyncStatus" class="tf-tool-note"></p><div id="tfImpressionProgress" aria-live="polite">Consultando entrega verificable…</div>')+
-  '<p class="tf-tool-note">Los valores diarios orientativos no constituyen impresiones garantizadas, gastos ejecutados ni facturación. Las estrategias y límites de frecuencia afectan a oportunidades de selección, no a importes cobrados. La distribución entre campañas se determina en el servicio privado.</p>');
+  '<p class="tf-tool-note">El presupuesto no compra automáticamente una cantidad fija de impresiones. Solo se reconocen eventos visibles y confirmados; las metas necesitan cupo comprobado y autorización. Las ventas y conversiones no se garantizan. Las estrategias y límites de frecuencia afectan a oportunidades de selección, no a importes cobrados. La distribución entre campañas se determina en el servicio privado.</p>');
 }
 function settings(api){
  return wrap('Cuenta y seguridad','Administra el perfil comercial y el acceso de esta cuenta; estas herramientas no modifican campañas.',
