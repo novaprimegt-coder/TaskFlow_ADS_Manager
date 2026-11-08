@@ -448,7 +448,7 @@ function verifiedSection(api,verified){
  let impressions=0,clicks=0;
  for(const m of Object.values(verified.campaigns)){impressions+=Number(m.impressions)||0;clicks+=Number(m.clicks)||0}
  const rows=api.campaigns.map(c=>{
-  const m=verified.campaigns[c.id];const goal=Number(m?.authorizedGoal)||0,delivered=Number(m?.deliveredSinceAuthorization)||0;
+  const m=verified.campaigns[c.id];const goal=Number(m?.authorizedGoal)||0,delivered=Number(m?.deliveredSinceAuthorization)||0,result=goalResult(c,m);
   return '<tr><td><b>'+esc(c.name)+'</b><small>'+esc(impressionStatus(m))+'</small></td>'+
    '<td>'+metricValue(m,'impressions')+'</td><td>'+metricValue(m,'clicks')+'</td>'+
    '<td>'+(m?esc((Number(m.ctr)||0).toFixed(2))+' %':'—')+'</td>'+
@@ -456,7 +456,8 @@ function verifiedSection(api,verified){
    '<td>'+(m&&goal?number(goal):'—')+'</td>'+
    '<td>'+(m&&goal?number(delivered):'—')+'</td>'+
    '<td>'+(m&&goal?number(Math.max(0,goal-delivered)):'—')+'</td>'+
-   '<td>'+(m&&goal?(100*Math.min(goal,delivered)/goal).toFixed(2)+' %':'—')+'</td></tr>';
+   '<td>'+(m&&goal?(100*Math.min(goal,delivered)/goal).toFixed(2)+' %':'—')+'</td>'+
+    '<td>'+esc(result.value)+' '+esc(result.name)+'</td><td>'+esc(result.proof)+'</td></tr>';
  }).join('');
  return section('Entrega confirmada por TaskFlow',
   '<p class="tf-tool-note">Criterio técnico de impresión: material cargado, al menos 50 % del área visible de forma continua durante un segundo y confirmación única del servidor. Son eventos, no personas únicas ni certificación externa. Las cifras de los últimos 30 días se separan de las entregas acumuladas desde la autorización. Una solicitud no es un compromiso y una meta incompleta no se considera entregada.</p>'+
@@ -464,7 +465,7 @@ function verifiedSection(api,verified){
   mini(number(clicks),'Clics confirmados · 30 días')+
   mini(impressions?(100*clicks/impressions).toFixed(2)+' %':'0.00 %','CTR confirmado')+'</div>'+
   (verified.failed.length?'<p class="tf-tool-warning">'+verified.failed.length+' campaña(s) sin datos exactos disponibles.</p>':'')+
-  '<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Campaña y estado</th><th>Impresiones (30 días)</th><th>Clics (30 días)</th><th>CTR</th><th>Solicitadas</th><th>Autorizadas</th><th>Entregadas desde autorización</th><th>Pendientes</th><th>Cumplimiento</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+  '<div class="tf-tool-table-scroll"><table class="tf-tool-table"><thead><tr><th>Campaña y estado</th><th>Impresiones (30 días)</th><th>Clics (30 días)</th><th>CTR</th><th>Solicitadas</th><th>Autorizadas</th><th>Entregadas desde autorización</th><th>Pendientes</th><th>Cumplimiento</th><th>Resultado del objetivo</th><th>Origen de medición</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
   '<p class="tf-tool-note">No se garantizan ventas, instalaciones, clientes ni resultados futuros. Si la meta no se completa dentro del período, el informe debe mostrar el déficit real.</p>');
 }
 function localDeliveryEvidence(){
@@ -693,8 +694,8 @@ function wire(root){
   else if(action==='preview-close'){const d=btn.closest('dialog');if(d){if(d.close)d.close();else d.remove()}}
   else if(action==='report-refresh')void reports(current,true);
   else if(action==='report-verified-csv')void getVerifiedMetrics(current).then(data=>{
-    const rows=[['Campaña','ID','Impresiones confirmadas (30 días)','Clics confirmados (30 días)','CTR %','Solicitadas','Cupo autorizado','Entregadas desde autorización','Pendientes','Estado']];
-    current.campaigns.forEach(c=>{const m=data.campaigns[c.id];rows.push([c.name,c.id,m?.impressions??'',m?.clicks??'',m?.ctr??'',m?.requestedImpressions??'',m?.authorizedGoal??'',m?.authorizedGoal?m.deliveredSinceAuthorization:'',m?.authorizedGoal?m.outstandingImpressions:'',impressionStatus(m)])});
+    const rows=[['Campaña','ID','Objetivo','Impresiones confirmadas (30 días)','Clics confirmados (30 días)','CTR %','Solicitadas','Cupo autorizado','Entregadas desde autorización','Pendientes','Estado','Resultado objetivo','Indicador','Procedencia']];
+    current.campaigns.forEach(c=>{const m=data.campaigns[c.id];rows.push([c.name,c.id,objective[c.objective]||c.objective,m?.impressions??'',m?.clicks??'',m?.ctr??'',m?.requestedImpressions??'',m?.authorizedGoal??'',m?.authorizedGoal?m.deliveredSinceAuthorization:'',m?.authorizedGoal?m.outstandingImpressions:'',impressionStatus(m),goalResult(c,m).value,goalResult(c,m).name,goalResult(c,m).proof])});
     csvDownload('taskflow-ads-entrega-confirmada-30-dias.csv',rows);
    }).catch(e=>current.toast('No se pudo exportar entrega verificada: '+(e.message||'Error de conexión')));
    else if(action==='report-csv')void getMetrics(current,false).then(data=>{
