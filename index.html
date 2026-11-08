@@ -2299,12 +2299,78 @@ function renderModule(name){const root=$('moduleContent');if(!root)return;if(win
    root.innerHTML='<section class="tf-ads-admin" aria-label="Control ADS">'
   +'<div class="tf-ads-admin-intro"><div class="tf-ads-admin-topline"><span class="tf-ads-admin-kicker">TaskFlow ADS · Administración</span><span class="tf-ads-admin-status">Administrador autorizado</span></div><h3>Centro de aprobación</h3><p>Revisa las campañas de los anunciantes y autoriza su publicación en TaskFlow.</p></div>'
   +'<div class="tf-ads-admin-stats"><article class="tf-ads-admin-stat"><span>Pendientes</span><strong id="adminPendingCount">—</strong><small>Por revisar</small></article><article class="tf-ads-admin-stat"><span>Aprobadas</span><strong id="adminApprovedCount">—</strong><small>Revisadas</small></article><article class="tf-ads-admin-stat"><span>Rechazadas</span><strong id="adminRejectedCount">—</strong><small>Revisadas</small></article><article class="tf-ads-admin-stat"><span>Campañas</span><strong id="adminCampaignTotal">—</strong><small>Total registradas</small></article></div>'
-  +'<div class="tf-ads-admin-review"><div class="tf-ads-admin-review-head"><div><h3>Campañas pendientes de aprobación</h3><p>Solo se muestran solicitudes que necesitan una decisión.</p></div><button type="button" class="tf-ads-admin-refresh" id="adminReviewRefresh"><svg class="tf-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>Actualizar</button></div><div id="adminReviewList" class="tf-ads-admin-feedback" role="status" aria-live="polite">Consultando campañas...</div></div></section>';
+  +'<div class="tf-ads-admin-review"><div class="tf-ads-admin-review-head"><div><h3>Campañas pendientes de aprobación</h3><p>Solo se muestran solicitudes que necesitan una decisión.</p></div><button type="button" class="tf-ads-admin-refresh" id="adminReviewRefresh"><svg class="tf-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>Actualizar</button></div><div id="adminReviewList" class="tf-ads-admin-feedback" role="status" aria-live="polite">Consultando campañas...</div></div><div class="tf-ads-admin-review tf-ads-admin-goal-review"><div class="tf-ads-admin-review-head"><div><h3>Solicitudes de impresiones verificadas</h3><p>La autorización exige historial comprobado. No supone ventas ni garantiza tráfico futuro.</p></div></div><div id="adminImpressionList" class="tf-ads-admin-feedback" role="status" aria-live="polite">Consultando solicitudes...</div></div></section>';
    $('adminReviewRefresh').addEventListener('click',()=>{void loadAdminReview()});
    void loadAdminReview();
  }else root.innerHTML='';
 }
 
+
+async function renderGoalAuthorization(btn,ownerUid,id){
+ if(!currentUser||!isAdsAdmin||!fbAuth?.currentUser||!await getAdminClaim(fbAuth.currentUser))
+  throw Error('Se requiere sesión administrativa autorizada.');
+ if(!await syncPrivateDelivery(id,ownerUid))
+  throw Error('No se pudo confirmar la sincronización privada de la campaña.');
+ const token=await fbAuth.currentUser.getIdToken(true);
+ const controller=new AbortController(),stop=setTimeout(()=>controller.abort(),16000);
+ let result;
+ try{
+  const response=await fetch('https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/goal/authorize',{
+   method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:controller.signal,
+   headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+   body:JSON.stringify({campaignId:id,ownerUid})
+  });
+  if(!response.ok)throw Error('El servicio de autorización no respondió.');
+  result=await response.json();
+ }finally{clearTimeout(stop)}
+ const reasons={
+  AUTHORIZED:'Meta de impresiones autorizada para entrega controlada. El cumplimiento se medirá por confirmaciones reales.',
+  ALREADY_AUTHORIZED:'Esta campaña ya tiene una meta autorizada.',
+  HISTORY_INSUFFICIENT:'Sin historial verificable de siete días. No se puede autorizar una cantidad.',
+  CAPACITY_UNPROVEN:'La capacidad disponible no respalda la cantidad solicitada. No se autoriza.',
+  NARROW_AUDIENCE_UNPROVEN:'No hay suficientes datos específicos para avalar la audiencia regional o municipal.',
+  DATES_REQUIRED:'La meta requiere fechas de inicio y finalización válidas.',
+  PERIOD_OUTSIDE_EVIDENCE:'El período solicitado excede la ventana admitida para evaluar capacidad.',
+  NOT_ELIGIBLE:'La campaña no está habilitada para entrega o necesita una revisión.',
+  NO_REQUEST:'No existe una solicitud válida de impresiones.',
+  CONFIG_NOT_VERIFIED:'La configuración privada aún no se pudo comprobar.',
+  CONCURRENT_CHANGE:'La campaña cambió durante la revisión. Actualiza e intenta de nuevo.',
+  CAMPAIGN_NOT_APPROVED:'La campaña debe estar activa y aprobada.',
+  CAMPAIGN_NOT_PUBLISHED:'La publicación debe estar confirmada antes de autorizar.',
+  CAMPAIGN_NOT_FOUND:'No se encontró la campaña de este anunciante.'
+ };
+ const note=btn.closest('article')?.querySelector('[data-admin-goal-result]');
+ if(note)note.textContent=reasons[result?.reason]||'No se pudo completar la evaluación; no se autorizó ninguna meta.';
+ if(result?.ok)btn.disabled=true;
+ return result;
+}
+function renderAdminImpressionRequests(items){
+ const root=$('adminImpressionList');if(!root)return;
+ if(!items.length){root.className='tf-ads-admin-feedback';root.textContent='No hay solicitudes de impresiones de campañas activas y aprobadas.';return}
+ root.className='tf-ads-admin-rows';
+ root.innerHTML=items.slice(0,100).map(c=>
+  '<article class="tf-ads-campaign-row"><div class="tf-ads-campaign-title"><b>'+escapeHtml(c.name||'Campaña')+'</b><span>'+
+  escapeHtml(c.businessName||'Anunciante')+' · '+escapeHtml(placementLabel(c.placement))+
+  '</span><span>Solicitadas: '+number(c.requestedImpressions)+' impresiones. No son una promesa.</span></div>'+
+  '<div class="tf-ads-review-actions"><button type="button" class="tf-ads-approve" data-admin-goal="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Evaluar capacidad y autorizar</button></div>'+
+  '<p class="tf-goal-hint" data-admin-goal-result role="status"></p></article>'
+ ).join('');
+ if(items.length>100)root.insertAdjacentHTML('beforeend','<p>Solo se muestran las 100 solicitudes más recientes.</p>');
+ root.onclick=async e=>{
+  const btn=e.target.closest('[data-admin-goal]');
+  if(!btn||!root.contains(btn)||btn.disabled)return;
+  const parts=String(btn.dataset.adminGoal||'').split('|');
+  if(parts.length!==2||!parts.every(x=>/^[A-Za-z0-9_-]{3,128}$/.test(x)))return;
+  btn.disabled=true;
+  try{
+   await renderGoalAuthorization(btn,parts[0],parts[1]);
+  }catch(error){
+   const note=btn.closest('article')?.querySelector('[data-admin-goal-result]');
+   if(note)note.textContent='No se autorizó ninguna meta: '+String(error?.message||'Sin conexión');
+   btn.disabled=false;
+  }
+ };
+}
 async function loadAdminReview(){
  const root=$('adminReviewList'),refresh=$('adminReviewRefresh');
  if(!root||!isAdsAdmin||!currentUser||!fbDb)return;
@@ -2317,15 +2383,18 @@ async function loadAdminReview(){
   // Una consulta sin filtros ni ordenamiento; necesita reglas de grupo, no un índice compuesto.
   const snap=await withDeadline(fbDb.collectionGroup('adsCampaigns').get({source:'server'}),18000,'La consulta administrativa tardó demasiado.');
   if(!root.isConnected||!isAdsAdmin)return;
-  const pending=[],counts={pending:0,approved:0,rejected:0};
+  const pending=[],goalRequests=[],counts={pending:0,approved:0,rejected:0};
   snap.forEach(doc=>{
    const ownerUid=String(doc.ref?.parent?.parent?.id||doc.data()?.ownerUid||'');
    if(!ownerUid||!doc.id)return;
    const c=normalizeCampaign({...doc.data(),id:doc.id,ownerUid});
    if(Object.prototype.hasOwnProperty.call(counts,c.approvalStatus))counts[c.approvalStatus]++;
    if(c.approvalStatus==='pending')pending.push(c);
+    if(c.approvalStatus==='approved'&&c.status==='active'&&Number.isSafeInteger(Number(c.requestedImpressions))&&Number(c.requestedImpressions)>0)goalRequests.push(c);
   });
   pending.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+   goalRequests.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+   renderAdminImpressionRequests(goalRequests);
   setMetric('adminPendingCount',counts.pending);
   setMetric('adminApprovedCount',counts.approved);
   setMetric('adminRejectedCount',counts.rejected);
