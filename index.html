@@ -800,7 +800,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 }
 
 </style>
-<script defer src="./ads-manager-modules.js?v=20261107-audiences-fix-4"></script>
+<script defer src="./ads-manager-modules.js?v=20261108-delivery-1"></script>
 <style id="tfAdsCrystalizedHero2026">
 /* Fondo animado exclusivo del encabezado de inicio de sesión; no modifica el formulario. */
 #authView .auth-hero{
@@ -2828,7 +2828,7 @@ async function toggleCampaign(id){
 }
 async function deleteCampaign(id){
  const c=campaigns.find(x=>x.id===id);if(!c)return;if(!confirm('¿Eliminar la campaña "'+c.name+'"?'))return;
- try{for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete();await publicCampaignRef(id).delete().catch(()=>{});campaigns=campaigns.filter(x=>x.id!==id);saveCampaigns();await clearDraftMedia(id);renderAll();toast('Campaña eliminada.')}catch(e){console.error(e);toast('No fue posible eliminar la campaña.')}
+ try{for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete();await publicCampaignRef(id).delete().catch(()=>{});void syncPrivateDelivery(id);campaigns=campaigns.filter(x=>x.id!==id);saveCampaigns();await clearDraftMedia(id);renderAll();toast('Campaña eliminada.')}catch(e){console.error(e);toast('No fue posible eliminar la campaña.')}
 }
 function restoreAuthVisuals(){
  const auth=$('authView');if(!auth||auth.hidden)return;
