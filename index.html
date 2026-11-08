@@ -820,7 +820,21 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #campaignModal .tf-ads-delivery-controls .tf-goal-hint{display:block;margin-top:7px;line-height:1.5}
 @media(max-width:600px){#campaignModal .tf-ads-delivery-controls{padding:12px}}
 #campaignModal .tf-ads-ab-test-field{margin:16px 0 4px;padding:13px 15px;border:1px solid rgba(65,125,201,.2);border-radius:12px;background:rgba(40,105,184,.035)}#campaignModal .tf-ads-ab-test-field label{display:flex;gap:10px;align-items:center;font-size:13px;font-weight:750;cursor:pointer}#campaignModal .tf-ads-ab-test-field input{accent-color:#1c7ddc;width:18px;height:18px}#campaignModal .tf-ads-ab-test-field small{display:block;line-height:1.55;margin:7px 0 0 28px}</style>
-<script defer src="./ads-manager-modules.js?v=20261108-meta-delivery-v2"></script>
+<style id="tfAdsAdsetsLayout2026">
+#moduleContent .tf-adset-group{padding:18px}
+#moduleContent .tf-adset-group-entries{display:grid;gap:10px;margin:10px 0 16px}
+#moduleContent .tf-adset-entry{border:1px solid #e1eaf5;border-radius:12px;padding:12px;min-width:0}
+#moduleContent .tf-adset-entry-title{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+#moduleContent .tf-adset-entry-title b{font-size:13px}
+#moduleContent .tf-adset-entry-title small,#moduleContent .tf-adset-details{font-size:11px;color:#63778c}
+#moduleContent .tf-adset-details{margin-top:6px;line-height:1.5}
+#moduleContent .tf-adset-entry-tools{display:flex;align-items:end;gap:8px;flex-wrap:wrap;margin-top:12px}
+#moduleContent .tf-adset-entry-tools label{min-width:170px;flex:1;color:#526d8a;font-weight:700;font-size:11px}
+#moduleContent .tf-adset-entry-tools input{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #d3e0ee;border-radius:9px;font-size:12px}
+#moduleContent .tf-adset-entry-tools button{white-space:normal}
+@media(max-width:480px){#moduleContent .tf-adset-entry-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#moduleContent .tf-adset-entry-tools label{grid-column:1/-1}#moduleContent .tf-adset-entry-tools button{min-width:0}}
+</style>
+<script defer src="./ads-manager-modules.js?v=20261108-adsets-ab-v1"></script>
 <style id="tfAdsCrystalizedHero2026">
 /* Fondo animado exclusivo del encabezado de inicio de sesión; no modifica el formulario. */
 #authView .auth-hero{
@@ -2062,7 +2076,7 @@ function publicationState(c){
  if(!campaignReady(c))return 'Archivo pendiente · sin entrega';
  return 'Aprobada · habilitada según audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
-function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,syncPrivateDelivery,renderAll,showView,duplicateCampaign,toast}}
+function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openNew,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,syncPrivateDelivery,renderAll,showView,duplicateCampaign,toast}}
 function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary();renderObjectiveInsights();if(window.TaskFlowADSModules?.paintOverview&&currentUser)void window.TaskFlowADSModules.paintOverview(adsModulesContext(),false);if(window.TaskFlowADSWallet?.onAuth&&currentUser)window.TaskFlowADSWallet.onAuth(adsModulesContext())}
 function fitSummaryMetricValues(){
  // Mantiene las cifras completas cuando caben; usa formato compacto solo si es necesario.
