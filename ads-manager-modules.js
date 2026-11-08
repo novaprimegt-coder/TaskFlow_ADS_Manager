@@ -358,7 +358,7 @@ async function getVerifiedMetrics(api){
  const owner=api.currentUser?.id;
  if(!owner||api.fbAuth?.currentUser?.uid!==owner)throw Error("Sesión no disponible");
  const token=await api.fbAuth.currentUser.getIdToken();
- const output={campaigns:{},periodDays:30,failed:[]};
+ const output={campaigns:{},periodDays:30,failed:[],exact:true,source:"verified-selections"};
  for(let i=0;i<ids.length;i+=12){
   const chunk=ids.slice(i,i+12),ctrl=new AbortController(),stop=setTimeout(()=>ctrl.abort(),17000);
   try{
