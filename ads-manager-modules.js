@@ -218,7 +218,7 @@ async function fetchActiveGeoAreas(api,force=false){
  if(verifiedGeoUid!==uid){verifiedGeoUid=uid;verifiedGeoAreas=[];verifiedGeoAt=0;verifiedGeoLoading=null}
  if(!force&&Date.now()-verifiedGeoAt<60000)return verifiedGeoAreas;
  if(verifiedGeoLoading)return verifiedGeoLoading;
- verifiedGeoLoading=(async()=>{
+ const pendingRequest=(async()=>{
   const token=await user.getIdToken(),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),14000);
   let response;
   try{response=await fetch(LIVE_GEO_AREAS_URL,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal,headers:{Authorization:'Bearer '+token}})}
@@ -239,9 +239,10 @@ async function fetchActiveGeoAreas(api,force=false){
   if(verifiedGeoUid!==uid||api.fbAuth?.currentUser?.uid!==uid)throw Error('Cambió la sesión.');
   verifiedGeoAreas=verified;verifiedGeoAt=Date.now();
   return verified;
- })().catch(e=>{if(verifiedGeoUid===uid){verifiedGeoAreas=[];verifiedGeoAt=0}throw e})
-  .finally(()=>{verifiedGeoLoading=null});
- return verifiedGeoLoading;
+ })().catch(e=>{if(verifiedGeoUid===uid){verifiedGeoAreas=[];verifiedGeoAt=0}throw e});
+ verifiedGeoLoading=pendingRequest;
+ try{return await pendingRequest}
+ finally{if(verifiedGeoLoading===pendingRequest)verifiedGeoLoading=null}
 }
 function fillVerifiedAudienceSelect(select,values,placeholder){
  if(!select)return;
@@ -388,6 +389,7 @@ async function saveAudiencePreset(){
   if(current?.currentUser.id!==uid)return;
   audiencePresets=saved;
   api.root.querySelector('#tfAdsAudiencePresets').innerHTML=presetMarkup(api);
+  hydrateAudienceGeoForm(api);refreshSavedAudienceEvidence(api);
   api.toast('Audiencia guardada y disponible para otras campañas.');
  }catch(e){
   console.warn('ADS guardado de audiencias:',e?.code||e?.message);
@@ -402,7 +404,7 @@ async function deleteAudiencePreset(button,id){
  const api=current,p=audiencePresets.find(x=>x.id===id);if(!p)return;
  if(button.dataset.confirm!=='true'){button.dataset.confirm='true';button.textContent='Confirmar eliminación';return}
  button.disabled=true;const next=audiencePresets.filter(x=>x.id!==id);
- try{await api.withDeadline(presetRef(api).update({audiencePresets:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),20000,'No se confirmó la eliminación.');audiencePresets=next;api.root.querySelector('#tfAdsAudiencePresets').innerHTML=presetMarkup(api);api.toast('Plantilla de audiencia eliminada.')}
+ try{await api.withDeadline(presetRef(api).update({audiencePresets:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),20000,'No se confirmó la eliminación.');audiencePresets=next;api.root.querySelector('#tfAdsAudiencePresets').innerHTML=presetMarkup(api);hydrateAudienceGeoForm(api);refreshSavedAudienceEvidence(api);api.toast('Plantilla de audiencia eliminada.')}
  catch(e){console.warn('ADS eliminación de audiencia:',e?.code||e?.message);api.toast('No se pudo eliminar la audiencia. Comprueba la conexión e inténtalo nuevamente.');button.disabled=false;button.dataset.confirm='false';button.textContent='Eliminar plantilla'}
 }
 async function applyAudiencePreset(button,id){
@@ -420,7 +422,7 @@ async function applyAudiencePreset(button,id){
   if(c.approvalStatus==='approved')batch.delete(api.fbDb.collection('adsPublicCampaigns').doc(c.id));
   await api.withDeadline(batch.commit(),20000,'La segmentación no pudo confirmarse.');
   Object.assign(c,data);const synced=await api.syncPrivateDelivery?.(c.id);api.saveCampaigns();api.renderAll();if(!synced)console.warn('ADS: audiencia aplicada; sincronización privada aún sin confirmar');api.toast('Audiencia aplicada. '+(data.approvalStatus==='pending'?'La campaña requiere nueva aprobación.':'Configuración actualizada.'));
-  if(view==='audiences'){api.root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
+  if(view==='audiences'){api.root.innerHTML=audiences(api);void loadAudiencePresets(api,false);void loadLiveGeoAreas(api)}
  }catch(e){api.toast('No se pudo aplicar: '+(e.message||'Comprueba la conexión.'));button.disabled=false;button.textContent='Aplicar segmentación'}
 }
 
