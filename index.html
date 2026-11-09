@@ -1366,7 +1366,8 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 <label class="placement"><input name="placement" type="radio" value="entry"/><span class="placement-card"><span class="placement-top"><span class="placement-symbol phone-symbol" aria-hidden="true"><svg viewBox="0 0 32 42"><rect x="8" y="2" width="16" height="38" rx="4"/><path d="M13 7h6M13 34h6"/><rect x="11" y="12" width="10" height="16" rx="2"/></svg></span><span class="placement-check" aria-hidden="true">✓</span></span><b>Anuncio de ingreso</b><span class="placement-description">Se muestra cuando la persona ingresa a TaskFlow.</span><small>HD: 2160 × 3840 px · Estándar: 1080 × 1920 px</small><span class="placement-formats">Imagen, GIF o video</span></span></label>
 <label class="placement"><input name="placement" type="radio" value="interaction"/><span class="placement-card"><span class="placement-top"><span class="placement-symbol tap-symbol" aria-hidden="true"><svg viewBox="0 0 32 42"><rect x="8" y="2" width="16" height="38" rx="4"/><path d="M13 7h6M13 34h6"/><path d="M16 27V16m0 0c2-2 4 0 3 3l5 3-1 9h-9l-4-5c-1-2 1-4 3-2l3 3"/></svg></span><span class="placement-check" aria-hidden="true">✓</span></span><b>Por interacción</b><span class="placement-description">Se muestra después de diez interacciones acumuladas.</span><small>HD: 2160 × 3840 px · Estándar: 1080 × 1920 px</small><span class="placement-formats">Imagen, GIF o video</span></span></label>
 </div></div>
-<div class="formgrid" style="margin-top:14px"><div class="field"><label>País</label><select id="country" aria-label="País de destino de la campaña"><option value="GT">Guatemala</option></select><small class="tf-goal-hint">Selecciona cualquier país o «Todo el mundo». Las campañas se entregan únicamente a usuarios de TaskFlow cuya ubicación coincida con el destino.</small></div><div class="field"><label>Departamento / región</label><input id="region" maxlength="100" placeholder="Ej. Huehuetenango"/></div><div class="field"><label>Ciudad / municipio</label><input id="city" maxlength="100" placeholder="Ej. Huehuetenango"/></div><div class="field"><label>Radio aproximado</label><select id="radius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select><small class="tf-goal-hint">Los radios de 10–100 km requieren validación geográfica. La campaña no se entregará con ese filtro hasta poder comprobarlo; utiliza país, región o ciudad para una segmentación disponible.</small></div><div class="field"><label>Edad mínima</label><input id="ageMin" max="65" min="13" type="number" value="18"/></div><div class="field"><label>Edad máxima</label><input id="ageMax" max="65" min="13" type="number" value="65"/><small class="tf-goal-hint">Una audiencia con rango de edad reducido solo podrá recibir anuncios cuando TaskFlow disponga de una edad verificable. Sin ese dato, no se forzará la segmentación.</small></div></div>
+<p id="tfAdsGeoAvailability" class="tf-goal-hint" role="status" aria-live="polite">Consultando dónde se utiliza TaskFlow…</p><button type="button" id="tfAdsRefreshGeos" class="btn btn-ghost" style="margin:8px 0 10px">Actualizar zonas disponibles</button>
+<div class="formgrid" style="margin-top:14px"><div class="field"><label>País</label><select id="country" aria-label="País con actividad real de TaskFlow"><option value="">Consultando países activos…</option></select><small class="tf-goal-hint">Solo aparecen países con usuarios autenticados y ubicación autorizada durante los últimos 30 días.</small></div><div class="field"><label>Departamento / región</label><select id="region"><option value="">Todo el país</option></select></div><div class="field"><label>Ciudad / municipio</label><select id="city"><option value="">Toda la región</option></select></div><div class="field"><label>Colonia / barrio (si hay actividad suficiente)</label><select id="neighborhood"><option value="">Toda la ciudad</option></select></div><div class="field"><label>Radio aproximado</label><select id="radius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select><small class="tf-goal-hint">Los radios de 10–100 km requieren validación geográfica. La campaña no se entregará con ese filtro hasta poder comprobarlo; utiliza país, región o ciudad para una segmentación disponible.</small></div><div class="field"><label>Edad mínima</label><input id="ageMin" max="65" min="13" type="number" value="18"/></div><div class="field"><label>Edad máxima</label><input id="ageMax" max="65" min="13" type="number" value="65"/><small class="tf-goal-hint">Una audiencia con rango de edad reducido solo podrá recibir anuncios cuando TaskFlow disponga de una edad verificable. Sin ese dato, no se forzará la segmentación.</small></div></div>
 </section>
 <section class="wizard-page" data-page="3">
 <div class="section-title"><span class="eyebrow">Control de gasto</span><h3>Presupuesto y calendario</h3></div>
@@ -1777,19 +1778,94 @@ document.addEventListener('DOMContentLoaded',init,{once:true});
 'use strict';
 const $=id=>document.getElementById(id);const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const TF_ADS_COUNTRY_CODES='AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW'.split(' ');
-function initWorldwideCountries(){
- const select=$('country');if(!select||select.dataset.tfCountryList==='world-v1')return;
- const chosen=select.value||'GT';
- let lookup=null;try{lookup=new Intl.DisplayNames(['es'],{type:'region'})}catch(_){}
- const entries=TF_ADS_COUNTRY_CODES.map(code=>({code,name:(lookup?.of(code)||code)}));
- entries.sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'}));
- const global=document.createElement('option');global.value='ALL';global.textContent='Todo el mundo (todos los países)';
- const options=[global];for(const item of entries){const option=document.createElement('option');option.value=item.code;option.textContent=item.name+' ('+item.code+')';options.push(option)}
- select.replaceChildren(...options);
- select.value=TF_ADS_COUNTRY_CODES.includes(chosen)||chosen==='ALL'?chosen:'GT';
- select.dataset.tfCountryList='world-v1';
-}
 
+const GEO_INVENTORY_URL='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/geo/available';
+let tfGeoAreas=[],tfGeoLoaded=false,tfGeoLoading=null,tfGeoLastAt=0,tfGeoEventsBound=false,tfGeoPreferred=null;
+function tfGeoLabel(code){
+ try{return new Intl.DisplayNames(['es'],{type:'region'}).of(code)||code}catch(_){return code}
+}
+function tfGeoOption(value,label){
+ const opt=document.createElement('option');opt.value=value;opt.textContent=label;return opt;
+}
+function tfGeoFill(id,values,placeholder,desired){
+ const el=$(id);if(!el)return;
+ const options=[tfGeoOption('',placeholder),...values.map(v=>tfGeoOption(v.value,v.label))];
+ if(desired&&!values.some(v=>v.value===desired)&&editingId){
+  options.push(tfGeoOption(desired,desired+' · sin actividad reciente'));
+ }
+ el.replaceChildren(...options);
+ el.value=desired&&options.some(v=>v.value===desired)?desired:'';
+ el.disabled=id!=='country'&&!values.length&&!desired;
+}
+function tfGeoRender(level){
+ const preferred=tfGeoPreferred||{
+  country:$('country')?.value||'',region:$('region')?.value||'',
+  city:$('city')?.value||'',neighborhood:$('neighborhood')?.value||''
+ };
+ tfGeoPreferred=null;
+ if(level==='country'){preferred.region='';preferred.city='';preferred.neighborhood=''}
+ else if(level==='region'){preferred.city='';preferred.neighborhood=''}
+ else if(level==='city')preferred.neighborhood='';
+ const countryCodes=[...new Set(tfGeoAreas.filter(x=>x.level==='country').map(x=>x.country))];
+ const countries=countryCodes.map(code=>({value:code,label:tfGeoLabel(code)+' ('+code+')'}))
+  .sort((a,b)=>a.label.localeCompare(b.label,'es'));
+ if(countryCodes.length)countries.unshift({value:'ALL',label:'Todos los países con actividad'});
+ tfGeoFill('country',countries,tfGeoLoaded?'Selecciona un país con usuarios activos':'Sin inventario verificado',preferred.country);
+ const c=$('country').value;
+ const regions=[...new Set(tfGeoAreas.filter(x=>x.level==='region'&&x.country===c).map(x=>x.region))]
+  .sort((a,b)=>a.localeCompare(b,'es')).map(v=>({value:v,label:v}));
+ tfGeoFill('region',regions,'Todas las regiones disponibles',preferred.region);
+ const r=$('region').value;
+ const cities=[...new Set(tfGeoAreas.filter(x=>x.level==='city'&&x.country===c&&x.region===r).map(x=>x.city))]
+  .sort((a,b)=>a.localeCompare(b,'es')).map(v=>({value:v,label:v}));
+ tfGeoFill('city',cities,'Todas las ciudades disponibles',preferred.city);
+ const city=$('city').value;
+ const hoods=[...new Set(tfGeoAreas.filter(x=>x.level==='neighborhood'&&x.country===c&&x.region===r&&x.city===city).map(x=>x.neighborhood))]
+  .sort((a,b)=>a.localeCompare(b,'es')).map(v=>({value:v,label:v}));
+ tfGeoFill('neighborhood',hoods,'Toda la ciudad',preferred.neighborhood);
+}
+async function tfGeoRefresh(force=false){
+ if(tfGeoLoading)return tfGeoLoading;
+ if(!force&&tfGeoLoaded&&Date.now()-tfGeoLastAt<120000){tfGeoRender('');return}
+ const info=$('tfAdsGeoAvailability');if(info)info.textContent='Consultando ubicaciones con actividad reciente…';
+ tfGeoLoading=(async()=>{
+  try{
+   const user=fbAuth?.currentUser;
+   if(!user)throw Error('Inicia sesión para consultar zonas');
+   const token=await user.getIdToken(),ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),11000);
+   let response;
+   try{response=await fetch(GEO_INVENTORY_URL,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal,
+    headers:{Authorization:'Bearer '+token}})}finally{clearTimeout(timeout)}
+   if(!response.ok)throw Error('Sin acceso al inventario privado');
+   const data=await response.json();
+   if(data?.source!=='consented-active-taskflow-users'||!Array.isArray(data.areas))throw Error('Inventario sin verificar');
+   tfGeoAreas=data.areas.filter(x=>x&&['country','region','city','neighborhood'].includes(x.level)
+    &&typeof x.country==='string'&&/^[A-Z]{2}$/.test(x.country)&&TF_ADS_COUNTRY_CODES.includes(x.country));
+   tfGeoLoaded=true;tfGeoLastAt=Date.now();
+   const counts=['country','region','city','neighborhood'].map(level=>tfGeoAreas.filter(x=>x.level===level).length);
+   if(info)info.textContent=counts[0]
+    ?counts[0]+' país(es), '+counts[1]+' región(es), '+counts[2]+' ciudad(es) y '+counts[3]+' barrio(s) con actividad verificada en los últimos 30 días. Zonas pequeñas se ocultan para proteger privacidad.'
+    :'Sin zonas disponibles todavía. Aparecerán cuando usuarios autenticados utilicen TaskFlow con ubicación autorizada.';
+   tfGeoRender('');
+  }catch(e){
+   tfGeoLoaded=false;tfGeoAreas=[];
+   if(info)info.textContent='No se pudo verificar el inventario de ubicaciones activas. No se permiten nuevas zonas hasta recuperar la conexión.';
+   tfGeoRender('');
+  }
+ })().finally(()=>{tfGeoLoading=null});
+ return tfGeoLoading;
+}
+function initWorldwideCountries(){
+ if(!tfGeoEventsBound){
+  tfGeoEventsBound=true;
+  for(const [id,name]of [['country','country'],['region','region'],['city','city']]){
+   $(id)?.addEventListener('change',()=>tfGeoRender(name));
+  }
+  $('tfAdsRefreshGeos')?.addEventListener('click',()=>void tfGeoRefresh(true));
+  setInterval(()=>{if(!$('campaignModal')?.hidden)void tfGeoRefresh(true)},180000);
+ }
+ void tfGeoRefresh(true);
+}
 const FIREBASE_CONFIG=Object.freeze({apiKey:'AIzaSyAswSpJcc1oEy93DFcKZ-9RBfszuGJJbKQ',authDomain:'taskflow-b0ece.firebaseapp.com',projectId:'taskflow-b0ece',storageBucket:'taskflow-b0ece.firebasestorage.app',messagingSenderId:'1015897402601',appId:'1:1015897402601:web:68350cebb63c52d72c1478'});
 const CAMPAIGN_CACHE_KEY='tf_ads_manager_campaigns_prod_';
 // La integración opcional se autentica y procesa exclusivamente en el servidor.
@@ -2015,7 +2091,7 @@ async function syncPrivateDelivery(campaignId,ownerUid){
 }
 function toPublicCampaign(c){
  const n=normalizeCampaign(c);
- return {campaignId:c.id,objective:c.objective||'awareness',status:c.status,approvalStatus:c.approvalStatus||'pending',placement:c.placement,country:c.country||'',region:c.region||'',city:c.city||'',radius:Number(c.radius)||0,ageMin:Number(c.ageMin)||18,ageMax:Number(c.ageMax)||65,start:c.start||'',end:c.end||'',ads:n.ads.filter(a=>a.src&&a.mediaMeta).map(a=>({id:a.id,name:a.name||'',src:a.src,type:a.mediaMeta?.kind==='video'?'video':(String(a.mediaMeta?.mime||'').toLowerCase()==='image/gif'?'gif':'image'),destination:a.destination||'',ctaLabel:goalDetails(c.objective).cta,sound:!!a.sound,width:Number(a.mediaMeta?.width)||0,height:Number(a.mediaMeta?.height)||0,duration:Number(a.mediaMeta?.duration)||0})),updatedAt:now()}
+ return {campaignId:c.id,objective:c.objective||'awareness',status:c.status,approvalStatus:c.approvalStatus||'pending',placement:c.placement,country:c.country||'',region:c.region||'',city:c.city||'',neighborhood:c.neighborhood||'',radius:Number(c.radius)||0,ageMin:Number(c.ageMin)||18,ageMax:Number(c.ageMax)||65,start:c.start||'',end:c.end||'',ads:n.ads.filter(a=>a.src&&a.mediaMeta).map(a=>({id:a.id,name:a.name||'',src:a.src,type:a.mediaMeta?.kind==='video'?'video':(String(a.mediaMeta?.mime||'').toLowerCase()==='image/gif'?'gif':'image'),destination:a.destination||'',ctaLabel:goalDetails(c.objective).cta,sound:!!a.sound,width:Number(a.mediaMeta?.width)||0,height:Number(a.mediaMeta?.height)||0,duration:Number(a.mediaMeta?.duration)||0})),updatedAt:now()}
 }
 // Notificación anónima a TaskFlow: solo avisa que cambió el catálogo público.
 function notifyTaskFlowAdsChanged(){
@@ -2801,7 +2877,7 @@ function setStep(n){
 function resetForm(){
  initWorldwideCountries();
  editingId=null;objective='awareness';pendingMedia=null;existingMediaMeta=null;adDrafts=[];currentAdDraftId=null;
- $('campaignForm').reset();$('country').value='GT';$('campaignName').value='';$('campaignGroup').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';$('deliveryStrategy').value='balanced';$('frequencyCap').value='3';$('abTest').checked=false;$('requestedImpressions').value='0';
+ $('campaignForm').reset();tfGeoPreferred=null;$('country').value='';$('campaignName').value='';$('campaignGroup').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';$('deliveryStrategy').value='balanced';$('frequencyCap').value='3';$('abTest').checked=false;$('requestedImpressions').value='0';
  updateObjectiveExperience();
  qa('input[name="placement"]').forEach((x,i)=>x.checked=i===0);
  const sys=qa('input[name="budgetDistribution"]').find(x=>x.value==='system');if(sys)sys.checked=true;
@@ -2817,7 +2893,7 @@ async function openEdit(id){
  $('modalEyebrow').textContent='Editar campaña';$('modalTitle').textContent='Editar campaña publicitaria';$('campaignName').value=c.name||'';$('campaignGroup').value=c.campaignGroup||c.name||'';
  updateObjectiveExperience();
  qa('input[name="placement"]').forEach(x=>x.checked=x.value===(c.placement||'banner'));
- $('country').value=c.country||'GT';$('region').value=c.region||'';$('city').value=c.city||'';$('radius').value=String(c.radius||0);$('ageMin').value=String(c.ageMin||18);$('ageMax').value=String(c.ageMax||65);
+ tfGeoPreferred={country:c.country||'',region:c.region||'',city:c.city||'',neighborhood:c.neighborhood||''};tfGeoRender('');$('radius').value=String(c.radius||0);$('ageMin').value=String(c.ageMin||18);$('ageMax').value=String(c.ageMax||65);
  $('budgetType').value=c.budgetType||'daily';$('budgetAmount').value=String(c.budget||0);$('startDate').value=c.start||'';$('endDate').value=c.end||'';$('deliveryStrategy').value=['balanced','reach','steady'].includes(c.deliveryStrategy)?c.deliveryStrategy:'balanced';$('frequencyCap').value=String([1,2,3].includes(Number(c.frequencyCap))?Number(c.frequencyCap):3);$('abTest').checked=c.abTest===true;$('requestedImpressions').value=String(Number(c.requestedImpressions)||0);
  const mode=qa('input[name="budgetDistribution"]').find(x=>x.value===(c.budgetDistribution||'system'));if(mode)mode.checked=true;
  const normalized=normalizeCampaign(c);adDrafts=normalized.ads.length?normalized.ads.map((a,i)=>({...normalizeAd(a,i),_blob:null})):[newAdDraft(0)];
@@ -2831,8 +2907,12 @@ function validateStep(){
  if(step===1&&!clean($('campaignName').value)){msg('Escribe el nombre de la campaña.','error');return false}
  if(step===2){
   const country=$('country').value;
-  if(!country||(country!=='ALL'&&!TF_ADS_COUNTRY_CODES.includes(country))){msg('Selecciona un país válido para la campaña.','error');return false}
-  if(country==='ALL'&&(clean($('region').value)||clean($('city').value))){msg('Para segmentar por región o ciudad, selecciona primero un país concreto.','error');return false}
+  if(!tfGeoLoaded||!country||(country!=='ALL'&&!tfGeoAreas.some(x=>x.level==='country'&&x.country===country))){msg('Elige un país con usuarios activos confirmados. Actualiza el inventario de zonas.','error');return false}
+  const region=$('region').value,city=$('city').value,neighborhood=$('neighborhood').value;
+  if(region&&!tfGeoAreas.some(x=>x.level==='region'&&x.country===country&&x.region===region)){msg('La región no tiene suficiente actividad reciente.','error');return false}
+  if(city&&!tfGeoAreas.some(x=>x.level==='city'&&x.country===country&&x.region===region&&x.city===city)){msg('La ciudad no tiene suficiente actividad reciente.','error');return false}
+  if(neighborhood&&!tfGeoAreas.some(x=>x.level==='neighborhood'&&x.country===country&&x.region===region&&x.city===city&&x.neighborhood===neighborhood)){msg('El barrio no tiene suficiente actividad reciente.','error');return false}
+  if(country==='ALL'&&(clean($('region').value)||clean($('city').value)||clean($('neighborhood').value))){msg('Para segmentar por región o ciudad, selecciona primero un país concreto.','error');return false}
   const min=Number($('ageMin').value),max=Number($('ageMax').value);if(min<13||max>65||min>max){msg('Revisa el rango de edad.','error');return false}
  }
  if(step===3){
@@ -2881,7 +2961,7 @@ async function saveCampaign(){
   }
   msg('Guardando datos de la campaña...');
   const first=cleanAds[0]||{},approvalStatus=existing?.approvalStatus==='approved'?'pending':(existing?.approvalStatus||'pending');
-  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),campaignGroup:clean($('campaignGroup').value)||clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),requestedImpressions:Number($('requestedImpressions').value)||0,start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
+  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),campaignGroup:clean($('campaignGroup').value)||clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),neighborhood:clean($('neighborhood').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),requestedImpressions:Number($('requestedImpressions').value)||0,start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
   await syncCampaignDoc(c);
   msg('Confirmando el estado de la campaña...');
   await syncPublicCampaign(c);
