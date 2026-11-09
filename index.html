@@ -2050,15 +2050,22 @@ async function loadCampaigns(){
  campaigns=Array.isArray(cache)?cache.map(normalizeCampaign):[];campaigns.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));renderAll();
  if(!currentUser||!fbDb)return campaigns;
  try{
-  const snap=await campaignsRef(currentUser.id).get(),remote=[];snap.forEach(doc=>remote.push(normalizeCampaign({...doc.data(),id:doc.id})));
+  const snap=await campaignsRef(currentUser.id).get({source:'server'}),remote=[];snap.forEach(doc=>remote.push(normalizeCampaign({...doc.data(),id:doc.id})));
   const pending=campaigns.filter(c=>c.localPendingSync);
   const index=new Map(remote.map(c=>[c.id,c]));
   for(const c of pending)index.set(c.id,c);
   campaigns=[...index.values()].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
   writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns);renderAll();
-  // Revalida en servidor las campañas de la cuenta al recuperar su sesión.
-  const ready=campaigns.filter(c=>c.status==='active'&&c.approvalStatus==='approved').slice(0,50);
-  for(let i=0;i<ready.length;i+=3)void Promise.allSettled(ready.slice(i,i+3).map(c=>syncPrivateDelivery(c.id)));
+  // Reparar catálogo público solo de campañas activas y aprobadas en el servidor.
+  const ready=remote.filter(c=>c.status==='active'&&c.approvalStatus==='approved').slice(0,50);
+  for(let i=0;i<ready.length;i+=3){
+   void Promise.allSettled(ready.slice(i,i+3).map(c=>syncPublicCampaign(c))).then(results=>{
+    const failures=results.filter(result=>result.status==='rejected').length;
+    if(failures)console.warn('ADS: campañas aprobadas no publicadas:',failures);
+   });
+  }
+  const localOnly=cache.filter(c=>c.status==='active'&&!remote.some(x=>x.id===c.id));
+  if(localOnly.length)toast(localOnly.length+' campaña(s) activas solo en este dispositivo: no se encontraron publicadas en Firebase.');
  }catch(e){console.warn('ADS campaigns load:',e);toast('Sincronización remota no disponible; se muestra la copia local.')}
  return campaigns
 }
@@ -2135,7 +2142,12 @@ async function recoverOwnDeliveryCampaigns(){
    const result=await response.json();
    if(currentUser?.id!==uid)return false;
    if(!result.ok||Number(result.failed)>0){
-    console.warn('ADS: algunas campañas no pudieron sincronizarse con el servicio privado');
+    console.warn('ADS: algunas campañas no se sincronizaron:',Number(result.failed)||0);
+    toast('Algunas campañas siguen sin confirmación de distribución. Verifica su aprobación y archivos.');
+    return false;
+   }
+   if(campaigns.some(c=>c.status==='active'&&c.approvalStatus==='approved')&&Number(result.checked)===0){
+    toast('El servidor no encuentra campañas de esta cuenta. Las campañas locales no están publicadas.');
     return false;
    }
    return true;
@@ -2143,6 +2155,37 @@ async function recoverOwnDeliveryCampaigns(){
  })().catch(error=>{console.warn('ADS: recuperación privada no confirmada',error?.message||'Conexión no disponible');return false})
   .finally(()=>{ownedDeliveryRecovery=null});
  return ownedDeliveryRecovery;
+}
+let adminGlobalRecovery=null;
+async function recoverAdministrativeDelivery(){
+ if(!isAdsAdmin||!fbAuth?.currentUser||!currentUser)return false;
+ if(adminGlobalRecovery)return adminGlobalRecovery;
+ const uid=currentUser.id;
+ adminGlobalRecovery=(async()=>{
+  const token=await fbAuth.currentUser.getIdToken(true);
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),46000);
+  try{
+   const response=await fetch('https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/sync/admin',{
+    method:'POST',mode:'cors',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',
+    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}',signal:ctrl.signal
+   });
+   if(!response.ok)throw Error('ADMIN_SYNC_'+response.status);
+   const result=await response.json();
+   if(currentUser?.id!==uid||!isAdsAdmin)return false;
+   if(Number(result.failed)>0){
+    toast('Distribución ADS: '+result.failed+' campaña(s) aprobadas sin confirmar. Comprueba los archivos y permisos.');
+    return false;
+   }
+   if(result.truncated)toast('El control revisó 250 campañas. Comprueba el resto en el panel administrativo.');
+   if(Number(result.approved)>0&&Number(result.synchronized)>0)toast('Sincronizadas '+result.synchronized+' campañas aprobadas.');
+   return result.ok===true;
+  }finally{clearTimeout(timer)}
+ })().catch(error=>{
+  console.warn('ADS: recuperación administrativa no disponible:',error?.message||'Error');
+  toast('No se confirmó la recuperación general. Revisa los permisos de administrador y Firestore.');
+  return false;
+ }).finally(()=>{adminGlobalRecovery=null});
+ return adminGlobalRecovery;
 }
 function toPublicCampaign(c){
  const n=normalizeCampaign(c);
@@ -2265,7 +2308,7 @@ async function handleAuthState(user){
  isAdsAdmin=await getAdminClaim(user);
  currentUser={id:user.uid,uid:user.uid,name:user.displayName||business?.ownerName||user.email||'Usuario',company:business?.businessName||'Cuenta comercial',email:user.email||'',accountStatus:business?.accountStatus||'active'};
  await enterApp();
- if(isAdsAdmin)void loadAdminReview();
+ if(isAdsAdmin){void loadAdminReview();void recoverAdministrativeDelivery()}
 }
 function objectiveLabel(v){return {awareness:'Reconocimiento',traffic:'Tráfico',engagement:'Interacción',leads:'Clientes potenciales',sales:'Ventas',app:'Aplicación'}[v]||v}
 
