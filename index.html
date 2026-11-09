@@ -2223,7 +2223,8 @@ async function handleAuthState(user){
  if(business&&business.accountStatus==='suspended'){authMsg('Esta cuenta comercial está suspendida.','error');await fbAuth.signOut();return}
  isAdsAdmin=await getAdminClaim(user);
  currentUser={id:user.uid,uid:user.uid,name:user.displayName||business?.ownerName||user.email||'Usuario',company:business?.businessName||'Cuenta comercial',email:user.email||'',accountStatus:business?.accountStatus||'active'};
- await enterApp()
+ await enterApp();
+ if(isAdsAdmin)void loadAdminReview();
 }
 function objectiveLabel(v){return {awareness:'Reconocimiento',traffic:'Tráfico',engagement:'Interacción',leads:'Clientes potenciales',sales:'Ventas',app:'Aplicación'}[v]||v}
 
@@ -2556,6 +2557,44 @@ function renderAdminImpressionRequests(items){
   }
  };
 }
+// Recuperar las campañas ya aprobadas cuando el servicio privado perdió sincronización.
+// Solo se ejecuta bajo la cuenta administrativa: no toca TaskFlow Sistem ni inventa anuncios.
+let approvedAdsRecoveryBusy=false,approvedAdsRecoveryAt=0;
+async function reconcileApprovedAds(items){
+ if(!isAdsAdmin||!fbAuth?.currentUser||!currentUser||!items?.length||approvedAdsRecoveryBusy||Date.now()-approvedAdsRecoveryAt<180000)return;
+ approvedAdsRecoveryBusy=true;approvedAdsRecoveryAt=Date.now();
+ let recovered=0,failed=0,skipped=0;
+ try{
+  for(let i=0;i<items.length;i+=3){
+   const batch=await Promise.all(items.slice(i,i+3).map(async c=>{
+    try{
+     const own=await withDeadline(fbDb.collection('users').doc(c.ownerUid).collection('adsCampaigns').doc(c.id).get({source:'server'}),12000,'No se pudo comprobar la campaña original.');
+     if(!own.exists)return 'skipped';
+     const actual=normalizeCampaign({...own.data(),id:c.id,ownerUid:c.ownerUid});
+     if(actual.status!=='active'||actual.approvalStatus!=='approved')return 'skipped';
+     if(!campaignReady(actual))throw Error('Los creativos no están listos.');
+     await verifyPublishedCreatives(actual);
+     const publicRef=publicCampaignRef(actual.id);
+     const existing=await withDeadline(publicRef.get({source:'server'}),12000,'No se pudo comprobar el catálogo público.');
+     if(!existing.exists){
+      await withDeadline(publicRef.set(toPublicCampaign(actual),{merge:false}),ADS_REMOTE_WRITE_MS,'No se confirmó la restauración del anuncio.');
+      notifyTaskFlowAdsChanged();
+     }
+     if(!await syncPrivateDelivery(actual.id,actual.ownerUid))throw Error('Distribución privada no confirmada.');
+     return 'recovered';
+    }catch(error){
+     console.warn('ADS: campaña aprobada sin recuperación confirmada:',c.id,error?.code||error?.message);
+     return 'failed';
+    }
+   }));
+   recovered+=batch.filter(v=>v==='recovered').length;
+   skipped+=batch.filter(v=>v==='skipped').length;
+   failed+=batch.filter(v=>v==='failed').length;
+  }
+  if(failed)toast('Sincronización ADS: '+recovered+' campaña(s) comprobadas y '+failed+' pendiente(s) de reparación.');
+  else if(recovered)toast('Distribución privada confirmada para '+recovered+' campaña(s) aprobadas.');
+ }finally{approvedAdsRecoveryBusy=false}
+}
 async function loadAdminReview(){
  const root=$('adminReviewList'),refresh=$('adminReviewRefresh');
  if(!root||!isAdsAdmin||!currentUser||!fbDb)return;
@@ -2568,18 +2607,20 @@ async function loadAdminReview(){
   // Una consulta sin filtros ni ordenamiento; necesita reglas de grupo, no un índice compuesto.
   const snap=await withDeadline(fbDb.collectionGroup('adsCampaigns').get({source:'server'}),18000,'La consulta administrativa tardó demasiado.');
   if(!root.isConnected||!isAdsAdmin)return;
-  const pending=[],goalRequests=[],counts={pending:0,approved:0,rejected:0};
+  const pending=[],goalRequests=[],approvedActive=[],counts={pending:0,approved:0,rejected:0};
   snap.forEach(doc=>{
    const ownerUid=String(doc.ref?.parent?.parent?.id||doc.data()?.ownerUid||'');
    if(!ownerUid||!doc.id)return;
    const c=normalizeCampaign({...doc.data(),id:doc.id,ownerUid});
    if(Object.prototype.hasOwnProperty.call(counts,c.approvalStatus))counts[c.approvalStatus]++;
    if(c.approvalStatus==='pending')pending.push(c);
+   if(c.approvalStatus==='approved'&&c.status==='active'&&campaignReady(c))approvedActive.push(c);
     if(c.approvalStatus==='approved'&&c.status==='active'&&Number.isSafeInteger(Number(c.requestedImpressions))&&Number(c.requestedImpressions)>0)goalRequests.push(c);
   });
   pending.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
    goalRequests.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
    renderAdminImpressionRequests(goalRequests);
+  void reconcileApprovedAds(approvedActive);
   setMetric('adminPendingCount',counts.pending);
   setMetric('adminApprovedCount',counts.approved);
   setMetric('adminRejectedCount',counts.rejected);
