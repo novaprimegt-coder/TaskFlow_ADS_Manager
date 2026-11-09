@@ -869,7 +869,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #moduleContent #tfAdsObjectiveResults td{vertical-align:middle}
 @media(max-width:600px){#moduleContent .tf-ads-private-key{font-size:11px}#moduleContent #tfAdsObjectiveResults table{min-width:660px}}
 </style>
-<script defer src="./ads-manager-modules.js?v=20261108-consented-live-geo-v2"></script>
+<script defer src="./ads-manager-modules.js?v=20261109-verified-audience-source-v3"></script>
 <style id="tfAdsCrystalizedHero2026">
 /* Fondo animado exclusivo del encabezado de inicio de sesión; no modifica el formulario. */
 #authView .auth-hero{
@@ -1780,7 +1780,7 @@ const $=id=>document.getElementById(id);const qa=(s,r=document)=>Array.from(r.qu
 const TF_ADS_COUNTRY_CODES='AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW'.split(' ');
 
 const GEO_INVENTORY_URL='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/geo/available';
-let tfGeoAreas=[],tfGeoLoaded=false,tfGeoLoading=null,tfGeoLastAt=0,tfGeoEventsBound=false,tfGeoPreferred=null;
+let tfGeoAreas=[],tfGeoLoaded=false,tfGeoLoading=null,tfGeoLastAt=0,tfGeoEventsBound=false,tfGeoPreferred=null,tfGeoUid='';
 function tfGeoLabel(code){
  try{return new Intl.DisplayNames(['es'],{type:'region'}).of(code)||code}catch(_){return code}
 }
@@ -1789,13 +1789,12 @@ function tfGeoOption(value,label){
 }
 function tfGeoFill(id,values,placeholder,desired){
  const el=$(id);if(!el)return;
- const options=[tfGeoOption('',placeholder),...values.map(v=>tfGeoOption(v.value,v.label))];
- if(desired&&!values.some(v=>v.value===desired)&&editingId){
-  options.push(tfGeoOption(desired,desired+' · sin actividad reciente'));
- }
+ // No ofrecer como disponible una ubicación antigua, escrita manualmente o sin usuarios recientes.
+ const valid=values.filter(v=>v&&typeof v.value==='string'&&v.value.length>0);
+ const options=[tfGeoOption('',placeholder),...valid.map(v=>tfGeoOption(v.value,v.label))];
  el.replaceChildren(...options);
- el.value=desired&&options.some(v=>v.value===desired)?desired:'';
- el.disabled=id!=='country'&&!values.length&&!desired;
+ el.value=desired&&valid.some(v=>v.value===desired)?desired:'';
+ el.disabled=!valid.length;
 }
 function tfGeoRender(level){
  const preferred=tfGeoPreferred||{
@@ -1825,6 +1824,8 @@ function tfGeoRender(level){
  tfGeoFill('neighborhood',hoods,'Toda la ciudad',preferred.neighborhood);
 }
 async function tfGeoRefresh(force=false){
+ const uid=fbAuth?.currentUser?.uid||'';
+ if(uid!==tfGeoUid){tfGeoUid=uid;tfGeoAreas=[];tfGeoLoaded=false;tfGeoLastAt=0;tfGeoPreferred=null;tfGeoRender('')}
  if(tfGeoLoading)return tfGeoLoading;
  if(!force&&tfGeoLoaded&&Date.now()-tfGeoLastAt<120000){tfGeoRender('');return}
  const info=$('tfAdsGeoAvailability');if(info)info.textContent='Consultando ubicaciones con actividad reciente…';
@@ -1838,9 +1839,18 @@ async function tfGeoRefresh(force=false){
     headers:{Authorization:'Bearer '+token}})}finally{clearTimeout(timeout)}
    if(!response.ok)throw Error('Sin acceso al inventario privado');
    const data=await response.json();
-   if(data?.source!=='consented-active-taskflow-users'||!Array.isArray(data.areas))throw Error('Inventario sin verificar');
-   tfGeoAreas=data.areas.filter(x=>x&&['country','region','city','neighborhood'].includes(x.level)
+   if(data?.source!=='consented-active-taskflow-users'||data.activeWithinDays!==30||!Array.isArray(data.areas))throw Error('Inventario sin verificar');
+   if(fbAuth?.currentUser?.uid!==uid||tfGeoUid!==uid)throw Error('Cambió la cuenta durante la consulta.');
+   const valid=data.areas.filter(x=>x&&['country','region','city','neighborhood'].includes(x.level)
     &&typeof x.country==='string'&&/^[A-Z]{2}$/.test(x.country)&&TF_ADS_COUNTRY_CODES.includes(x.country));
+   const eligibleCountries=new Set(valid.filter(x=>x.level==='country').map(x=>x.country));
+   tfGeoAreas=valid.filter(x=>{
+    if(!eligibleCountries.has(x.country))return false;
+    if(x.level==='region')return typeof x.region==='string'&&x.region.length>0;
+    if(x.level==='city')return typeof x.city==='string'&&x.city.length>0&&valid.some(p=>p.level==='region'&&p.country===x.country&&p.region===x.region);
+    if(x.level==='neighborhood')return typeof x.neighborhood==='string'&&x.neighborhood.length>0&&valid.some(p=>p.level==='city'&&p.country===x.country&&p.region===x.region&&p.city===x.city);
+    return true;
+   });
    tfGeoLoaded=true;tfGeoLastAt=Date.now();
    const counts=['country','region','city','neighborhood'].map(level=>tfGeoAreas.filter(x=>x.level===level).length);
    if(info)info.textContent=counts[0]
@@ -1848,7 +1858,7 @@ async function tfGeoRefresh(force=false){
     :'Sin zonas disponibles todavía. Aparecerán cuando usuarios autenticados utilicen TaskFlow con ubicación autorizada.';
    tfGeoRender('');
   }catch(e){
-   tfGeoLoaded=false;tfGeoAreas=[];
+   tfGeoLoaded=false;tfGeoAreas=[];tfGeoLastAt=0;
    if(info)info.textContent='No se pudo verificar el inventario de ubicaciones activas. No se permiten nuevas zonas hasta recuperar la conexión.';
    tfGeoRender('');
   }
