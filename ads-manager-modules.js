@@ -852,10 +852,19 @@ function wire(root){
     let ok=0,failed=0;
     try{
      for(let i=0;i<items.length;i+=3){
-      const results=await Promise.all(items.slice(i,i+3).map(async c=>api.syncPrivateDelivery(c.id).catch(()=>false)));
+      const results=await Promise.all(items.slice(i,i+3).map(async c=>{
+       try{
+        const snap=await api.withDeadline(api.fbDb.collection('users').doc(api.currentUser.id).collection('adsCampaigns').doc(c.id).get({source:'server'}),12000,'La campaña no pudo verificarse en Firebase.');
+        if(!snap.exists||snap.data()?.status!=='active'||snap.data()?.approvalStatus!=='approved')return false;
+        return await api.syncPublicCampaign({...snap.data(),id:c.id,ownerUid:api.currentUser.id})===true;
+       }catch(error){
+        console.warn('ADS: publicación no confirmada:',c.id,error?.message||'Error');
+        return false;
+       }
+      }));
       for(const r of results)r?ok++:failed++;
      }
-     if(note&&note.isConnected)note.textContent=ok+' campaña(s) confirmada(s); '+failed+' sin confirmar.'+(failed?' Revisa la conexión y vuelve a intentarlo.':'');
+     if(note&&note.isConnected)note.textContent=ok+' campaña(s) con publicación y sincronización confirmadas; '+failed+' sin confirmar.'+(failed?' Comprueba aprobación, archivo HTTPS y reglas de Firebase.':'');
      api.toast(failed?'Algunas campañas no pudieron sincronizarse.':'Sincronización privada confirmada.');
     }finally{btn.disabled=false}
    })();
