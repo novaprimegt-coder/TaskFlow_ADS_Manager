@@ -192,11 +192,55 @@ function audiences(api){
  const overlap=api.campaigns.reduce((n,c,i)=>n+api.campaigns.slice(i+1).filter(p=>p.country===c.country&&p.region===c.region&&p.city===c.city&&Math.max(Number(p.ageMin)||18,Number(c.ageMin)||18)<=Math.min(Number(p.ageMax)||65,Number(c.ageMax)||65)).length,0);
  return wrap('Editor de audiencias','Compara zonas, edades y posibles solapamientos. Modifica la segmentación de una campaña desde este módulo.',
  '<div class="tf-tool-kpis">'+mini(api.campaigns.length,'Campañas segmentadas')+mini(locs.size,'Zonas configuradas')+mini(overlap,'Cruces de segmentación','Coincidencias de ubicación y edades')+'</div>'+
+ section('Zonas geográficas disponibles','<p class="tf-tool-note">Se muestran únicamente países y zonas con actividad reciente de usuarios autenticados que autorizaron su ubicación. País y región: desde 1 usuario; ciudades: desde 5; barrios: desde 10. No representa descargas totales, audiencia contratada ni impresiones garantizadas.</p><button type="button" data-tf-action="geo-refresh">Actualizar zonas ahora</button><div id="tfAdsLiveGeoAreas" aria-live="polite"><p class="tf-tool-loading">Consultando zonas activas…</p></div>')+
  section('Audiencias guardadas','<div id="tfAdsAudiencePresets"><p class="tf-tool-loading">Consultando audiencias guardadas…</p></div>')+
  section('Segmentación por campaña','<label class="tf-tool-search">Buscar campaña o ubicación<input type="search" data-tf-search="audiences" placeholder="Nombre, departamento o municipio" autocomplete="off"></label><div data-tf-results="audiences">'+audienceRows(api,'')+'</div>')+
  '<p class="tf-tool-note">Las coincidencias son una comparación de configuración, no un cálculo de tamaño de audiencia ni de personas únicas.</p>');
 }
 
+
+const LIVE_GEO_AREAS_URL='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/geo/available';
+let geoAreasWatch=0;
+async function loadLiveGeoAreas(api){
+ const target=api.root.querySelector('#tfAdsLiveGeoAreas'),uid=api.currentUser?.id;
+ if(!target)return;
+ target.innerHTML='<p class="tf-tool-loading">Comprobando países y localidades con actividad reciente…</p>';
+ try{
+  if(api.fbAuth?.currentUser?.uid!==uid)throw Error('Sesión no disponible');
+  const token=await api.fbAuth.currentUser.getIdToken();
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),14000);
+  let response;
+  try{response=await fetch(LIVE_GEO_AREAS_URL,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal,headers:{Authorization:'Bearer '+token}})}
+  finally{clearTimeout(timer)}
+  if(!response.ok)throw Error('Inventario de zonas no disponible');
+  const data=await response.json();
+  if(data?.source!=='consented-active-taskflow-users'||!Array.isArray(data.areas))throw Error('Inventario sin verificación');
+  if(view!=='audiences'||current?.currentUser?.id!==uid||!target.isConnected)return;
+  const active=data.areas.filter(x=>x&&['country','region','city','neighborhood'].includes(x.level)&&/^[A-Z]{2}$/.test(String(x.country||'')));
+  const countryCodes=[...new Set(active.filter(x=>x.level==='country').map(x=>x.country))];
+  let names=null;try{names=new Intl.DisplayNames(['es'],{type:'region'})}catch(_){}
+  const cards=countryCodes.sort((a,b)=>String(names?.of(a)||a).localeCompare(String(names?.of(b)||b),'es'))
+   .map(code=>{
+    const countryName=names?.of(code)||code;
+    const lines=active.filter(x=>x.country===code&&x.level!=='country').map(x=>{
+     const label=x.level==='region'?'Región':x.level==='city'?'Ciudad':'Localidad / barrio';
+     return '<span class="tf-geo-inventory-area"><b>'+label+':</b> '+esc([x.region,x.city,x.neighborhood].filter(Boolean).join(' · '))+'</span>';
+    });
+    return '<article class="tf-tool-row"><div><b>'+esc(countryName)+' ('+esc(code)+')</b><small>Zona país activa</small><div class="tf-geo-inventory-areas">'+(lines.join('')||'<small>No hay localidades habilitadas todavía por el umbral de privacidad.</small>')+'</div></div></article>';
+   }).join('');
+  target.innerHTML='<div class="tf-tool-kpis">'+mini(countryCodes.length,'Países disponibles')+
+   mini(active.filter(x=>x.level==='region').length,'Regiones disponibles')+
+   mini(active.filter(x=>x.level==='city').length,'Ciudades disponibles')+
+   mini(active.filter(x=>x.level==='neighborhood').length,'Barrios disponibles')+'</div>'+
+   (cards||'<p class="tf-tool-empty">Aún no hay países con usuarios autenticados y ubicación autorizada. La lista se actualizará cuando exista actividad registrada.</p>');
+ }catch(_){
+  if(target.isConnected)target.innerHTML='<p class="tf-tool-warning">No fue posible comprobar las zonas disponibles. No se muestran ubicaciones sin verificar.</p>';
+ }
+}
+function watchLiveGeoAreas(){
+ if(geoAreasWatch)return;
+ geoAreasWatch=setInterval(()=>{if(view==='audiences'&&current)void loadLiveGeoAreas(current)},180000);
+}
 function presetRef(api){return api.fbDb.collection('users').doc(api.currentUser.id).collection('adsManager').doc('business')}
 function presetMarkup(api){
  const choices=api.campaigns.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('');
@@ -707,6 +751,7 @@ function wire(root){
    else if(action==='adset-edit')void current.openEdit(id);
    else if(action==='adset-duplicate')void current.duplicateCampaign(id).then(()=>{if(view==='adsets')root.innerHTML=adSets(current)});
    else if(action==='adset-new'){current.openNew();const field=document.getElementById('campaignGroup');if(field&&btn.dataset.group)field.value=btn.dataset.group}
+   else if(action==='geo-refresh')void loadLiveGeoAreas(current);
    else if(action==='delivery-resync')void (async()=>{
     const api=current,items=api?.campaigns.filter(c=>c.status==='active'&&c.approvalStatus==='approved')||[];
     const note=root.querySelector('#tfDeliverySyncStatus');
@@ -775,7 +820,7 @@ function render(name,api){
  current=api;view=name;wire(root);
  if(name==='conversions'){root.innerHTML=conversions(api);void paintConversions(api)}
  else if(name==='adsets')root.innerHTML=adSets(api);
-  else if(name==='audiences'){root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
+  else if(name==='audiences'){root.innerHTML=audiences(api);void loadAudiencePresets(api,false);void loadLiveGeoAreas(api);watchLiveGeoAreas()}
  else if(name==='creatives')root.innerHTML=creatives(api);
  else if(name==='reports'){root.innerHTML=wrap('Informes de rendimiento','Impresiones, clics, CTR y desglose de los eventos registrados, sin estimaciones ni compras inventadas.','<div class="tf-tool-buttons"><button type="button" data-tf-action="report-refresh">Actualizar métricas</button><button type="button" data-tf-action="report-verified-csv">Exportar impresiones confirmadas</button><button type="button" data-tf-action="report-csv">Exportar histórico no verificado</button></div><div id="tfAdsReportsPayload"></div>');void reports(api,false)}
  else if(name==='billing'){root.innerHTML=budgets(api);window.TaskFlowADSWallet?.mount?.(api);void paintImpressionCommitments(api)}
