@@ -2075,20 +2075,34 @@ async function syncCampaignDoc(c){
 const PRIVATE_ADS_DELIVERY='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/sync';
 async function syncPrivateDelivery(campaignId,ownerUid){
  if(!fbAuth?.currentUser||!currentUser||!campaignId||!/^[A-Za-z0-9_-]{3,128}$/.test(String(campaignId)))return false;
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
- try{
-  const token=await fbAuth.currentUser.getIdToken();
-  const body={campaignId:String(campaignId)};
-  if(ownerUid&&ownerUid!==currentUser.id){if(!isAdsAdmin)return false;body.ownerUid=ownerUid}
-  const result=await fetch(PRIVATE_ADS_DELIVERY,{
-   method:'POST',mode:'cors',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',
-   headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-   body:JSON.stringify(body),signal:controller.signal
-  });
-  return result.ok;
- }catch(_){return false}
- finally{clearTimeout(timer)}
+ for(let attempt=0;attempt<2;attempt++){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+  try{
+   const token=await fbAuth.currentUser.getIdToken(attempt===1);
+   const body={campaignId:String(campaignId)};
+   if(ownerUid&&ownerUid!==currentUser.id){
+    if(!isAdsAdmin)return false;
+    body.ownerUid=ownerUid;
+   }
+   const result=await fetch(PRIVATE_ADS_DELIVERY,{
+    method:'POST',mode:'cors',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',
+    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify(body),signal:controller.signal
+   });
+   if(result.ok){
+    const confirmation=await result.json().catch(()=>null);
+    return confirmation?.ok===true;
+   }
+   if(attempt===0&&(result.status===401||result.status===429||result.status>=500))continue;
+   console.warn('ADS: sincronización privada sin confirmación HTTP',result.status);
+   return false;
+  }catch(error){
+   if(attempt===1)console.warn('ADS: sincronización privada no disponible',error?.name||error?.message);
+  }finally{clearTimeout(timer)}
+ }
+ return false;
 }
+
 function toPublicCampaign(c){
  const n=normalizeCampaign(c);
  return {campaignId:c.id,objective:c.objective||'awareness',status:c.status,approvalStatus:c.approvalStatus||'pending',placement:c.placement,country:c.country||'',region:c.region||'',city:c.city||'',neighborhood:c.neighborhood||'',radius:Number(c.radius)||0,ageMin:Number(c.ageMin)||18,ageMax:Number(c.ageMax)||65,start:c.start||'',end:c.end||'',ads:n.ads.filter(a=>a.src&&a.mediaMeta).map(a=>({id:a.id,name:a.name||'',src:a.src,type:a.mediaMeta?.kind==='video'?'video':(String(a.mediaMeta?.mime||'').toLowerCase()==='image/gif'?'gif':'image'),destination:a.destination||'',ctaLabel:goalDetails(c.objective).cta,sound:!!a.sound,width:Number(a.mediaMeta?.width)||0,height:Number(a.mediaMeta?.height)||0,duration:Number(a.mediaMeta?.duration)||0})),updatedAt:now()}
@@ -2098,16 +2112,63 @@ function notifyTaskFlowAdsChanged(){
  try{localStorage.setItem('taskflow_ads_public_changed_at',String(Date.now()))}catch(_){}
  try{if(typeof BroadcastChannel==='function'){const ch=new BroadcastChannel('taskflow-ads-catalog-v1');ch.postMessage({type:'catalog-changed'});ch.close()}}catch(_){}
 }
+// Comprobar el recurso original en la URL publicada; no convertir imágenes estándar en HD.
+async function verifyPublishedCreatives(c){
+ const publication=toPublicCampaign(c),spec=placementSpecs[c?.placement];
+ const count=normalizeCampaign(c).ads.length;
+ if(!spec||!count||publication.ads.length!==count)
+  throw new Error('La campaña contiene anuncios sin archivos completos o compatibles. Revisa los creativos.');
+ const verify=ad=>new Promise((resolve,reject)=>{
+  const video=ad.type==='video',media=document.createElement(video?'video':'img');
+  let ended=false;
+  const done=valid=>{
+   if(ended)return;
+   ended=true;clearTimeout(timer);
+   media.onload=null;media.onerror=null;media.onloadedmetadata=null;
+   media.removeAttribute('src');if(video)try{media.load()}catch(_){}
+   if(valid)resolve(true);
+   else reject(new Error('No se pudo verificar el archivo de «'+(ad.name||'Anuncio')+'». Revisa el enlace, la resolución y la reproducción.'));
+  };
+  const timer=setTimeout(()=>done(false),11000);
+  media.onerror=()=>done(false);
+  if(video){
+   media.preload='metadata';
+   media.onloadedmetadata=()=>done(creativeSizeAllowed(media.videoWidth,media.videoHeight,spec)
+    &&Number.isFinite(media.duration)&&media.duration>=9.95&&media.duration<=180.05);
+  }else media.onload=()=>done(creativeSizeAllowed(media.naturalWidth,media.naturalHeight,spec));
+  media.src=ad.src;if(video)media.load();
+ });
+ for(let i=0;i<publication.ads.length;i+=3)
+  await Promise.all(publication.ads.slice(i,i+3).map(verify));
+ return true;
+}
 async function syncPublicCampaign(c){
  if(!fbDb||!c)return false;
  const allowed=c.status==='active'&&c.approvalStatus==='approved'&&campaignReady(c);
  if(allowed){
-  try{await withDeadline(publicCampaignRef(c.id).set(toPublicCampaign(c),{merge:false}),ADS_REMOTE_WRITE_MS,'La publicación no pudo confirmarse. Revisa tu conexión.');notifyTaskFlowAdsChanged();void syncPrivateDelivery(c.id);return true}
-  catch(error){console.warn('No se completó la publicación del anuncio:',error?.code||error?.message);throw new Error('No fue posible confirmar la publicación de la campaña. Comprueba tu conexión e inténtalo de nuevo.')}
+  await verifyPublishedCreatives(c);
+  try{
+   await withDeadline(publicCampaignRef(c.id).set(toPublicCampaign(c),{merge:false}),ADS_REMOTE_WRITE_MS,'La publicación no pudo confirmarse. Revisa tu conexión.');
+  }catch(error){
+   console.warn('ADS: publicación no confirmada:',error?.code||error?.message);
+   throw new Error('No se confirmó la publicación de la campaña. Comprueba la conexión e inténtalo nuevamente.');
+  }
+  notifyTaskFlowAdsChanged();
+  if(!await syncPrivateDelivery(c.id))
+   throw new Error('El catálogo se actualizó, pero el motor privado no confirmó la sincronización. No se puede afirmar que los anuncios estén disponibles. Reintenta la sincronización.');
+  return true;
  }
- try{await withDeadline(publicCampaignRef(c.id).delete(),9000,'No se pudo confirmar la limpieza del anuncio anterior.');notifyTaskFlowAdsChanged();void syncPrivateDelivery(c.id)}catch(error){console.warn('No se pudo limpiar la publicación anterior:',error?.code||error?.message)}
+ let removed=false;
+ try{
+  await withDeadline(publicCampaignRef(c.id).delete(),9000,'No se pudo retirar el anuncio del catálogo público.');
+  removed=true;notifyTaskFlowAdsChanged();
+ }catch(error){console.warn('ADS: retirada pública no confirmada:',error?.code||error?.message)}
+ const privateDisabled=await syncPrivateDelivery(c.id);
+ if(!removed)throw new Error('No se confirmó la retirada pública del anuncio. Revisa la conexión e inténtalo nuevamente.');
+ if(!privateDisabled)console.warn('ADS: anuncio retirado; sincronización privada pendiente:',c.id);
  return false;
 }
+
 function syncAdminNavigation(){
  // No se crea navegación administrativa hasta verificar el token de la sesión.
  const settings=document.querySelector('.sidebar .nav-item[data-view="settings"]');
@@ -2583,6 +2644,7 @@ async function adminReviewCampaign(ownerUid,id,approve){
  c.reviewedAt=now();
  c.reviewedBy=currentUser.id;
  const deliver=approve&&c.status==='active'&&campaignReady(c);
+ if(deliver)await verifyPublishedCreatives(c);
  // La aprobación y la publicación se confirman en una sola operación atómica.
  const batch=fbDb.batch();
  batch.update(ref,{approvalStatus:c.approvalStatus,reviewedAt:c.reviewedAt,reviewedBy:c.reviewedBy});
@@ -2590,8 +2652,22 @@ async function adminReviewCampaign(ownerUid,id,approve){
  else batch.delete(publicCampaignRef(id));
  await withDeadline(batch.commit(),ADS_REMOTE_WRITE_MS,'No fue posible confirmar la revisión. Comprueba la conexión.');
  notifyTaskFlowAdsChanged();
- void syncPrivateDelivery(id,ownerUid);
- toast(approve?(deliver?'Campaña aprobada y habilitada para entrega.':'Campaña aprobada; la entrega requiere activación y archivos válidos.'):'Campaña rechazada.');
+ const privatelySynced=await syncPrivateDelivery(id,ownerUid);
+ if(deliver&&!privatelySynced){
+  const rollback=fbDb.batch();
+  rollback.update(ref,{approvalStatus:'pending'});
+  rollback.delete(publicCampaignRef(id));
+  try{
+   await withDeadline(rollback.commit(),ADS_REMOTE_WRITE_MS,'No se pudo confirmar la reversión.');
+   notifyTaskFlowAdsChanged();
+  }catch(error){
+   console.warn('ADS: revisión sin distribución privada, reversión no confirmada:',error?.code||error?.message);
+   throw new Error('La sincronización falló y no se confirmó la reversión. Comprueba el estado real antes de aprobar nuevamente.');
+  }
+  throw new Error('No se confirmó la distribución. La campaña continúa pendiente de aprobación para permitir un reintento.');
+ }
+ if(!privatelySynced)console.warn('ADS: revisión guardada y sincronización privada pendiente:',id);
+ toast(approve?(deliver?'Campaña aprobada y sincronizada; la entrega depende de usuarios elegibles.':'Campaña aprobada; la entrega requiere activación y archivos válidos.'):'Campaña rechazada.');
 }
 function showView(name){if(name==='admin'&&(!isAdsAdmin||!currentUser))return;qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={adsets:['Conjuntos de anuncios','Agrupa conjuntos con presupuesto, audiencia y calendario independientes.'],audiences:['Audiencias','Guarda y aplica segmentaciones a tus campañas.'],creatives:['Creativos','Revisa, previsualiza y edita anuncios.'],reports:['Informes','Eventos publicitarios registrados durante los últimos 30 días.'],conversions:['Medición de resultados','Conecta tu sitio para confirmar visitas, contactos, ventas e instalaciones.'],billing:['Presupuestos','Configura límites de campaña. No son cobros.'],settings:['Configuración','Administra tu perfil comercial y seguridad.'],admin:['Control ADS','Aprueba o rechaza campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp();requestAnimationFrame(fitSummaryMetricValues)}
 
@@ -2679,7 +2755,7 @@ async function handleCreativeFile(file){
  try{
    const meta=await inspectMedia(file);pendingMedia={blob:file,meta};existingMediaMeta=null;
    const a=currentAdDraft();if(a){a.mediaMeta=meta;a._blob=file;a.pendingMediaLocal=true;a.updatedAt=now()}
-   showPreviewBlob(file,meta);setMediaStatus('Archivo válido · '+meta.width+'×'+meta.height+(meta.kind==='video'?' · '+meta.duration.toFixed(2)+' s':'')+' · '+meta.name,'ok');updateSoundVisibility();renderAdDraftList();review()
+   showPreviewBlob(file,meta);const spec=placementSpecs[selectedPlacement()],quality=meta.width===spec.hdWidth&&meta.height===spec.hdHeight?'HD: resolución verificada':'Estándar: para mayor definición utiliza la resolución HD';setMediaStatus('Archivo válido · '+quality+' · '+meta.width+'×'+meta.height+(meta.kind==='video'?' · '+meta.duration.toFixed(2)+' s':'')+' · '+meta.name,'ok');updateSoundVisibility();renderAdDraftList();review()
  }catch(err){pendingMedia=null;$('creativeFile').value='';clearPreview();setMediaStatus(err.message||'Archivo inválido.','error');updateSoundVisibility()}
 }
 function showPreviewBlob(blob,meta){clearPreview();currentPreviewUrl=URL.createObjectURL(blob);const el=document.createElement(meta.kind==='video'?'video':'img');el.src=currentPreviewUrl;if(meta.kind==='video'){el.muted=true;el.loop=true;el.playsInline=true;el.autoplay=true;el.controls=false}el.draggable=false;$('mediaFrame').innerHTML='';$('mediaFrame').appendChild(el)}function showPreviewUrl(url,meta){clearPreview();const el=document.createElement(meta.kind==='video'?'video':'img');el.src=url;if(meta.kind==='video'){el.muted=true;el.loop=true;el.playsInline=true;el.autoplay=true;el.controls=false}el.draggable=false;$('mediaFrame').innerHTML='';$('mediaFrame').appendChild(el)}
@@ -3068,7 +3144,7 @@ async function toggleCampaign(id){
   await syncCampaignDoc(updated);
   await syncPublicCampaign(updated);
   Object.assign(c,updated);saveCampaigns();renderAll();
-  toast(updated.status==='active'?(updated.approvalStatus==='approved'?'Campaña activada y aprobada.':'Campaña activada, pero pendiente de aprobación. No se mostrará en TaskFlow todavía.'):'Campaña pausada.');
+  toast(updated.status==='active'?(updated.approvalStatus==='approved'?'Campaña activa y sincronizada; su entrega requiere usuarios elegibles.':'Campaña activada, pero pendiente de aprobación. No se mostrará en TaskFlow todavía.'):'Campaña pausada.');
  }catch(error){
   // La campaña nunca debe aparecer activada si no se completó el guardado remoto.
   if(previous.status==='active')Object.assign(c,previous);
