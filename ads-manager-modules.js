@@ -200,55 +200,138 @@ function audiences(api){
 
 
 const LIVE_GEO_AREAS_URL='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/geo/available';
-let geoAreasWatch=0;
-async function loadLiveGeoAreas(api){
- const target=api.root.querySelector('#tfAdsLiveGeoAreas'),uid=api.currentUser?.id;
- if(!target)return;
- target.innerHTML='<p class="tf-tool-loading">Comprobando países y localidades con actividad reciente…</p>';
- try{
-  if(api.fbAuth?.currentUser?.uid!==uid)throw Error('Sesión no disponible');
-  const token=await api.fbAuth.currentUser.getIdToken();
-  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),14000);
+
+let geoAreasWatch=0,verifiedGeoAreas=[],verifiedGeoAt=0,verifiedGeoUid='',verifiedGeoLoading=null;
+function activeGeoAreas(api){
+ return api?.currentUser?.id===verifiedGeoUid&&Date.now()-verifiedGeoAt<120000?verifiedGeoAreas:[];
+}
+function isVerifiedAudienceGeo(areas,country,region,city){
+ if(!/^[A-Z]{2}$/.test(country)||!areas.some(a=>a.level==='country'&&a.country===country))return false;
+ if(city&&!region)return false;
+ if(region&&!areas.some(a=>a.level==='region'&&a.country===country&&a.region===region))return false;
+ if(city&&!areas.some(a=>a.level==='city'&&a.country===country&&a.region===region&&a.city===city))return false;
+ return true;
+}
+async function fetchActiveGeoAreas(api,force=false){
+ const uid=api?.currentUser?.id,user=api?.fbAuth?.currentUser;
+ if(!uid||user?.uid!==uid)throw Error('Inicia sesión para consultar ubicaciones reales.');
+ if(verifiedGeoUid!==uid){verifiedGeoUid=uid;verifiedGeoAreas=[];verifiedGeoAt=0;verifiedGeoLoading=null}
+ if(!force&&Date.now()-verifiedGeoAt<60000)return verifiedGeoAreas;
+ if(verifiedGeoLoading)return verifiedGeoLoading;
+ verifiedGeoLoading=(async()=>{
+  const token=await user.getIdToken(),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),14000);
   let response;
   try{response=await fetch(LIVE_GEO_AREAS_URL,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal,headers:{Authorization:'Bearer '+token}})}
   finally{clearTimeout(timer)}
-  if(!response.ok)throw Error('Inventario de zonas no disponible');
+  if(!response.ok)throw Error('Inventario geográfico no disponible.');
   const data=await response.json();
-  if(data?.source!=='consented-active-taskflow-users'||!Array.isArray(data.areas))throw Error('Inventario sin verificación');
+  if(data?.source!=='consented-active-taskflow-users'||data.activeWithinDays!==30||!Array.isArray(data.areas))
+   throw Error('El inventario recibido no tiene verificación suficiente.');
+  const valid=data.areas.filter(a=>a&&['country','region','city','neighborhood'].includes(a.level)&&/^[A-Z]{2}$/.test(String(a.country||'')));
+  const countries=new Set(valid.filter(a=>a.level==='country').map(a=>a.country));
+  const verified=valid.filter(a=>{
+   if(!countries.has(a.country))return false;
+   if(a.level==='region')return typeof a.region==='string'&&a.region.length>0;
+   if(a.level==='city')return typeof a.city==='string'&&a.city.length>0&&valid.some(p=>p.level==='region'&&p.country===a.country&&p.region===a.region);
+   if(a.level==='neighborhood')return typeof a.neighborhood==='string'&&a.neighborhood.length>0&&valid.some(p=>p.level==='city'&&p.country===a.country&&p.region===a.region&&p.city===a.city);
+   return true;
+  });
+  if(verifiedGeoUid!==uid||api.fbAuth?.currentUser?.uid!==uid)throw Error('Cambió la sesión.');
+  verifiedGeoAreas=verified;verifiedGeoAt=Date.now();
+  return verified;
+ })().catch(e=>{if(verifiedGeoUid===uid){verifiedGeoAreas=[];verifiedGeoAt=0}throw e})
+  .finally(()=>{verifiedGeoLoading=null});
+ return verifiedGeoLoading;
+}
+function fillVerifiedAudienceSelect(select,values,placeholder){
+ if(!select)return;
+ const selected=select.value;
+ const entries=[{value:'',label:placeholder},...values];
+ select.replaceChildren(...entries.map(v=>{const o=document.createElement('option');o.value=v.value;o.textContent=v.label;return o}));
+ select.value=values.some(x=>x.value===selected)?selected:'';
+ select.disabled=!values.length;
+}
+function hydrateAudienceGeoForm(api){
+ const form=api.root.querySelector('#tfAudiencePresetForm');if(!form)return;
+ const areas=activeGeoAreas(api),country=form.elements.namedItem('country'),
+  region=form.elements.namedItem('region'),city=form.elements.namedItem('city');
+ if(!country||!region||!city)return;
+ const countryCodes=[...new Set(areas.filter(a=>a.level==='country').map(a=>a.country))];
+ let names;try{names=new Intl.DisplayNames(['es'],{type:'region'})}catch(_){}
+ const countries=countryCodes.map(v=>({value:v,label:(names?.of(v)||v)+' ('+v+')'})).sort((a,b)=>a.label.localeCompare(b.label,'es'));
+ fillVerifiedAudienceSelect(country,countries,'Sin países con usuarios verificados');
+ const regions=[...new Set(areas.filter(a=>a.level==='region'&&a.country===country.value).map(a=>a.region))]
+  .map(v=>({value:v,label:v})).sort((a,b)=>a.label.localeCompare(b.label,'es'));
+ fillVerifiedAudienceSelect(region,regions,'Todo el país');
+ const cities=[...new Set(areas.filter(a=>a.level==='city'&&a.country===country.value&&a.region===region.value).map(a=>a.city))]
+  .map(v=>({value:v,label:v})).sort((a,b)=>a.label.localeCompare(b.label,'es'));
+ fillVerifiedAudienceSelect(city,cities,'Toda la región');
+ // Los campos de región y ciudad pueden quedar vacíos para escoger una audiencia amplia.
+ region.disabled=!country.value||!regions.length;city.disabled=!region.value||!cities.length;
+ const submit=form.querySelector('[type="submit"]');if(submit)submit.disabled=!country.value||!areas.length;
+ if(!form.dataset.verifiedGeoEvents){
+  form.dataset.verifiedGeoEvents='1';
+  form.addEventListener('change',e=>{
+   if(e.target?.name==='country'){region.value='';city.value='';hydrateAudienceGeoForm(api)}
+   else if(e.target?.name==='region'){city.value='';hydrateAudienceGeoForm(api)}
+  });
+ }
+}
+function refreshSavedAudienceEvidence(api){
+ const areas=activeGeoAreas(api);
+ for(const p of audiencePresets){
+  const node=api.root.querySelector('[data-tf-preset-geo="'+String(p.id).replace(/[^A-Za-z0-9_-]/g,'')+'"]');
+  if(node)node.textContent=isVerifiedAudienceGeo(areas,String(p.country||'').toUpperCase(),String(p.region||''),String(p.city||''))
+   ?'Destino actualmente verificado':'Destino guardado: sin usuarios verificados en la zona';
+ }
+}
+async function loadLiveGeoAreas(api){
+ const target=api.root.querySelector('#tfAdsLiveGeoAreas'),uid=api.currentUser?.id;
+ if(!target)return;
+ target.innerHTML='<p class="tf-tool-loading">Comprobando ubicaciones autorizadas recientes…</p>';
+ try{
+  const active=await fetchActiveGeoAreas(api,true);
   if(view!=='audiences'||current?.currentUser?.id!==uid||!target.isConnected)return;
-  const active=data.areas.filter(x=>x&&['country','region','city','neighborhood'].includes(x.level)&&/^[A-Z]{2}$/.test(String(x.country||'')));
   const countryCodes=[...new Set(active.filter(x=>x.level==='country').map(x=>x.country))];
   let names=null;try{names=new Intl.DisplayNames(['es'],{type:'region'})}catch(_){}
   const cards=countryCodes.sort((a,b)=>String(names?.of(a)||a).localeCompare(String(names?.of(b)||b),'es'))
    .map(code=>{
-    const countryName=names?.of(code)||code;
     const lines=active.filter(x=>x.country===code&&x.level!=='country').map(x=>{
      const label=x.level==='region'?'Región':x.level==='city'?'Ciudad':'Localidad / barrio';
      return '<span class="tf-geo-inventory-area"><b>'+label+':</b> '+esc([x.region,x.city,x.neighborhood].filter(Boolean).join(' · '))+'</span>';
     });
-    return '<article class="tf-tool-row"><div><b>'+esc(countryName)+' ('+esc(code)+')</b><small>Zona país activa</small><div class="tf-geo-inventory-areas">'+(lines.join('')||'<small>No hay localidades habilitadas todavía por el umbral de privacidad.</small>')+'</div></div></article>';
+    return '<article class="tf-tool-row"><div><b>'+esc(names?.of(code)||code)+' ('+esc(code)+')</b><small>País con actividad reciente verificada</small><div class="tf-geo-inventory-areas">'+(lines.join('')||'<small>Sin zonas más específicas habilitadas.</small>')+'</div></div></article>';
    }).join('');
-  target.innerHTML='<div class="tf-tool-kpis">'+mini(countryCodes.length,'Países disponibles')+
-   mini(active.filter(x=>x.level==='region').length,'Regiones disponibles')+
-   mini(active.filter(x=>x.level==='city').length,'Ciudades disponibles')+
-   mini(active.filter(x=>x.level==='neighborhood').length,'Barrios disponibles')+'</div>'+
-   (cards||'<p class="tf-tool-empty">Aún no hay países con usuarios autenticados y ubicación autorizada. La lista se actualizará cuando exista actividad registrada.</p>');
+  target.innerHTML='<div class="tf-tool-kpis">'+mini(countryCodes.length,'Países verificados')+
+   mini(active.filter(x=>x.level==='region').length,'Regiones verificadas')+
+   mini(active.filter(x=>x.level==='city').length,'Ciudades verificadas')+
+   mini(active.filter(x=>x.level==='neighborhood').length,'Barrios verificados')+'</div>'+
+   (cards||'<p class="tf-tool-empty">No existen países con presencia verificada en los últimos 30 días. Esto no demuestra que no haya descargas.</p>');
+  hydrateAudienceGeoForm(api);refreshSavedAudienceEvidence(api);
  }catch(_){
-  if(target.isConnected)target.innerHTML='<p class="tf-tool-warning">No fue posible comprobar las zonas disponibles. No se muestran ubicaciones sin verificar.</p>';
+  if(target.isConnected)target.innerHTML='<p class="tf-tool-warning">No se pudo verificar la actividad real. Países y zonas no verificados no están disponibles para crear o aplicar audiencias.</p>';
+  if(view==='audiences'&&current?.currentUser?.id===uid){hydrateAudienceGeoForm(api);refreshSavedAudienceEvidence(api)}
  }
 }
+
 function watchLiveGeoAreas(){
  if(geoAreasWatch)return;
  geoAreasWatch=setInterval(()=>{if(view==='audiences'&&current)void loadLiveGeoAreas(current)},180000);
 }
 function presetRef(api){return api.fbDb.collection('users').doc(api.currentUser.id).collection('adsManager').doc('business')}
+
 function presetMarkup(api){
  const choices=api.campaigns.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('');
- const rows=audiencePresets.map(p=>'<article class="tf-tool-row"><div><b>'+esc(p.name)+'</b><span>'+esc([p.city,p.region,p.country].filter(Boolean).join(', ')||'Ubicación general')+' · Edades '+esc(p.ageMin+'–'+p.ageMax)+'</span><small>Audiencia guardada y disponible para reutilizar</small></div><div class="tf-tool-budget-edit"><label>Campaña destinataria<select data-tf-preset-target="'+esc(p.id)+'"><option value="">Seleccionar campaña</option>'+choices+'</select></label><button type="button" data-tf-action="audience-apply" data-id="'+esc(p.id)+'" '+(!api.campaigns.length?'disabled':'')+'>Aplicar segmentación</button><button type="button" data-tf-action="audience-delete" data-id="'+esc(p.id)+'">Eliminar plantilla</button></div></article>').join('');
- return '<div class="tf-tool-kpis">'+mini(audiencePresets.length,'Audiencias guardadas','Se sincronizan en esta cuenta')+'</div>'+
- '<form class="tf-tool-form tf-tool-audience-form" id="tfAudiencePresetForm"><label>Nombre de audiencia<input name="presetName" maxlength="80" required placeholder="Ej. Huehuetenango · 18–35"></label><div class="tf-tool-form-grid"><label>País<input name="country" value="GT" maxlength="40" required></label><label>Departamento<input name="region" maxlength="90" placeholder="Huehuetenango"></label><label>Ciudad o municipio<input name="city" maxlength="90" placeholder="Huehuetenango"></label><label>Edad mínima<input name="ageMin" type="number" min="18" max="65" value="18" required></label><label>Edad máxima<input name="ageMax" type="number" min="18" max="65" value="65" required></label></div><button type="submit">Guardar nueva audiencia</button><p role="status" id="tfAudiencePresetMessage" class="tf-tool-note"></p></form>'+
- '<div class="tf-tool-preset-list">'+(rows||'<p class="tf-tool-empty">No hay audiencias guardadas. Crea una para reutilizar su segmentación.</p>')+'</div>';
+ const active=activeGeoAreas(api);
+ const rows=audiencePresets.map(p=>{
+  const supported=isVerifiedAudienceGeo(active,String(p.country||'').toUpperCase(),String(p.region||''),String(p.city||''));
+  return '<article class="tf-tool-row"><div><b>'+esc(p.name)+'</b><span>'+esc([p.city,p.region,p.country].filter(Boolean).join(', ')||'Ubicación general')+' · Edades '+esc(p.ageMin+'–'+p.ageMax)+'</span><small data-tf-preset-geo="'+esc(p.id)+'">'+(supported?'Destino actualmente verificado':'Destino guardado: sin usuarios verificados en la zona')+'</small></div><div class="tf-tool-budget-edit"><label>Campaña destinataria<select data-tf-preset-target="'+esc(p.id)+'"><option value="">Seleccionar campaña</option>'+choices+'</select></label><button type="button" data-tf-action="audience-apply" data-id="'+esc(p.id)+'" '+(!api.campaigns.length?'disabled':'')+'>Aplicar segmentación</button><button type="button" data-tf-action="audience-delete" data-id="'+esc(p.id)+'">Eliminar plantilla</button></div></article>';
+ }).join('');
+ return '<div class="tf-tool-kpis">'+mini(audiencePresets.length,'Audiencias guardadas','No son usuarios activos')+'</div>'+
+ '<form class="tf-tool-form tf-tool-audience-form" id="tfAudiencePresetForm"><label>Nombre de audiencia<input name="presetName" maxlength="80" required placeholder="Ej. Huehuetenango · 18–35"></label><div class="tf-tool-form-grid"><label>País<select name="country" required disabled><option value="">Consultando países verificados…</option></select></label><label>Departamento<select name="region" disabled><option value="">Toda la nación</option></select></label><label>Ciudad o municipio<select name="city" disabled><option value="">Toda la región</option></select></label><label>Edad mínima<input name="ageMin" type="number" min="18" max="65" value="18" required></label><label>Edad máxima<input name="ageMax" type="number" min="18" max="65" value="65" required></label></div><button type="submit" disabled>Guardar nueva audiencia</button><p role="status" id="tfAudiencePresetMessage" class="tf-tool-note">Solo se pueden crear audiencias en zonas con actividad reciente verificada.</p></form>'+
+ '<div class="tf-tool-preset-list">'+(rows||'<p class="tf-tool-empty">No hay audiencias guardadas. Solo podrás crearlas cuando exista presencia geográfica verificada.</p>')+'</div>';
 }
+
 async function loadAudiencePresets(api,force){
  const uid=api.currentUser.id;
  if(audienceOwner!==uid){audienceOwner=uid;audiencePresets=[];audienceLoaded=false}
@@ -267,7 +350,7 @@ async function loadAudiencePresets(api,force){
   }
  }
  const target=api.root.querySelector('#tfAdsAudiencePresets');
- if(target&&view==='audiences'&&current?.currentUser.id===uid)target.innerHTML=presetMarkup(api);
+ if(target&&view==='audiences'&&current?.currentUser.id===uid){target.innerHTML=presetMarkup(api);hydrateAudienceGeoForm(api)}
 }
 async function saveAudiencePreset(){
  const api=current,form=api.root.querySelector('#tfAudiencePresetForm'),label=api.root.querySelector('#tfAudiencePresetMessage');
@@ -279,6 +362,9 @@ async function saveAudiencePreset(){
  const newPreset={id:'aud_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9),name,country,region,city,ageMin,ageMax};
  const uid=api.currentUser.id,ref=presetRef(api);
  try{
+  const areas=await fetchActiveGeoAreas(api,true);
+  if(!isVerifiedAudienceGeo(areas,country.toUpperCase(),region,city))throw Error('GEO_AUDIENCE_UNVERIFIED');
+  if(current?.currentUser?.id!==uid)throw Error('ACCOUNT_CHANGED');
   let saved=[];
   await api.withDeadline(api.fbDb.runTransaction(async tx=>{
    const snap=await tx.get(ref);
@@ -305,7 +391,8 @@ async function saveAudiencePreset(){
   api.toast('Audiencia guardada y disponible para otras campañas.');
  }catch(e){
   console.warn('ADS guardado de audiencias:',e?.code||e?.message);
-  label.textContent=e?.message==='AUDIENCE_LIMIT_REACHED'?'Se alcanzó el máximo de 50 audiencias guardadas.':
+  label.textContent=e?.message==='GEO_AUDIENCE_UNVERIFIED'?'No existe actividad real verificada en esa ubicación. No se guardó ninguna audiencia.':
+   e?.message==='AUDIENCE_LIMIT_REACHED'?'Se alcanzó el máximo de 50 audiencias guardadas.':
    e?.code==='permission-denied'?'No tienes permiso para guardar esta audiencia. Comprueba la sesión.':
    'No se pudo guardar la audiencia. Comprueba la conexión e inténtalo nuevamente.';
   btn.disabled=false;
@@ -323,14 +410,16 @@ async function applyAudiencePreset(button,id){
  const select=api.root.querySelector('[data-tf-preset-target="'+id+'"]'),c=api.campaigns.find(x=>x.id===select?.value);
  if(!p||!c){api.toast('Selecciona una campaña para aplicar la audiencia.');return}
  button.disabled=true;button.textContent='Aplicando…';
- const data={country:p.country,region:p.region,city:p.city,ageMin:p.ageMin,ageMax:p.ageMax,updatedAt:new Date().toISOString()};
+ const data={country:String(p.country||'').toUpperCase(),region:p.region||'',city:p.city||'',ageMin:p.ageMin,ageMax:p.ageMax,updatedAt:new Date().toISOString()};
  if(c.approvalStatus==='approved')data.approvalStatus='pending';
  try{
+  const areas=await fetchActiveGeoAreas(api,true);
+  if(!isVerifiedAudienceGeo(areas,data.country,data.region,data.city))throw Error('No existen usuarios recientes verificados en la zona guardada.');
   const ref=api.fbDb.collection('users').doc(api.currentUser.id).collection('adsCampaigns').doc(c.id);
   const batch=api.fbDb.batch();batch.update(ref,data);
   if(c.approvalStatus==='approved')batch.delete(api.fbDb.collection('adsPublicCampaigns').doc(c.id));
   await api.withDeadline(batch.commit(),20000,'La segmentación no pudo confirmarse.');
-  Object.assign(c,data);void api.syncPrivateDelivery?.(c.id);api.saveCampaigns();api.renderAll();api.toast('Audiencia aplicada. '+(data.approvalStatus==='pending'?'La campaña requiere nueva aprobación.':'Configuración actualizada.'));
+  Object.assign(c,data);const synced=await api.syncPrivateDelivery?.(c.id);api.saveCampaigns();api.renderAll();if(!synced)console.warn('ADS: audiencia aplicada; sincronización privada aún sin confirmar');api.toast('Audiencia aplicada. '+(data.approvalStatus==='pending'?'La campaña requiere nueva aprobación.':'Configuración actualizada.'));
   if(view==='audiences'){api.root.innerHTML=audiences(api);void loadAudiencePresets(api,false)}
  }catch(e){api.toast('No se pudo aplicar: '+(e.message||'Comprueba la conexión.'));button.disabled=false;button.textContent='Aplicar segmentación'}
 }
