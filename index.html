@@ -2095,7 +2095,7 @@ async function syncCampaignDoc(c){
 // Private synchronization only sends a campaign identifier and the signed session.
 // Budget and allocation rules never enter the public ad catalog or page HTML.
 const PRIVATE_ADS_DELIVERY='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/sync';
-async function syncPrivateDelivery(campaignId,ownerUid){
+async function syncPrivateDelivery(campaignId,ownerUid,requireEligible=false){
  if(!fbAuth?.currentUser||!currentUser||!campaignId||!/^[A-Za-z0-9_-]{3,128}$/.test(String(campaignId)))return false;
  for(let attempt=0;attempt<2;attempt++){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
@@ -2113,7 +2113,7 @@ async function syncPrivateDelivery(campaignId,ownerUid){
    });
    if(result.ok){
     const confirmation=await result.json().catch(()=>null);
-    return confirmation?.ok===true;
+    return confirmation?.ok===true&&(!requireEligible||confirmation?.eligible===true);
    }
    if(attempt===0&&(result.status===401||result.status===429||result.status>=500))continue;
    console.warn('ADS: sincronización privada sin confirmación HTTP',result.status);
@@ -2238,7 +2238,7 @@ async function syncPublicCampaign(c){
    throw new Error('No se confirmó la publicación de la campaña. Comprueba la conexión e inténtalo nuevamente.');
   }
   notifyTaskFlowAdsChanged();
-  if(!await syncPrivateDelivery(c.id))
+  if(!await syncPrivateDelivery(c.id,undefined,true))
    throw new Error('El catálogo se actualizó, pero el motor privado no confirmó la sincronización. No se puede afirmar que los anuncios estén disponibles. Reintenta la sincronización.');
   return true;
  }
@@ -2664,7 +2664,7 @@ async function reconcileApprovedAds(items){
       await withDeadline(publicRef.set(toPublicCampaign(actual),{merge:false}),ADS_REMOTE_WRITE_MS,'No se confirmó la restauración del anuncio.');
       notifyTaskFlowAdsChanged();
      }
-     if(!await syncPrivateDelivery(actual.id,actual.ownerUid))throw Error('Distribución privada no confirmada.');
+     if(!await syncPrivateDelivery(actual.id,actual.ownerUid,true))throw Error('Distribución privada no confirmada.');
      return 'recovered';
     }catch(error){
      console.warn('ADS: campaña aprobada sin recuperación confirmada:',c.id,error?.code||error?.message);
@@ -2777,7 +2777,7 @@ async function adminReviewCampaign(ownerUid,id,approve){
  else batch.delete(publicCampaignRef(id));
  await withDeadline(batch.commit(),ADS_REMOTE_WRITE_MS,'No fue posible confirmar la revisión. Comprueba la conexión.');
  notifyTaskFlowAdsChanged();
- const privatelySynced=await syncPrivateDelivery(id,ownerUid);
+ const privatelySynced=await syncPrivateDelivery(id,ownerUid,deliver);
  if(deliver&&!privatelySynced){
   const rollback=fbDb.batch();
   rollback.update(ref,{approvalStatus:'pending'});
