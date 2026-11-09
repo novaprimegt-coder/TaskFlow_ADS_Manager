@@ -2045,6 +2045,7 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
   }
  }
 
+let ownerPublicationRecovery=Promise.resolve();
 async function loadCampaigns(){
  const cache=readJSON(CAMPAIGN_CACHE_KEY+(currentUser?.id||''),[]);
  campaigns=Array.isArray(cache)?cache.map(normalizeCampaign):[];campaigns.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));renderAll();
@@ -2058,12 +2059,14 @@ async function loadCampaigns(){
   writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns);renderAll();
   // Reparar catálogo público solo de campañas activas y aprobadas en el servidor.
   const ready=remote.filter(c=>c.status==='active'&&c.approvalStatus==='approved').slice(0,50);
+  const restoreJobs=[];
   for(let i=0;i<ready.length;i+=3){
-   void Promise.allSettled(ready.slice(i,i+3).map(c=>syncPublicCampaign(c))).then(results=>{
+   restoreJobs.push(Promise.allSettled(ready.slice(i,i+3).map(c=>syncPublicCampaign(c))).then(results=>{
     const failures=results.filter(result=>result.status==='rejected').length;
     if(failures)console.warn('ADS: campañas aprobadas no publicadas:',failures);
-   });
+   }));
   }
+  ownerPublicationRecovery=Promise.allSettled(restoreJobs);
   const localOnly=cache.filter(c=>c.status==='active'&&!remote.some(x=>x.id===c.id));
   if(localOnly.length)toast(localOnly.length+' campaña(s) activas solo en este dispositivo: no se encontraron publicadas en Firebase.');
  }catch(e){console.warn('ADS campaigns load:',e);toast('Sincronización remota no disponible; se muestra la copia local.')}
@@ -2281,7 +2284,7 @@ function clearAdminView(){
 async function enterApp(){
  syncAdminNavigation();
  if(!isAdsAdmin)clearAdminView();
- $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);await loadCampaigns();void recoverOwnDeliveryCampaigns();renderAll();animateApp()
+ $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);await loadCampaigns();void ownerPublicationRecovery.then(()=>recoverOwnDeliveryCampaigns());renderAll();animateApp()
 }
 async function logout(){
  if(!fbAuth)return;
