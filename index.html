@@ -1374,12 +1374,12 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 <label class="placement"><input name="placement" type="radio" value="interaction"/><span class="placement-card"><span class="placement-top"><span class="placement-symbol tap-symbol" aria-hidden="true"><svg viewBox="0 0 32 42"><rect x="8" y="2" width="16" height="38" rx="4"/><path d="M13 7h6M13 34h6"/><path d="M16 27V16m0 0c2-2 4 0 3 3l5 3-1 9h-9l-4-5c-1-2 1-4 3-2l3 3"/></svg></span><span class="placement-check" aria-hidden="true">✓</span></span><b>Por interacción</b><span class="placement-description">Se muestra después de diez interacciones acumuladas.</span><small>HD: 2160 × 3840 px · Estándar: 1080 × 1920 px</small><span class="placement-formats">Imagen, GIF o video</span></span></label>
 </div></div>
 <fieldset class="tf-ads-interest-fieldset">
- <legend>Intereses <small>Opcional</small></legend>
- <p class="tf-goal-hint">Si eliges temas, la campaña se mostrará a usuarios que hayan elegido al menos uno.</p>
+ <legend>Temas del anuncio <small>Opcional</small></legend>
+ <p class="tf-goal-hint">Si eliges temas, la campaña se muestra al abrir una sección compatible en TaskFlow. Para una campaña general, deja los temas vacíos.</p>
  <div id="tfAdsInterestChoices" class="tf-ads-interest-choices"></div>
 </fieldset>
 <p id="tfAdsGeoAvailability" class="tf-goal-hint" role="status" aria-live="polite">Consultando dónde se utiliza TaskFlow…</p><button type="button" id="tfAdsRefreshGeos" class="btn btn-ghost" style="margin:8px 0 10px">Actualizar zonas disponibles</button>
-<div class="formgrid" style="margin-top:14px"><div class="field"><label>País</label><select id="country" aria-label="País o anuncios generales"><option value="">Consultando países activos…</option></select><small class="tf-goal-hint">Las zonas provienen de preferencias publicitarias elegidas en TaskFlow durante los últimos 30 días.</small></div><div class="field"><label>Departamento / región</label><select id="region"><option value="">Todo el país</option></select></div><div class="field"><label>Ciudad / municipio</label><select id="city"><option value="">Toda la región</option></select></div><div class="field"><label>Colonia / barrio (si hay actividad suficiente)</label><select id="neighborhood"><option value="">Toda la ciudad</option></select></div><div class="field"><label>Radio aproximado</label><select id="radius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select><small class="tf-goal-hint">Los radios de 10–100 km requieren validación geográfica. La campaña no se entregará con ese filtro hasta poder comprobarlo; utiliza país, región o ciudad para una segmentación disponible.</small></div><div class="field"><label>Edad mínima</label><input id="ageMin" max="65" min="13" type="number" value="18"/></div><div class="field"><label>Edad máxima</label><input id="ageMax" max="65" min="13" type="number" value="65"/><small class="tf-goal-hint">Una audiencia con rango de edad reducido solo podrá recibir anuncios cuando TaskFlow disponga de una edad verificable. Sin ese dato, no se forzará la segmentación.</small></div></div>
+<div class="formgrid" style="margin-top:14px"><div class="field"><label>País</label><select id="country" aria-label="País o anuncios generales"><option value="">Consultando países activos…</option></select><small class="tf-goal-hint">TaskFlow usa el alcance general y los temas de la sección abierta. La ubicación del dispositivo es exclusiva del reloj.</small></div><div class="field"><label>Departamento / región</label><select id="region"><option value="">Todo el país</option></select></div><div class="field"><label>Ciudad / municipio</label><select id="city"><option value="">Toda la región</option></select></div><div class="field"><label>Colonia / barrio (si hay actividad suficiente)</label><select id="neighborhood"><option value="">Toda la ciudad</option></select></div><div class="field"><label>Radio aproximado</label><select id="radius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select><small class="tf-goal-hint">Los radios de 10–100 km requieren validación geográfica. La campaña no se entregará con ese filtro hasta poder comprobarlo; utiliza país, región o ciudad para una segmentación disponible.</small></div><div class="field"><label>Edad mínima</label><input id="ageMin" max="65" min="13" type="number" value="18"/></div><div class="field"><label>Edad máxima</label><input id="ageMax" max="65" min="13" type="number" value="65"/><small class="tf-goal-hint">Una audiencia con rango de edad reducido solo podrá recibir anuncios cuando TaskFlow disponga de una edad verificable. Sin ese dato, no se forzará la segmentación.</small></div></div>
 </section>
 <section class="wizard-page" data-page="3">
 <div class="section-title"><span class="eyebrow">Control de gasto</span><h3>Presupuesto y calendario</h3></div>
@@ -1867,7 +1867,7 @@ async function tfGeoRefresh(force=false){
  if(uid!==tfGeoUid){tfGeoUid=uid;tfGeoAreas=[];tfGeoLoaded=false;tfGeoLastAt=0;tfGeoPreferred=null;tfGeoLoading=null;tfGeoLoadingUid='';tfGeoRender('')}
  if(tfGeoLoading&&tfGeoLoadingUid===uid)return tfGeoLoading;
  if(!force&&tfGeoLoaded&&Date.now()-tfGeoLastAt<120000){tfGeoRender('');return}
- const info=$('tfAdsGeoAvailability');if(info)info.textContent='Consultando zonas elegidas para publicidad…';
+ const info=$('tfAdsGeoAvailability');if(info)info.textContent='Consultando zonas de campañas anteriores…';
  const geoRequest=(async()=>{
   try{
    const user=fbAuth?.currentUser;
@@ -1894,7 +1894,7 @@ async function tfGeoRefresh(force=false){
    const counts=['country','region','city'].map(level=>tfGeoAreas.filter(x=>x.level===level).length);
    if(info)info.textContent=counts[0]
     ?counts[0]+' país(es), '+counts[1]+' región(es) y '+counts[2]+' ciudad(es) elegidos para publicidad en los últimos 30 días.'
-    :'Aún no hay zonas elegidas. Puedes crear campañas generales.';
+    :'Las campañas de alcance general pueden publicarse aquí.';
    tfGeoRender('');
   }catch(e){
    if(tfGeoUid===uid){
