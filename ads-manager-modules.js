@@ -192,7 +192,7 @@ function audiences(api){
  const overlap=api.campaigns.reduce((n,c,i)=>n+api.campaigns.slice(i+1).filter(p=>p.country===c.country&&p.region===c.region&&p.city===c.city&&Math.max(Number(p.ageMin)||18,Number(c.ageMin)||18)<=Math.min(Number(p.ageMax)||65,Number(c.ageMax)||65)).length,0);
  return wrap('Editor de audiencias','Compara zonas, edades y posibles solapamientos. Modifica la segmentación de una campaña desde este módulo.',
  '<div class="tf-tool-kpis">'+mini(api.campaigns.length,'Campañas segmentadas')+mini(locs.size,'Zonas configuradas')+mini(overlap,'Cruces de segmentación','Coincidencias de ubicación y edades')+'</div>'+
- section('Zonas geográficas disponibles','<p class="tf-tool-note">Se muestran únicamente países y zonas con actividad reciente de usuarios autenticados que autorizaron su ubicación. País y región: desde 1 usuario; ciudades: desde 5; barrios: desde 10. No representa descargas totales, audiencia contratada ni impresiones garantizadas.</p><button type="button" data-tf-action="geo-refresh">Actualizar zonas ahora</button><div id="tfAdsLiveGeoAreas" aria-live="polite"><p class="tf-tool-loading">Consultando zonas activas…</p></div>')+
+ section('Zonas geográficas disponibles','<p class="tf-tool-note">Se muestran zonas publicitarias elegidas voluntariamente por usuarios autenticados. País y región desde 1 usuario. Ciudades desde 5. No representa descargas totales, audiencia contratada ni impresiones garantizadas.</p><button type="button" data-tf-action="geo-refresh">Actualizar zonas ahora</button><div id="tfAdsLiveGeoAreas" aria-live="polite"><p class="tf-tool-loading">Consultando zonas activas…</p></div>')+
  section('Audiencias guardadas','<div id="tfAdsAudiencePresets"><p class="tf-tool-loading">Consultando audiencias guardadas…</p></div>')+
  section('Segmentación por campaña','<label class="tf-tool-search">Buscar campaña o ubicación<input type="search" data-tf-search="audiences" placeholder="Nombre, departamento o municipio" autocomplete="off"></label><div data-tf-results="audiences">'+audienceRows(api,'')+'</div>')+
  '<p class="tf-tool-note">Las coincidencias son una comparación de configuración, no un cálculo de tamaño de audiencia ni de personas únicas.</p>');
@@ -301,7 +301,7 @@ async function loadLiveGeoAreas(api){
      const label=x.level==='region'?'Región':x.level==='city'?'Ciudad':'Localidad / barrio';
      return '<span class="tf-geo-inventory-area"><b>'+label+':</b> '+esc([x.region,x.city,x.neighborhood].filter(Boolean).join(' · '))+'</span>';
     });
-    return '<article class="tf-tool-row"><div><b>'+esc(names?.of(code)||code)+' ('+esc(code)+')</b><small>País con actividad reciente verificada</small><div class="tf-geo-inventory-areas">'+(lines.join('')||'<small>Sin zonas más específicas habilitadas.</small>')+'</div></div></article>';
+    return '<article class="tf-tool-row"><div><b>'+esc(names?.of(code)||code)+' ('+esc(code)+')</b><small>País elegido para publicidad</small><div class="tf-geo-inventory-areas">'+(lines.join('')||'<small>Sin zonas más específicas habilitadas.</small>')+'</div></div></article>';
    }).join('');
   target.innerHTML='<div class="tf-tool-kpis">'+mini(countryCodes.length,'Países verificados')+
    mini(active.filter(x=>x.level==='region').length,'Regiones verificadas')+
@@ -310,7 +310,7 @@ async function loadLiveGeoAreas(api){
    (cards||'<p class="tf-tool-empty">No existen países con presencia verificada en los últimos 30 días. Esto no demuestra que no haya descargas.</p>');
   hydrateAudienceGeoForm(api);refreshSavedAudienceEvidence(api);
  }catch(_){
-  if(target.isConnected)target.innerHTML='<p class="tf-tool-warning">No se pudo verificar la actividad real. Países y zonas no verificados no están disponibles para crear o aplicar audiencias.</p>';
+  if(target.isConnected)target.innerHTML='<p class="tf-tool-warning">No se pudieron consultar las zonas elegidas para publicidad.</p>';
   if(view==='audiences'&&current?.currentUser?.id===uid){hydrateAudienceGeoForm(api);refreshSavedAudienceEvidence(api)}
  }
 }
@@ -329,7 +329,7 @@ function presetMarkup(api){
   return '<article class="tf-tool-row"><div><b>'+esc(p.name)+'</b><span>'+esc([p.city,p.region,p.country].filter(Boolean).join(', ')||'Ubicación general')+' · Edades '+esc(p.ageMin+'–'+p.ageMax)+'</span><small data-tf-preset-geo="'+esc(p.id)+'">'+(supported?'Destino actualmente verificado':'Destino guardado: sin usuarios verificados en la zona')+'</small></div><div class="tf-tool-budget-edit"><label>Campaña destinataria<select data-tf-preset-target="'+esc(p.id)+'"><option value="">Seleccionar campaña</option>'+choices+'</select></label><button type="button" data-tf-action="audience-apply" data-id="'+esc(p.id)+'" '+(!api.campaigns.length?'disabled':'')+'>Aplicar segmentación</button><button type="button" data-tf-action="audience-delete" data-id="'+esc(p.id)+'">Eliminar plantilla</button></div></article>';
  }).join('');
  return '<div class="tf-tool-kpis">'+mini(audiencePresets.length,'Audiencias guardadas','No son usuarios activos')+'</div>'+
- '<form class="tf-tool-form tf-tool-audience-form" id="tfAudiencePresetForm"><label>Nombre de audiencia<input name="presetName" maxlength="80" required placeholder="Ej. Huehuetenango · 18–35"></label><div class="tf-tool-form-grid"><label>País<select name="country" required disabled><option value="">Consultando países verificados…</option></select></label><label>Departamento<select name="region" disabled><option value="">Toda la nación</option></select></label><label>Ciudad o municipio<select name="city" disabled><option value="">Toda la región</option></select></label><label>Edad mínima<input name="ageMin" type="number" min="18" max="65" value="18" required></label><label>Edad máxima<input name="ageMax" type="number" min="18" max="65" value="65" required></label></div><button type="submit" disabled>Guardar nueva audiencia</button><p role="status" id="tfAudiencePresetMessage" class="tf-tool-note">Solo se pueden crear audiencias en zonas con actividad reciente verificada.</p></form>'+
+ '<form class="tf-tool-form tf-tool-audience-form" id="tfAudiencePresetForm"><label>Nombre de audiencia<input name="presetName" maxlength="80" required placeholder="Ej. Huehuetenango · 18–35"></label><div class="tf-tool-form-grid"><label>País<select name="country" required disabled><option value="">Consultando países verificados…</option></select></label><label>Departamento<select name="region" disabled><option value="">Toda la nación</option></select></label><label>Ciudad o municipio<select name="city" disabled><option value="">Toda la región</option></select></label><label>Edad mínima<input name="ageMin" type="number" min="18" max="65" value="18" required></label><label>Edad máxima<input name="ageMax" type="number" min="18" max="65" value="65" required></label></div><button type="submit" disabled>Guardar nueva audiencia</button><p role="status" id="tfAudiencePresetMessage" class="tf-tool-note">Las audiencias geográficas usan zonas elegidas para publicidad en TaskFlow.</p></form>'+
  '<div class="tf-tool-preset-list">'+(rows||'<p class="tf-tool-empty">No hay audiencias guardadas. Solo podrás crearlas cuando exista presencia geográfica verificada.</p>')+'</div>';
 }
 
@@ -393,7 +393,7 @@ async function saveAudiencePreset(){
   api.toast('Audiencia guardada y disponible para otras campañas.');
  }catch(e){
   console.warn('ADS guardado de audiencias:',e?.code||e?.message);
-  label.textContent=e?.message==='GEO_AUDIENCE_UNVERIFIED'?'No existe actividad real verificada en esa ubicación. No se guardó ninguna audiencia.':
+  label.textContent=e?.message==='GEO_AUDIENCE_UNVERIFIED'?'Esa zona no está disponible en las preferencias publicitarias recientes.':
    e?.message==='AUDIENCE_LIMIT_REACHED'?'Se alcanzó el máximo de 50 audiencias guardadas.':
    e?.code==='permission-denied'?'No tienes permiso para guardar esta audiencia. Comprueba la sesión.':
    'No se pudo guardar la audiencia. Comprueba la conexión e inténtalo nuevamente.';

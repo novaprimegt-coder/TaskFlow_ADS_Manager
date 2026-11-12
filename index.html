@@ -69,6 +69,13 @@ button,input,select,textarea{letter-spacing:0}
 @media(max-width:820px){.shell{display:block}.sidebar{width:258px}.top-status,.sync{display:none}.view{padding:20px 14px 34px}.modal{padding:8px}.modal-card{max-height:calc(100dvh - 16px);border-radius:16px}.wizard{grid-template-columns:1fr}.steps{grid-template-columns:repeat(4,1fr);padding:9px}.wizard-body{padding:18px 16px}.wizard-footer{bottom:-18px;margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}.auth-hero{padding:44px 24px}.hero-flow{display:none}}
 @media(max-width:600px){.auth-hero{min-height:34vh}.auth-hero h1{font-size:38px}.auth-panel{padding:30px 18px}.metrics,.module-kpis{grid-template-columns:1fr 1fr}.metric,.module-card{padding:14px}.module-card>strong{font-size:20px}.settings-grid{grid-template-columns:1fr}.module-row{grid-template-columns:1fr auto}.module-row small{grid-column:1/-1;text-align:left}.heading h2{font-size:23px}.topbar{height:66px}.top-actions .primary{height:39px}.account{display:none}.choice,.placement-card{min-height:auto}.wizard-body{min-height:560px}.creative-layout{display:block}.preview-card{margin-top:14px}}
 
+
+.tf-ads-interest-fieldset{margin:12px 0;padding:10px 12px;min-width:0;border:1px solid #ccdbed;border-radius:12px;background:#f5f9ff}
+.tf-ads-interest-fieldset legend{padding:0 5px;font-weight:750;color:#173d62}
+.tf-ads-interest-fieldset small{font-weight:500;color:#4b6581}
+.tf-ads-interest-choices{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}
+.tf-ads-interest-choices label{display:flex;align-items:center;gap:5px;min-height:36px;padding:5px 8px;border:1px solid #cad9eb;border-radius:8px;color:#173955;background:white;font-size:12px;cursor:pointer}
+.tf-ads-interest-choices input{width:16px;height:16px;accent-color:#135ed8}
 </style>
 <style>
 :root{--tf-blue:#0866ff;--tf-green:#15a05c;--tf-ink:#1c1e21;--tf-muted:#65676b;--tf-border:#d8dde5;--tf-soft:#f5f6f7}
@@ -869,7 +876,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #moduleContent #tfAdsObjectiveResults td{vertical-align:middle}
 @media(max-width:600px){#moduleContent .tf-ads-private-key{font-size:11px}#moduleContent #tfAdsObjectiveResults table{min-width:660px}}
 </style>
-<script defer src="./ads-manager-modules.js?v=20261109-publication-repair-v5"></script>
+<script defer src="./ads-manager-modules.js?v=20261112-preferencias-ads"></script>
 <style id="tfAdsCrystalizedHero2026">
 /* Fondo animado exclusivo del encabezado de inicio de sesión; no modifica el formulario. */
 #authView .auth-hero{
@@ -1366,8 +1373,13 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 <label class="placement"><input name="placement" type="radio" value="entry"/><span class="placement-card"><span class="placement-top"><span class="placement-symbol phone-symbol" aria-hidden="true"><svg viewBox="0 0 32 42"><rect x="8" y="2" width="16" height="38" rx="4"/><path d="M13 7h6M13 34h6"/><rect x="11" y="12" width="10" height="16" rx="2"/></svg></span><span class="placement-check" aria-hidden="true">✓</span></span><b>Anuncio de ingreso</b><span class="placement-description">Se muestra cuando la persona ingresa a TaskFlow.</span><small>HD: 2160 × 3840 px · Estándar: 1080 × 1920 px</small><span class="placement-formats">Imagen, GIF o video</span></span></label>
 <label class="placement"><input name="placement" type="radio" value="interaction"/><span class="placement-card"><span class="placement-top"><span class="placement-symbol tap-symbol" aria-hidden="true"><svg viewBox="0 0 32 42"><rect x="8" y="2" width="16" height="38" rx="4"/><path d="M13 7h6M13 34h6"/><path d="M16 27V16m0 0c2-2 4 0 3 3l5 3-1 9h-9l-4-5c-1-2 1-4 3-2l3 3"/></svg></span><span class="placement-check" aria-hidden="true">✓</span></span><b>Por interacción</b><span class="placement-description">Se muestra después de diez interacciones acumuladas.</span><small>HD: 2160 × 3840 px · Estándar: 1080 × 1920 px</small><span class="placement-formats">Imagen, GIF o video</span></span></label>
 </div></div>
+<fieldset class="tf-ads-interest-fieldset">
+ <legend>Intereses <small>Opcional</small></legend>
+ <p class="tf-goal-hint">Si eliges temas, la campaña se mostrará a usuarios que hayan elegido al menos uno.</p>
+ <div id="tfAdsInterestChoices" class="tf-ads-interest-choices"></div>
+</fieldset>
 <p id="tfAdsGeoAvailability" class="tf-goal-hint" role="status" aria-live="polite">Consultando dónde se utiliza TaskFlow…</p><button type="button" id="tfAdsRefreshGeos" class="btn btn-ghost" style="margin:8px 0 10px">Actualizar zonas disponibles</button>
-<div class="formgrid" style="margin-top:14px"><div class="field"><label>País</label><select id="country" aria-label="País con actividad real de TaskFlow"><option value="">Consultando países activos…</option></select><small class="tf-goal-hint">Solo aparecen países con usuarios autenticados y ubicación autorizada durante los últimos 30 días.</small></div><div class="field"><label>Departamento / región</label><select id="region"><option value="">Todo el país</option></select></div><div class="field"><label>Ciudad / municipio</label><select id="city"><option value="">Toda la región</option></select></div><div class="field"><label>Colonia / barrio (si hay actividad suficiente)</label><select id="neighborhood"><option value="">Toda la ciudad</option></select></div><div class="field"><label>Radio aproximado</label><select id="radius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select><small class="tf-goal-hint">Los radios de 10–100 km requieren validación geográfica. La campaña no se entregará con ese filtro hasta poder comprobarlo; utiliza país, región o ciudad para una segmentación disponible.</small></div><div class="field"><label>Edad mínima</label><input id="ageMin" max="65" min="13" type="number" value="18"/></div><div class="field"><label>Edad máxima</label><input id="ageMax" max="65" min="13" type="number" value="65"/><small class="tf-goal-hint">Una audiencia con rango de edad reducido solo podrá recibir anuncios cuando TaskFlow disponga de una edad verificable. Sin ese dato, no se forzará la segmentación.</small></div></div>
+<div class="formgrid" style="margin-top:14px"><div class="field"><label>País</label><select id="country" aria-label="País o anuncios generales"><option value="">Consultando países activos…</option></select><small class="tf-goal-hint">Las zonas provienen de preferencias publicitarias elegidas en TaskFlow durante los últimos 30 días.</small></div><div class="field"><label>Departamento / región</label><select id="region"><option value="">Todo el país</option></select></div><div class="field"><label>Ciudad / municipio</label><select id="city"><option value="">Toda la región</option></select></div><div class="field"><label>Colonia / barrio (si hay actividad suficiente)</label><select id="neighborhood"><option value="">Toda la ciudad</option></select></div><div class="field"><label>Radio aproximado</label><select id="radius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select><small class="tf-goal-hint">Los radios de 10–100 km requieren validación geográfica. La campaña no se entregará con ese filtro hasta poder comprobarlo; utiliza país, región o ciudad para una segmentación disponible.</small></div><div class="field"><label>Edad mínima</label><input id="ageMin" max="65" min="13" type="number" value="18"/></div><div class="field"><label>Edad máxima</label><input id="ageMax" max="65" min="13" type="number" value="65"/><small class="tf-goal-hint">Una audiencia con rango de edad reducido solo podrá recibir anuncios cuando TaskFlow disponga de una edad verificable. Sin ese dato, no se forzará la segmentación.</small></div></div>
 </section>
 <section class="wizard-page" data-page="3">
 <div class="section-title"><span class="eyebrow">Control de gasto</span><h3>Presupuesto y calendario</h3></div>
@@ -1779,6 +1791,25 @@ document.addEventListener('DOMContentLoaded',init,{once:true});
 const $=id=>document.getElementById(id);const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const TF_ADS_COUNTRY_CODES='AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW'.split(' ');
 
+const TF_AD_INTERESTS = {
+ technology:'Tecnología',education:'Educación',sports:'Deportes',food:'Comida',entertainment:'Entretenimiento',
+ shopping:'Compras',travel:'Viajes',home:'Hogar',business:'Negocios',culture:'Cultura'
+};
+function normalizeInterests(topics){
+ return Array.isArray(topics)?Object.keys(TF_AD_INTERESTS).filter(id=>topics.includes(id)):[];
+}
+function setCampaignInterests(topics=[]){
+ const selected=normalizeInterests(topics), choices=$('tfAdsInterestChoices');
+ choices.replaceChildren();
+ for(const [id,text] of Object.entries(TF_AD_INTERESTS)){
+  const label=document.createElement('label'), box=document.createElement('input');
+  box.type='checkbox';box.value=id;box.checked=selected.includes(id);
+  label.append(box,document.createTextNode(text));choices.append(label);
+ }
+}
+function readCampaignInterests(){
+ return normalizeInterests(qa('#tfAdsInterestChoices input:checked').map(box=>box.value));
+}
 const GEO_INVENTORY_URL='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/geo/available';
 let tfGeoAreas=[],tfGeoLoaded=false,tfGeoLoading=null,tfGeoLoadingUid='',tfGeoLastAt=0,tfGeoEventsBound=false,tfGeoPreferred=null,tfGeoUid='';
 function tfGeoLabel(code){
@@ -1805,21 +1836,29 @@ function tfGeoRender(level){
  if(level==='country'){preferred.region='';preferred.city='';preferred.neighborhood=''}
  else if(level==='region'){preferred.city='';preferred.neighborhood=''}
  else if(level==='city')preferred.neighborhood='';
+ const configured=editingId?campaigns.find(c=>c.id===editingId):null;
  const countryCodes=[...new Set(tfGeoAreas.filter(x=>x.level==='country').map(x=>x.country))];
+ if(TF_ADS_COUNTRY_CODES.includes(configured?.country)&&!countryCodes.includes(configured.country))countryCodes.push(configured.country);
  const countries=countryCodes.map(code=>({value:code,label:tfGeoLabel(code)+' ('+code+')'}))
   .sort((a,b)=>a.label.localeCompare(b.label,'es'));
- if(countryCodes.length)countries.unshift({value:'ALL',label:'Todos los países con actividad'});
- tfGeoFill('country',countries,tfGeoLoaded?'Selecciona un país con usuarios activos':'Sin inventario verificado',preferred.country);
+ countries.unshift({value:'ALL',label:'Anuncios generales · Sin zona'});
+ tfGeoFill('country',countries,'Elige una zona o anuncios generales',preferred.country);
  const c=$('country').value;
- const regions=[...new Set(tfGeoAreas.filter(x=>x.level==='region'&&x.country===c).map(x=>x.region))]
+ const regionOptions=tfGeoAreas.filter(x=>x.level==='region'&&x.country===c).map(x=>x.region);
+ if(configured?.country===c&&configured.region)regionOptions.push(configured.region);
+ const regions=[...new Set(regionOptions)]
   .sort((a,b)=>a.localeCompare(b,'es')).map(v=>({value:v,label:v}));
  tfGeoFill('region',regions,'Todas las regiones disponibles',preferred.region);
  const r=$('region').value;
- const cities=[...new Set(tfGeoAreas.filter(x=>x.level==='city'&&x.country===c&&x.region===r).map(x=>x.city))]
+ const cityOptions=tfGeoAreas.filter(x=>x.level==='city'&&x.country===c&&x.region===r).map(x=>x.city);
+ if(configured?.country===c&&configured.region===r&&configured.city)cityOptions.push(configured.city);
+ const cities=[...new Set(cityOptions)]
   .sort((a,b)=>a.localeCompare(b,'es')).map(v=>({value:v,label:v}));
  tfGeoFill('city',cities,'Todas las ciudades disponibles',preferred.city);
  const city=$('city').value;
- const hoods=[...new Set(tfGeoAreas.filter(x=>x.level==='neighborhood'&&x.country===c&&x.region===r&&x.city===city).map(x=>x.neighborhood))]
+ const neighborhoodOptions=tfGeoAreas.filter(x=>x.level==='neighborhood'&&x.country===c&&x.region===r&&x.city===city).map(x=>x.neighborhood);
+ if(configured?.country===c&&configured.region===r&&configured.city===city&&configured.neighborhood)neighborhoodOptions.push(configured.neighborhood);
+ const hoods=[...new Set(neighborhoodOptions)]
   .sort((a,b)=>a.localeCompare(b,'es')).map(v=>({value:v,label:v}));
  tfGeoFill('neighborhood',hoods,'Toda la ciudad',preferred.neighborhood);
 }
@@ -1828,7 +1867,7 @@ async function tfGeoRefresh(force=false){
  if(uid!==tfGeoUid){tfGeoUid=uid;tfGeoAreas=[];tfGeoLoaded=false;tfGeoLastAt=0;tfGeoPreferred=null;tfGeoLoading=null;tfGeoLoadingUid='';tfGeoRender('')}
  if(tfGeoLoading&&tfGeoLoadingUid===uid)return tfGeoLoading;
  if(!force&&tfGeoLoaded&&Date.now()-tfGeoLastAt<120000){tfGeoRender('');return}
- const info=$('tfAdsGeoAvailability');if(info)info.textContent='Consultando ubicaciones con actividad reciente…';
+ const info=$('tfAdsGeoAvailability');if(info)info.textContent='Consultando zonas elegidas para publicidad…';
  const geoRequest=(async()=>{
   try{
    const user=fbAuth?.currentUser;
@@ -1852,15 +1891,15 @@ async function tfGeoRefresh(force=false){
     return true;
    });
    tfGeoLoaded=true;tfGeoLastAt=Date.now();
-   const counts=['country','region','city','neighborhood'].map(level=>tfGeoAreas.filter(x=>x.level===level).length);
+   const counts=['country','region','city'].map(level=>tfGeoAreas.filter(x=>x.level===level).length);
    if(info)info.textContent=counts[0]
-    ?counts[0]+' país(es), '+counts[1]+' región(es), '+counts[2]+' ciudad(es) y '+counts[3]+' barrio(s) con actividad verificada en los últimos 30 días. Zonas pequeñas se ocultan para proteger privacidad.'
-    :'Sin zonas disponibles todavía. Aparecerán cuando usuarios autenticados utilicen TaskFlow con ubicación autorizada.';
+    ?counts[0]+' país(es), '+counts[1]+' región(es) y '+counts[2]+' ciudad(es) elegidos para publicidad en los últimos 30 días.'
+    :'Aún no hay zonas elegidas. Puedes crear campañas generales.';
    tfGeoRender('');
   }catch(e){
    if(tfGeoUid===uid){
     tfGeoLoaded=false;tfGeoAreas=[];tfGeoLastAt=0;
-    if(info)info.textContent='No se pudo verificar el inventario de ubicaciones activas. No se permiten nuevas zonas hasta recuperar la conexión.';
+    if(info)info.textContent='No se pudo consultar las zonas. Puedes elegir anuncios generales.';
     tfGeoRender('');
    }
   }
@@ -1967,7 +2006,7 @@ function initials(n,e){const p=(clean(n)||clean(e)||'TF').split(/\s+/).filter(Bo
   }]:[];
   const source=Array.isArray(c.ads)?c.ads:fallbackAd;
   const ads=source.map(normalizeAd);
-  return {...c,ads,adCount:ads.length,campaignGroup:clean(c.campaignGroup)||clean(c.name)||'Sin agrupar',status:c.status||'draft',
+  return {...c,ads,adCount:ads.length,interestTopics:normalizeInterests(c.interestTopics),campaignGroup:clean(c.campaignGroup)||clean(c.name)||'Sin agrupar',status:c.status||'draft',
    approvalStatus:c.approvalStatus||'pending',budgetDistribution:c.budgetDistribution||'system',
    budgetType:c.budgetType||'daily',budget:Number(c.budget)||0,requestedImpressions:Number.isSafeInteger(Number(c.requestedImpressions))&&Number(c.requestedImpressions)>=0&&Number(c.requestedImpressions)<=10000000?Number(c.requestedImpressions):0,abTest:c.abTest===true,deliveryStrategy:['balanced','reach','steady'].includes(c.deliveryStrategy)?c.deliveryStrategy:'balanced',frequencyCap:[1,2,3].includes(Number(c.frequencyCap))?Number(c.frequencyCap):3};
  }
@@ -2192,7 +2231,7 @@ async function recoverAdministrativeDelivery(){
 }
 function toPublicCampaign(c){
  const n=normalizeCampaign(c);
- return {campaignId:c.id,objective:c.objective||'awareness',status:c.status,approvalStatus:c.approvalStatus||'pending',placement:c.placement,country:c.country||'',region:c.region||'',city:c.city||'',neighborhood:c.neighborhood||'',radius:Number(c.radius)||0,ageMin:Number(c.ageMin)||18,ageMax:Number(c.ageMax)||65,start:c.start||'',end:c.end||'',ads:n.ads.filter(a=>a.src&&a.mediaMeta).map(a=>({id:a.id,name:a.name||'',src:a.src,type:a.mediaMeta?.kind==='video'?'video':(String(a.mediaMeta?.mime||'').toLowerCase()==='image/gif'?'gif':'image'),destination:a.destination||'',ctaLabel:goalDetails(c.objective).cta,sound:!!a.sound,width:Number(a.mediaMeta?.width)||0,height:Number(a.mediaMeta?.height)||0,duration:Number(a.mediaMeta?.duration)||0})),updatedAt:now()}
+ return {campaignId:c.id,objective:c.objective||'awareness',interestTopics:n.interestTopics,status:c.status,approvalStatus:c.approvalStatus||'pending',placement:c.placement,country:c.country||'',region:c.region||'',city:c.city||'',neighborhood:c.neighborhood||'',radius:Number(c.radius)||0,ageMin:Number(c.ageMin)||18,ageMax:Number(c.ageMax)||65,start:c.start||'',end:c.end||'',ads:n.ads.filter(a=>a.src&&a.mediaMeta).map(a=>({id:a.id,name:a.name||'',src:a.src,type:a.mediaMeta?.kind==='video'?'video':(String(a.mediaMeta?.mime||'').toLowerCase()==='image/gif'?'gif':'image'),destination:a.destination||'',ctaLabel:goalDetails(c.objective).cta,sound:!!a.sound,width:Number(a.mediaMeta?.width)||0,height:Number(a.mediaMeta?.height)||0,duration:Number(a.mediaMeta?.duration)||0})),updatedAt:now()}
 }
 // Notificación anónima a TaskFlow: solo avisa que cambió el catálogo público.
 function notifyTaskFlowAdsChanged(){
@@ -2240,9 +2279,9 @@ async function syncPublicCampaign(c){
    console.warn('ADS: publicación no confirmada:',error?.code||error?.message);
    throw new Error('No se confirmó la publicación de la campaña. Comprueba la conexión e inténtalo nuevamente.');
   }
+  const synchronized=await syncPrivateDelivery(c.id,undefined,true);
   notifyTaskFlowAdsChanged();
-  if(!await syncPrivateDelivery(c.id,undefined,true))
-   throw new Error('El catálogo se actualizó, pero el motor privado no confirmó la sincronización. No se puede afirmar que los anuncios estén disponibles. Reintenta la sincronización.');
+  if(!synchronized)throw new Error('El catálogo se actualizó, pero el motor privado no confirmó la sincronización. Revisa la segmentación e inténtalo nuevamente.');
   return true;
  }
  let removed=false;
@@ -3081,7 +3120,7 @@ function setStep(n){
 function resetForm(){
  initWorldwideCountries();
  editingId=null;objective='awareness';pendingMedia=null;existingMediaMeta=null;adDrafts=[];currentAdDraftId=null;
- $('campaignForm').reset();tfGeoPreferred=null;$('country').value='';$('campaignName').value='';$('campaignGroup').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';$('deliveryStrategy').value='balanced';$('frequencyCap').value='3';$('abTest').checked=false;$('requestedImpressions').value='0';
+ $('campaignForm').reset();setCampaignInterests();tfGeoPreferred=null;$('country').value='';$('campaignName').value='';$('campaignGroup').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';$('deliveryStrategy').value='balanced';$('frequencyCap').value='3';$('abTest').checked=false;$('requestedImpressions').value='0';
  updateObjectiveExperience();
  qa('input[name="placement"]').forEach((x,i)=>x.checked=i===0);
  const sys=qa('input[name="budgetDistribution"]').find(x=>x.value==='system');if(sys)sys.checked=true;
@@ -3093,7 +3132,7 @@ function resetForm(){
 function openNew(){resetForm();$('campaignModal').hidden=false}
 async function openEdit(id){
  const c=campaigns.find(x=>x.id===id);if(!c)return;
- resetForm();editingId=id;objective=c.objective||'awareness';
+ resetForm();editingId=id;objective=c.objective||'awareness';setCampaignInterests(c.interestTopics);
  $('modalEyebrow').textContent='Editar campaña';$('modalTitle').textContent='Editar campaña publicitaria';$('campaignName').value=c.name||'';$('campaignGroup').value=c.campaignGroup||c.name||'';
  updateObjectiveExperience();
  qa('input[name="placement"]').forEach(x=>x.checked=x.value===(c.placement||'banner'));
@@ -3110,12 +3149,14 @@ function validateStep(){
  msg('');
  if(step===1&&!clean($('campaignName').value)){msg('Escribe el nombre de la campaña.','error');return false}
  if(step===2){
-  const country=$('country').value;
-  if(!tfGeoLoaded||!country||(country!=='ALL'&&!tfGeoAreas.some(x=>x.level==='country'&&x.country===country))){msg('Elige un país con usuarios activos confirmados. Actualiza el inventario de zonas.','error');return false}
-  const region=$('region').value,city=$('city').value,neighborhood=$('neighborhood').value;
-  if(region&&!tfGeoAreas.some(x=>x.level==='region'&&x.country===country&&x.region===region)){msg('La región no tiene suficiente actividad reciente.','error');return false}
-  if(city&&!tfGeoAreas.some(x=>x.level==='city'&&x.country===country&&x.region===region&&x.city===city)){msg('La ciudad no tiene suficiente actividad reciente.','error');return false}
-  if(neighborhood&&!tfGeoAreas.some(x=>x.level==='neighborhood'&&x.country===country&&x.region===region&&x.city===city&&x.neighborhood===neighborhood)){msg('El barrio no tiene suficiente actividad reciente.','error');return false}
+  const configured=editingId?campaigns.find(c=>c.id===editingId):null;
+  const country=$('country').value,region=$('region').value,city=$('city').value,neighborhood=$('neighborhood').value;
+  const sameCountry=configured?.country===country,sameRegion=sameCountry&&(configured.region||'')===region;
+  const sameCity=sameRegion&&(configured.city||'')===city,sameNeighborhood=sameCity&&(configured.neighborhood||'')===neighborhood;
+  if(!country||(country!=='ALL'&&!sameCountry&&(!tfGeoLoaded||!tfGeoAreas.some(x=>x.level==='country'&&x.country===country)))){msg('Elige una zona disponible o selecciona anuncios generales.','error');return false}
+  if(region&&!sameRegion&&!tfGeoAreas.some(x=>x.level==='region'&&x.country===country&&x.region===region)){msg('La región no tiene suficiente actividad reciente.','error');return false}
+  if(city&&!sameCity&&!tfGeoAreas.some(x=>x.level==='city'&&x.country===country&&x.region===region&&x.city===city)){msg('La ciudad no tiene suficiente actividad reciente.','error');return false}
+  if(neighborhood&&!sameNeighborhood&&!tfGeoAreas.some(x=>x.level==='neighborhood'&&x.country===country&&x.region===region&&x.city===city&&x.neighborhood===neighborhood)){msg('El barrio no tiene suficiente actividad reciente.','error');return false}
   if(country==='ALL'&&(clean($('region').value)||clean($('city').value)||clean($('neighborhood').value))){msg('Para segmentar por región o ciudad, selecciona primero un país concreto.','error');return false}
   const min=Number($('ageMin').value),max=Number($('ageMax').value);if(min<13||max>65||min>max){msg('Revisa el rango de edad.','error');return false}
  }
@@ -3165,7 +3206,7 @@ async function saveCampaign(){
   }
   msg('Guardando datos de la campaña...');
   const first=cleanAds[0]||{},approvalStatus=existing?.approvalStatus==='approved'?'pending':(existing?.approvalStatus||'pending');
-  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),campaignGroup:clean($('campaignGroup').value)||clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),neighborhood:clean($('neighborhood').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),requestedImpressions:Number($('requestedImpressions').value)||0,start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
+  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),campaignGroup:clean($('campaignGroup').value)||clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),interestTopics:readCampaignInterests(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),neighborhood:clean($('neighborhood').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),requestedImpressions:Number($('requestedImpressions').value)||0,start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
   await syncCampaignDoc(c);
   msg('Confirmando el estado de la campaña...');
   await syncPublicCampaign(c);
@@ -3201,7 +3242,7 @@ async function saveDraft(){
  const first=ads[0]||{};
  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name,campaignGroup:clean($('campaignGroup').value)||name,objective,
   status:'draft',approvalStatus:existing?.approvalStatus==='rejected'?'rejected':'pending',
-  placement:selectedPlacement(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),
+  placement:selectedPlacement(),interestTopics:readCampaignInterests(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),neighborhood:clean($('neighborhood').value),
   radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,
   budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,
   budgetDistribution:currentBudgetMode(),abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),requestedImpressions:Number($('requestedImpressions').value)||0,start:$('startDate').value,end:$('endDate').value,
