@@ -877,7 +877,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #moduleContent #tfAdsObjectiveResults td{vertical-align:middle}
 @media(max-width:600px){#moduleContent .tf-ads-private-key{font-size:11px}#moduleContent #tfAdsObjectiveResults table{min-width:660px}}
 </style>
-<script defer src="./ads-manager-modules.js?v=20261112-preferencias-ads"></script>
+<script defer src="./ads-manager-modules.js?v=20261118-catalogo"></script>
 <style id="tfAdsCrystalizedHero2026">
 /* Fondo animado exclusivo del encabezado de inicio de sesión; no modifica el formulario. */
 #authView .auth-hero{
@@ -2087,32 +2087,55 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
   }
  }
 
-let ownerPublicationRecovery=Promise.resolve();
-async function loadCampaigns(){
- const cache=readJSON(CAMPAIGN_CACHE_KEY+(currentUser?.id||''),[]);
+let stopCampaignWatch=null,campaignWatchGeneration=0;
+function disconnectCampaignWatch(){
+ campaignWatchGeneration++;
+ if(stopCampaignWatch)stopCampaignWatch();
+ stopCampaignWatch=null;
+}
+function loadCampaigns(){
+ disconnectCampaignWatch();
+ const uid=currentUser?.id,generation=campaignWatchGeneration;
+ const current=()=>generation===campaignWatchGeneration&&currentUser?.id===uid&&fbAuth?.currentUser?.uid===uid;
+ const cache=readJSON(CAMPAIGN_CACHE_KEY+(uid||''),[]);
  campaigns=Array.isArray(cache)?cache.map(normalizeCampaign):[];campaigns.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));renderAll();
- if(!currentUser||!fbDb)return campaigns;
- try{
-  const snap=await campaignsRef(currentUser.id).get({source:'server'}),remote=[];snap.forEach(doc=>remote.push(normalizeCampaign({...doc.data(),id:doc.id})));
-  const pending=campaigns.filter(c=>c.localPendingSync);
+ if(!uid||!fbDb)return;
+ const query=campaignsRef(uid);
+ let initialized=false;
+ function accept(snap){
+  if(!current()||snap.metadata?.fromCache||snap.metadata?.hasPendingWrites)return;
+  const remote=snap.docs.map(doc=>normalizeCampaign({...doc.data(),id:doc.id}));
   const index=new Map(remote.map(c=>[c.id,c]));
-  for(const c of pending)index.set(c.id,c);
-  campaigns=[...index.values()].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
-  writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns);renderAll();
-  // Reparar catálogo público solo de campañas activas y aprobadas en el servidor.
-  const ready=remote.filter(c=>c.status==='active'&&c.approvalStatus==='approved'&&!deliveryConflict(c)).slice(0,50);
-  const restoreJobs=[];
-  for(let i=0;i<ready.length;i+=3){
-   restoreJobs.push(Promise.allSettled(ready.slice(i,i+3).map(c=>syncPublicCampaign(c))).then(results=>{
-    const failures=results.filter(result=>result.status==='rejected').length;
-    if(failures)console.warn('ADS: campañas aprobadas no publicadas:',failures);
-   }));
+  for(const c of campaigns){
+   const saved=index.get(c.id);
+   if(c.localPendingSync&&(!saved||String(c.updatedAt)>String(saved.updatedAt)))index.set(c.id,c);
   }
-  ownerPublicationRecovery=Promise.allSettled(restoreJobs);
-  const localOnly=cache.filter(c=>c.status==='active'&&!remote.some(x=>x.id===c.id));
-  if(localOnly.length)toast(localOnly.length+' campaña(s) activas solo en este dispositivo: no se encontraron publicadas en Firebase.');
- }catch(e){console.warn('ADS campaigns load:',e);toast('Sincronización remota no disponible; se muestra la copia local.')}
- return campaigns
+  campaigns=[...index.values()].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+  for(const id of selectedCampaignIds)if(!index.has(id))selectedCampaignIds.delete(id);
+  writeJSON(CAMPAIGN_CACHE_KEY+uid,campaigns);renderAll();
+  if(initialized)return;
+  initialized=true;
+  const localOnly=Array.isArray(cache)&&cache.some(c=>c.status==='active'&&!remote.some(x=>x.id===c.id));
+  if(localOnly)toast('Hay campañas que solo están guardadas en este dispositivo.');
+  void (async()=>{
+   const ready=remote.filter(c=>c.status==='active'&&c.approvalStatus==='approved'&&!deliveryConflict(c));
+   for(let i=0;i<ready.length&&current();i+=3){
+    const results=await Promise.allSettled(ready.slice(i,i+3).map(c=>syncPublicCampaign(c)));
+    if(results.some(r=>r.status==='rejected'))console.warn('ADS: quedan campañas por sincronizar.');
+   }
+   if(current())await recoverOwnDeliveryCampaigns();
+  })().catch(error=>console.warn('ADS: sincronización del catálogo pendiente.',error?.code));
+ }
+ function subscribe(){
+  if(!current())return;
+  stopCampaignWatch=query.onSnapshot({includeMetadataChanges:true},accept,error=>{
+   if(!current())return;
+   console.warn('ADS: conexión de campañas interrumpida.',error?.code);
+   const retry=setTimeout(subscribe,30000);
+   stopCampaignWatch=()=>clearTimeout(retry);
+  });
+ }
+ subscribe();
 }
 function saveCampaigns(){if(currentUser)writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns)}
 async function syncCampaignDoc(c){
@@ -2247,6 +2270,18 @@ function toPublicCampaign(c){
  const n=normalizeCampaign(c);
  return {campaignId:c.id,objective:c.objective||'awareness',interestTopics:n.interestTopics,status:c.status,approvalStatus:c.approvalStatus||'pending',placement:c.placement,country:c.country||'',region:c.region||'',city:c.city||'',neighborhood:c.neighborhood||'',radius:Number(c.radius)||0,ageMin:Number(c.ageMin)||18,ageMax:Number(c.ageMax)||65,start:c.start||'',end:c.end||'',ads:n.ads.filter(a=>a.src&&a.mediaMeta).map(a=>({id:a.id,name:a.name||'',src:a.src,type:a.mediaMeta?.kind==='video'?'video':(String(a.mediaMeta?.mime||'').toLowerCase()==='image/gif'?'gif':'image'),destination:a.destination||'',ctaLabel:goalDetails(c.objective).cta,sound:!!a.sound,width:Number(a.mediaMeta?.width)||0,height:Number(a.mediaMeta?.height)||0,duration:Number(a.mediaMeta?.duration)||0})),updatedAt:now()}
 }
+function sameCampaignData(a,b){
+ // Firestore no garantiza el orden de las claves de los mapas.
+ const ordered=(_,value)=>value&&typeof value==='object'&&!Array.isArray(value)
+  ?Object.fromEntries(Object.keys(value).sort().map(k=>[k,value[k]])):value;
+ return JSON.stringify(a,ordered)===JSON.stringify(b,ordered);
+}
+function publicationMatches(snapshot,publication){
+ if(!snapshot.exists)return false;
+ const {updatedAt,...stored}=snapshot.data();
+ const {updatedAt:generated,...expected}=publication;
+ return sameCampaignData(stored,expected);
+}
 // Notificación anónima a TaskFlow: solo avisa que cambió el catálogo público.
 function notifyTaskFlowAdsChanged(){
  try{localStorage.setItem('taskflow_ads_public_changed_at',String(Date.now()))}catch(_){}
@@ -2299,9 +2334,11 @@ async function syncPublicCampaign(c){
   if(!doc.exists)throw new Error('La campaña ya no está disponible.');
   const current=normalizeCampaign({...doc.data(),id:c.id,ownerUid:uid});
   const {updatedAt:publicationTime,...currentPublication}=toPublicCampaign(current);
-  if(current.updatedAt!==c.updatedAt||JSON.stringify(currentPublication)!==JSON.stringify(publication))
+  if(current.updatedAt!==c.updatedAt||!sameCampaignData(currentPublication,publication))
    throw new Error('La campaña cambió mientras se sincronizaba. Actualiza la lista e inténtalo nuevamente.');
-  if(allowed)transaction.set(published,{...publication,updatedAt},{merge:false});
+  if(allowed){
+   if(!publicationMatches(currentPublic,publication))transaction.set(published,{...publication,updatedAt},{merge:false});
+  }
   else if(currentPublic.exists)transaction.delete(published);
  }),ADS_REMOTE_WRITE_MS,'La publicación no pudo confirmarse. Comprueba la conexión.');
  notifyTaskFlowAdsChanged();
@@ -2341,10 +2378,10 @@ function clearAdminView(){
  if(module)module.replaceChildren();
  if($('placeholderView')?.classList.contains('active'))showView('overview');
 }
-async function enterApp(){
+function enterApp(){
  syncAdminNavigation();
  if(!isAdsAdmin)clearAdminView();
- $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);await loadCampaigns();void ownerPublicationRecovery.then(()=>recoverOwnDeliveryCampaigns());renderAll();animateApp()
+ $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);loadCampaigns();animateApp()
 }
 async function logout(){
  if(!fbAuth)return;
@@ -2358,6 +2395,15 @@ async function logout(){
 }
 async function handleAuthState(user){
  authReady=true;
+ disconnectCampaignWatch();
+ disconnectAdminWatch();
+ const generation=campaignWatchGeneration;
+ const isCurrent=()=>generation===campaignWatchGeneration&&fbAuth?.currentUser?.uid===user?.uid;
+ if(!user||currentUser?.id!==user.uid){
+  campaigns=[];selectedCampaignIds.clear();isAdsAdmin=false;currentUser=null;
+  if(!$('campaignModal').hidden)closeModal();
+  editingId=null;$('appView').hidden=true;
+ }
  if(!user){
   const firstDisplay=!authScreenInitialized;authScreenInitialized=true;
   isAdsAdmin=false;currentUser=null;syncAdminNavigation();clearAdminView();campaigns=[];
@@ -2367,10 +2413,13 @@ async function handleAuthState(user){
  }
  authScreenInitialized=true;
  const business=await getBusiness(user.uid);
+ if(!isCurrent())return;
  if(business&&business.accountStatus==='suspended'){authMsg('Esta cuenta comercial está suspendida.','error');await fbAuth.signOut();return}
- isAdsAdmin=await getAdminClaim(user);
+ const admin=await getAdminClaim(user);
+ if(!isCurrent())return;
+ isAdsAdmin=admin;
  currentUser={id:user.uid,uid:user.uid,name:user.displayName||business?.ownerName||user.email||'Usuario',company:business?.businessName||'Cuenta comercial',email:user.email||'',accountStatus:business?.accountStatus||'active'};
- await enterApp();
+ enterApp();
  if(isAdsAdmin){void loadAdminReview();void recoverAdministrativeDelivery()}
 }
 function objectiveLabel(v){return {awareness:'Reconocimiento',traffic:'Tráfico',engagement:'Interacción',leads:'Clientes potenciales',sales:'Ventas',app:'Aplicación'}[v]||v}
@@ -2423,7 +2472,7 @@ function publicationState(c){
  if(deliveryConflict(c))return 'Segmentación no disponible · sin entrega';
  return 'Aprobada · habilitada según audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
-function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openNew,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,syncPrivateDelivery,renderAll,showView,duplicateCampaign,toast}}
+function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openNew,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,syncPrivateDelivery,deliveryConflict,toPublicCampaign,publicationMatches,renderAll,showView,duplicateCampaign,toast}}
 function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary();renderObjectiveInsights();if(window.TaskFlowADSModules?.paintOverview&&currentUser)void window.TaskFlowADSModules.paintOverview(adsModulesContext(),false);if(window.TaskFlowADSWallet?.onAuth&&currentUser)window.TaskFlowADSWallet.onAuth(adsModulesContext())}
 function fitSummaryMetricValues(){
  // Mantiene las cifras completas cuando caben; usa formato compacto solo si es necesario.
@@ -2644,7 +2693,7 @@ function renderModule(name){const root=$('moduleContent');if(!root)return;if(win
   +'<div class="tf-ads-admin-stats"><article class="tf-ads-admin-stat"><span>Pendientes</span><strong id="adminPendingCount">—</strong><small>Por revisar</small></article><article class="tf-ads-admin-stat"><span>Aprobadas</span><strong id="adminApprovedCount">—</strong><small>Revisadas</small></article><article class="tf-ads-admin-stat"><span>Rechazadas</span><strong id="adminRejectedCount">—</strong><small>Revisadas</small></article><article class="tf-ads-admin-stat"><span>Campañas</span><strong id="adminCampaignTotal">—</strong><small>Total registradas</small></article></div>'
   +'<div class="tf-ads-admin-review"><div class="tf-ads-admin-review-head"><div><h3>Campañas pendientes de aprobación</h3><p>Solo se muestran solicitudes que necesitan una decisión.</p></div><button type="button" class="tf-ads-admin-refresh" id="adminReviewRefresh"><svg class="tf-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>Actualizar</button></div><div id="adminReviewList" class="tf-ads-admin-feedback" role="status" aria-live="polite">Consultando campañas...</div></div><div class="tf-ads-admin-review tf-ads-admin-goal-review"><div class="tf-ads-admin-review-head"><div><h3>Solicitudes de impresiones verificadas</h3><p>La autorización exige historial comprobado. No supone ventas ni garantiza tráfico futuro.</p></div></div><div id="adminImpressionList" class="tf-ads-admin-feedback" role="status" aria-live="polite">Consultando solicitudes...</div></div></section>';
    $('adminReviewRefresh').addEventListener('click',()=>{void loadAdminReview()});
-   void loadAdminReview();
+   watchAdminReview();
  }else root.innerHTML='';
 }
 
@@ -2720,24 +2769,31 @@ function renderAdminImpressionRequests(items){
 let approvedAdsRecoveryBusy=false,approvedAdsRecoveryAt=0;
 async function reconcileApprovedAds(items){
  if(!isAdsAdmin||!fbAuth?.currentUser||!currentUser||!items?.length||approvedAdsRecoveryBusy||Date.now()-approvedAdsRecoveryAt<180000)return;
+ const reviewer=currentUser.id;
  approvedAdsRecoveryBusy=true;approvedAdsRecoveryAt=Date.now();
  let recovered=0,failed=0,skipped=0;
  try{
   for(let i=0;i<items.length;i+=3){
    const batch=await Promise.all(items.slice(i,i+3).map(async c=>{
     try{
-     const own=await withDeadline(fbDb.collection('users').doc(c.ownerUid).collection('adsCampaigns').doc(c.id).get({source:'server'}),12000,'No se pudo comprobar la campaña original.');
+     const source=campaignsRef(c.ownerUid).doc(c.id);
+     const own=await withDeadline(source.get({source:'server'}),12000,'No se pudo comprobar la campaña original.');
      if(!own.exists)return 'skipped';
      const actual=normalizeCampaign({...own.data(),id:c.id,ownerUid:c.ownerUid});
-     if(actual.status!=='active'||actual.approvalStatus!=='approved')return 'skipped';
+     if(actual.status!=='active'||actual.approvalStatus!=='approved'||deliveryConflict(actual))return 'skipped';
      if(!campaignReady(actual))throw Error('Los creativos no están listos.');
      await verifyPublishedCreatives(actual);
      const publicRef=publicCampaignRef(actual.id);
-     const existing=await withDeadline(publicRef.get({source:'server'}),12000,'No se pudo comprobar el catálogo público.');
-     if(!existing.exists){
-      await withDeadline(publicRef.set(toPublicCampaign(actual),{merge:false}),ADS_REMOTE_WRITE_MS,'No se confirmó la restauración del anuncio.');
-      notifyTaskFlowAdsChanged();
-     }
+     const publication=toPublicCampaign(actual);
+     const result=await withDeadline(fbDb.runTransaction(async tx=>{
+      const [fresh,visible]=await Promise.all([tx.get(source),tx.get(publicRef)]);
+      if(!isAdsAdmin||fbAuth?.currentUser?.uid!==reviewer||!fresh.exists||!sameCampaignData(fresh.data(),own.data()))return 'changed';
+      if(publicationMatches(visible,publication))return 'current';
+      tx.set(publicRef,publication,{merge:false});
+      return 'restored';
+     }),ADS_REMOTE_WRITE_MS,'No se confirmó la restauración del anuncio.');
+     if(result==='changed')return 'skipped';
+     if(result==='restored')notifyTaskFlowAdsChanged();
      if(!await syncPrivateDelivery(actual.id,actual.ownerUid,true))throw Error('Distribución privada no confirmada.');
      return 'recovered';
     }catch(error){
@@ -2753,18 +2809,44 @@ async function reconcileApprovedAds(items){
   else if(recovered)toast('Distribución privada confirmada para '+recovered+' campaña(s) aprobadas.');
  }finally{approvedAdsRecoveryBusy=false}
 }
-async function loadAdminReview(){
+let stopAdminWatch=null,adminReadVersion=0;
+function disconnectAdminWatch(){
+ adminReadVersion++;
+ if(stopAdminWatch)stopAdminWatch();
+ stopAdminWatch=null;
+}
+function watchAdminReview(){
+ disconnectAdminWatch();
+ const reviewer=currentUser?.id,root=$('adminReviewList');
+ if(!reviewer||!isAdsAdmin||!root)return;
+ const current=()=>root.isConnected&&isAdsAdmin&&fbAuth?.currentUser?.uid===reviewer;
+ function subscribe(){
+  if(!current())return;
+  stopAdminWatch=fbDb.collectionGroup('adsCampaigns').onSnapshot({includeMetadataChanges:true},snap=>{
+   if(current()&&!snap.metadata.fromCache&&!snap.metadata.hasPendingWrites)void loadAdminReview(snap);
+  },()=>{
+   if(!current())return;
+   void loadAdminReview();
+   const retry=setTimeout(subscribe,30000);
+   stopAdminWatch=()=>clearTimeout(retry);
+  });
+ }
+ subscribe();
+}
+async function loadAdminReview(liveSnapshot){
  const root=$('adminReviewList'),refresh=$('adminReviewRefresh');
  if(!root||!isAdsAdmin||!currentUser||!fbDb)return;
  if(root.dataset.reviewBusy==='true')return;
+ const reviewer=currentUser.id,version=++adminReadVersion;
+ const current=()=>version===adminReadVersion&&root.isConnected&&isAdsAdmin&&fbAuth?.currentUser?.uid===reviewer;
  if(refresh)refresh.disabled=true;
  root.className='tf-ads-admin-feedback';
  root.textContent='Consultando campañas...';
  const setMetric=(id,value)=>{const el=$(id);if(el)el.textContent=String(value)};
  try{
   // Una consulta sin filtros ni ordenamiento; necesita reglas de grupo, no un índice compuesto.
-  const snap=await withDeadline(fbDb.collectionGroup('adsCampaigns').get({source:'server'}),18000,'La consulta administrativa tardó demasiado.');
-  if(!root.isConnected||!isAdsAdmin)return;
+  const snap=liveSnapshot||await withDeadline(fbDb.collectionGroup('adsCampaigns').get({source:'server'}),18000,'La consulta administrativa tardó demasiado.');
+  if(!current())return;
   const pending=[],goalRequests=[],approvedActive=[],counts={pending:0,approved:0,rejected:0};
   snap.forEach(doc=>{
    const ownerUid=String(doc.ref?.parent?.parent?.id||doc.data()?.ownerUid||'');
@@ -2805,7 +2887,9 @@ async function loadAdminReview(){
    root.dataset.reviewBusy='true';
    root.querySelectorAll('[data-admin-approve],[data-admin-reject]').forEach(el=>el.disabled=true);
    try{
-    await adminReviewCampaign(parts[0],parts[1],!!btn.dataset.adminApprove);
+    const displayed=pending.find(c=>c.ownerUid===parts[0]&&c.id===parts[1]);
+    if(!displayed)throw new Error('La campaña cambió. Actualiza la lista de revisión.');
+    await adminReviewCampaign(parts[0],parts[1],!!btn.dataset.adminApprove,displayed);
     root.dataset.reviewBusy='false';
     await loadAdminReview();
    }catch(error){
@@ -2817,6 +2901,7 @@ async function loadAdminReview(){
    }
   };
  }catch(e){
+  if(!current())return;
   console.warn('Consulta de campañas ADS fallida:',e?.code||e?.message);
   ['adminPendingCount','adminApprovedCount','adminRejectedCount','adminCampaignTotal'].forEach(id=>setMetric(id,'—'));
   const code=String(e?.code||'').toLowerCase();
@@ -2827,50 +2912,63 @@ async function loadAdminReview(){
   root.className='tf-ads-admin-feedback tf-ads-admin-error';
   root.innerHTML='<strong>No se pudo consultar las campañas</strong><p>'+escapeHtml(explanation)+'</p>';
  }finally{
-  if(refresh&&refresh.isConnected)refresh.disabled=false;
+  if(current()&&refresh?.isConnected)refresh.disabled=false;
  }
 }
-async function adminReviewCampaign(ownerUid,id,approve){
- if(!currentUser||!isAdsAdmin||!fbAuth?.currentUser||!await getAdminClaim(fbAuth.currentUser)){
+async function adminReviewCampaign(ownerUid,id,approve,displayed){
+ const reviewer=currentUser?.id;
+ if(!reviewer||!isAdsAdmin||fbAuth?.currentUser?.uid!==reviewer||!await getAdminClaim(fbAuth.currentUser)){
   isAdsAdmin=false;syncAdminNavigation();
   throw new Error('La sesión no tiene autorización administrativa vigente.');
  }
- const ref=fbDb.collection('users').doc(ownerUid).collection('adsCampaigns').doc(id);
+ const ref=campaignsRef(ownerUid).doc(id),published=publicCampaignRef(id);
  const snap=await withDeadline(ref.get({source:'server'}),12000,'No fue posible consultar la campaña.');
  if(!snap.exists)throw new Error('Esta campaña ya no está disponible.');
  const c=normalizeCampaign({...snap.data(),id,ownerUid});
+ if(displayed&&!sameCampaignData(c,displayed))throw new Error('La campaña cambió desde que se abrió la lista. Revisa la versión actual.');
+ if(c.approvalStatus!=='pending')throw new Error('Esta campaña ya tiene una decisión de revisión. Actualiza la lista.');
  c.approvalStatus=approve?'approved':'rejected';
  c.reviewedAt=now();
- c.reviewedBy=currentUser.id;
+ c.reviewedBy=reviewer;
  const deliver=approve&&c.status==='active'&&campaignReady(c);
  const conflict=deliver&&deliveryConflict(c);
  if(conflict)throw new Error(conflict);
  if(deliver)await verifyPublishedCreatives(c);
  // La aprobación y la publicación se confirman en una sola operación atómica.
- const batch=fbDb.batch();
- batch.update(ref,{approvalStatus:c.approvalStatus,reviewedAt:c.reviewedAt,reviewedBy:c.reviewedBy});
- if(deliver)batch.set(publicCampaignRef(id),toPublicCampaign(c),{merge:false});
- else batch.delete(publicCampaignRef(id));
- await withDeadline(batch.commit(),ADS_REMOTE_WRITE_MS,'No fue posible confirmar la revisión. Comprueba la conexión.');
+ const decision={approvalStatus:c.approvalStatus,reviewedAt:c.reviewedAt,reviewedBy:reviewer};
+ const publication=deliver?toPublicCampaign(c):null;
+ await withDeadline(fbDb.runTransaction(async tx=>{
+  const current=await tx.get(ref);
+  if(!isAdsAdmin||currentUser?.id!==reviewer||fbAuth?.currentUser?.uid!==reviewer)throw new Error('La sesión de revisión cambió.');
+  if(!current.exists||!sameCampaignData(current.data(),snap.data()))throw new Error('La campaña cambió durante la revisión. Vuelve a revisar la versión actual.');
+  tx.update(ref,decision);
+  if(publication)tx.set(published,publication,{merge:false});
+  else tx.delete(published);
+ }),ADS_REMOTE_WRITE_MS,'No fue posible confirmar la revisión. Comprueba la conexión.');
  notifyTaskFlowAdsChanged();
  const privatelySynced=await syncPrivateDelivery(id,ownerUid,deliver);
  if(deliver&&!privatelySynced){
-  const rollback=fbDb.batch();
-  rollback.update(ref,{approvalStatus:'pending'});
-  rollback.delete(publicCampaignRef(id));
+  let reverted=false;
   try{
-   await withDeadline(rollback.commit(),ADS_REMOTE_WRITE_MS,'No se pudo confirmar la reversión.');
-   notifyTaskFlowAdsChanged();
+   reverted=await withDeadline(fbDb.runTransaction(async tx=>{
+    const current=await tx.get(ref);
+    if(!isAdsAdmin||fbAuth?.currentUser?.uid!==reviewer||!current.exists||!sameCampaignData(current.data(),{...snap.data(),...decision}))return false;
+    tx.update(ref,{approvalStatus:'pending'});
+    tx.delete(published);
+    return true;
+   }),ADS_REMOTE_WRITE_MS,'No se pudo confirmar la reversión.');
+   if(reverted)notifyTaskFlowAdsChanged();
   }catch(error){
    console.warn('ADS: revisión sin distribución privada, reversión no confirmada:',error?.code||error?.message);
    throw new Error('La sincronización falló y no se confirmó la reversión. Comprueba el estado real antes de aprobar nuevamente.');
   }
+  if(!reverted)throw new Error('La campaña recibió otro cambio mientras se confirmaba la entrega. Actualiza la lista para ver su estado.');
   throw new Error('No se confirmó la distribución. La campaña continúa pendiente de aprobación para permitir un reintento.');
  }
  if(!privatelySynced)console.warn('ADS: revisión guardada y sincronización privada pendiente:',id);
  toast(approve?(deliver?'Campaña aprobada y sincronizada; la entrega depende de usuarios elegibles.':'Campaña aprobada; la entrega requiere activación y archivos válidos.'):'Campaña rechazada.');
 }
-function showView(name){if(name==='admin'&&(!isAdsAdmin||!currentUser))return;qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={adsets:['Conjuntos de anuncios','Agrupa conjuntos con presupuesto, audiencia y calendario independientes.'],audiences:['Audiencias','Guarda y aplica segmentaciones a tus campañas.'],creatives:['Creativos','Revisa, previsualiza y edita anuncios.'],reports:['Informes','Eventos publicitarios registrados durante los últimos 30 días.'],conversions:['Medición de resultados','Conecta tu sitio para confirmar visitas, contactos, ventas e instalaciones.'],billing:['Presupuestos','Configura límites de campaña. No son cobros.'],settings:['Configuración','Administra tu perfil comercial y seguridad.'],admin:['Control ADS','Aprueba o rechaza campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp();requestAnimationFrame(fitSummaryMetricValues)}
+function showView(name){if(name==='admin'&&(!isAdsAdmin||!currentUser))return;disconnectAdminWatch();qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={adsets:['Conjuntos de anuncios','Agrupa conjuntos con presupuesto, audiencia y calendario independientes.'],audiences:['Audiencias','Guarda y aplica segmentaciones a tus campañas.'],creatives:['Creativos','Revisa, previsualiza y edita anuncios.'],reports:['Informes','Eventos publicitarios registrados durante los últimos 30 días.'],conversions:['Medición de resultados','Conecta tu sitio para confirmar visitas, contactos, ventas e instalaciones.'],billing:['Presupuestos','Configura límites de campaña. No son cobros.'],settings:['Configuración','Administra tu perfil comercial y seguridad.'],admin:['Control ADS','Aprueba o rechaza campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp();requestAnimationFrame(fitSummaryMetricValues)}
 
 function currentBudgetMode(){return qa('input[name="budgetDistribution"]').find(x=>x.checked)?.value||'system'}
 function equalBudgetShares(total,count){

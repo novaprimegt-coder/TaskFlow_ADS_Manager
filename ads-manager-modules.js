@@ -3,7 +3,6 @@
 'use strict';
 const METRICS_URL='https://taskflow-ads-media.vercel.app/api/analytics';
 const VERIFIED_METRICS_URL='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/metrics';
-const PUBLIC_URL='https://firestore.googleapis.com/v1/projects/taskflow-b0ece/databases/(default)/documents/adsPublicCampaigns?pageSize=100';
 const number=v=>new Intl.NumberFormat('es-GT').format(Number(v)||0);
 const money=v=>new Intl.NumberFormat('es-GT',{style:'currency',currency:'GTQ'}).format(Number(v)||0);
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -156,26 +155,32 @@ async function checkDelivery(api){
  if(!target){target=document.createElement('div');target.id='tfAdsDeliveryCheck';overview.appendChild(target)}
  target.innerHTML='<p class="tf-tool-loading">Comprobando catálogo público y archivos de los anuncios…</p>';
  try{
-  const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),13000);
-  let resp;try{resp=await fetch(PUBLIC_URL,{method:'GET',credentials:'omit',cache:'no-store',signal:ctrl.signal})}finally{clearTimeout(timeout)}
-  if(!resp.ok)throw new Error('El catálogo público respondió HTTP '+resp.status);
-  const data=await resp.json(),ids=new Set((data.documents||[]).map(d=>String(d.name||'').split('/').pop()));
-  if(api.currentUser.id!==owner||!target.isConnected)return;
   const rows=[];
   for(const c of api.campaigns){
+   if(api.fbAuth?.currentUser?.uid!==owner||!target.isConnected)return;
    let message='',kind='warn',canRepair=false;
+   const conflict=api.deliveryConflict(c);
    if(c.status!=='active')message='Borrador o pausada. No se entrega.';
    else if(c.approvalStatus!=='approved')message='Falta aprobación administrativa. No se entrega.';
-   else if(!ids.has(c.id)){message='Aprobada, pero no figura en el catálogo público.';canRepair=true}
+   else if(conflict)message='Sin entrega. '+conflict;
    else if(!Array.isArray(c.ads)||!c.ads.length)message='No hay anuncios con archivos.';
    else{
-    const checks=await Promise.all(c.ads.slice(0,12).map(a=>assetWorks(a,c.placement)));
-    if(checks.every(Boolean)){message='Publicada. Todos los archivos cargaron correctamente.';kind='ok'}
-    else message='Publicada, pero algún archivo no carga o incumple las dimensiones.';
+    try{
+     const ref=api.fbDb.collection('adsPublicCampaigns').doc(c.id);
+     const snapshot=await api.withDeadline(ref.get({source:'server'}),12000,'El catálogo tardó demasiado.');
+     if(!api.publicationMatches(snapshot,api.toPublicCampaign(c))){
+      message=snapshot.exists?'La versión publicada difiere de la campaña aprobada.':'La campaña aprobada todavía no figura en el catálogo.';
+      canRepair=true;
+     }else{
+      const checks=await Promise.all(c.ads.slice(0,12).map(a=>assetWorks(a,c.placement)));
+      if(checks.every(Boolean)){message='Versión publicada y archivos verificados.';kind='ok'}
+      else message='Algún archivo publicado no carga o incumple las dimensiones.';
+     }
+    }catch(_){message='No se pudo consultar esta campaña en el servidor.'}
    }
    rows.push('<article class="tf-tool-delivery-row"><div><b>'+esc(c.name)+'</b><span class="'+(kind==='ok'?'tf-tool-success':'tf-tool-warning')+'">'+esc(message)+'</span></div>'+(canRepair?'<button type="button" data-tf-delivery-resync="'+esc(c.id)+'">Resincronizar publicación</button>':'')+'</article>');
   }
-  target.innerHTML='<div class="tf-tool-delivery-panel"><h3>Comprobación del catálogo</h3><p class="tf-tool-note">Estado de publicación y de carga de archivos. Fechas, permisos y ubicación pueden limitar la entrega final.</p>'+(rows.join('')||'<p class="tf-tool-empty">No hay campañas para comprobar.</p>')+'</div>';
+  if(api.fbAuth?.currentUser?.uid===owner&&target.isConnected)target.innerHTML='<div class="tf-tool-delivery-panel"><h3>Comprobación del catálogo</h3>'+(rows.join('')||'<p class="tf-tool-empty">No hay campañas para comprobar.</p>')+'</div>';
  }catch(e){target.innerHTML='<p class="tf-tool-error">Comprobación no completada: '+esc(e.message||'Error de conexión')+'</p>'}
 }
 
