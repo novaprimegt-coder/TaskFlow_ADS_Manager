@@ -76,6 +76,7 @@ button,input,select,textarea{letter-spacing:0}
 .tf-ads-interest-choices{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}
 .tf-ads-interest-choices label{display:flex;align-items:center;gap:5px;min-height:36px;padding:5px 8px;border:1px solid #cad9eb;border-radius:8px;color:#173955;background:white;font-size:12px;cursor:pointer}
 .tf-ads-interest-choices input{width:16px;height:16px;accent-color:#135ed8}
+.tf-recent-status.tf-recent-status-blocked{color:#8d4b04;background:#fff1d6;border-color:#e6cc96}
 </style>
 <style>
 :root{--tf-blue:#0866ff;--tf-green:#15a05c;--tf-ink:#1c1e21;--tf-muted:#65676b;--tf-border:#d8dde5;--tf-soft:#f5f6f7}
@@ -1795,6 +1796,7 @@ const TF_AD_INTERESTS = {
  technology:'Tecnología',education:'Educación',sports:'Deportes',food:'Comida',entertainment:'Entretenimiento',
  shopping:'Compras',travel:'Viajes',home:'Hogar',business:'Negocios',culture:'Cultura'
 };
+const TF_AD_DELIVERY_TOPICS=new Set(['education','sports']);
 function normalizeInterests(topics){
  return Array.isArray(topics)?Object.keys(TF_AD_INTERESTS).filter(id=>topics.includes(id)):[];
 }
@@ -1802,6 +1804,7 @@ function setCampaignInterests(topics=[]){
  const selected=normalizeInterests(topics), choices=$('tfAdsInterestChoices');
  choices.replaceChildren();
  for(const [id,text] of Object.entries(TF_AD_INTERESTS)){
+  if(!TF_AD_DELIVERY_TOPICS.has(id)&&!selected.includes(id))continue;
   const label=document.createElement('label'), box=document.createElement('input');
   box.type='checkbox';box.value=id;box.checked=selected.includes(id);
   label.append(box,document.createTextNode(text));choices.append(label);
@@ -2097,7 +2100,7 @@ async function loadCampaigns(){
   campaigns=[...index.values()].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
   writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns);renderAll();
   // Reparar catálogo público solo de campañas activas y aprobadas en el servidor.
-  const ready=remote.filter(c=>c.status==='active'&&c.approvalStatus==='approved').slice(0,50);
+  const ready=remote.filter(c=>c.status==='active'&&c.approvalStatus==='approved'&&!deliveryConflict(c)).slice(0,50);
   const restoreJobs=[];
   for(let i=0;i<ready.length;i+=3){
    restoreJobs.push(Promise.allSettled(ready.slice(i,i+3).map(c=>syncPublicCampaign(c))).then(results=>{
@@ -2114,13 +2117,21 @@ async function loadCampaigns(){
 function saveCampaigns(){if(currentUser)writeJSON(CAMPAIGN_CACHE_KEY+currentUser.id,campaigns)}
 async function syncCampaignDoc(c){
  if(!currentUser||!fbDb)throw new Error('No hay sesión activa para guardar los cambios.');
- const ref=campaignsRef(currentUser.id).doc(c.id);
+ const uid=currentUser.id,ref=campaignsRef(uid).doc(c.id);
  const payload=JSON.parse(JSON.stringify(c));
  const requestId='save_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
  payload.ownerUid=currentUser.id;payload.businessName=currentUser.company||'';
  payload.updatedAtServer=firebase.firestore.FieldValue.serverTimestamp();payload.lastSaveRequestId=requestId;
+ const withdraw=payload.status!=='active'||payload.approvalStatus!=='approved';
  try{
-  await withDeadline(ref.set(payload,{merge:true}),ADS_REMOTE_WRITE_MS,'No se confirmó el guardado. Comprueba la conexión e inténtalo de nuevo.');
+  const write=withdraw?fbDb.runTransaction(async transaction=>{
+   const published=publicCampaignRef(c.id),shown=await transaction.get(published);
+   if(currentUser?.id!==uid)throw new Error('La sesión cambió durante el guardado.');
+   transaction.set(ref,payload,{merge:true});
+   if(shown.exists)transaction.delete(published);
+  }):ref.set(payload,{merge:true});
+  await withDeadline(write,ADS_REMOTE_WRITE_MS,'No se confirmó el guardado. Comprueba la conexión e inténtalo de nuevo.');
+  if(withdraw)notifyTaskFlowAdsChanged();
   return true;
  }catch(error){
   // La escritura puede terminar en el servidor mientras vence el plazo local.
@@ -2128,7 +2139,10 @@ async function syncCampaignDoc(c){
   if(error?.code==='ads/timeout'){
    try{
     const snap=await withDeadline(ref.get({source:'server'}),7000,'No se pudo verificar el guardado.');
-    if(snap.exists&&snap.data()?.lastSaveRequestId===requestId)return true;
+    if(snap.exists&&snap.data()?.lastSaveRequestId===requestId){
+     if(withdraw)notifyTaskFlowAdsChanged();
+     return true;
+    }
    }catch(_){ }
   }
   throw error;
@@ -2270,27 +2284,34 @@ async function verifyPublishedCreatives(c){
 }
 async function syncPublicCampaign(c){
  if(!fbDb||!c)return false;
+ const uid=currentUser?.id;
+ if(!uid)throw new Error('Inicia sesión para sincronizar la campaña.');
  const allowed=c.status==='active'&&c.approvalStatus==='approved'&&campaignReady(c);
+ const conflict=allowed&&deliveryConflict(c);
+ if(conflict)throw new Error(conflict);
+ if(allowed)await verifyPublishedCreatives(c);
+ const source=campaignsRef(uid).doc(c.id),published=publicCampaignRef(c.id);
+ const {updatedAt,...publication}=toPublicCampaign(c);
+ // Bloquear la reapertura de una campaña pausada durante la recuperación del catálogo.
+ await withDeadline(fbDb.runTransaction(async transaction=>{
+  if(currentUser?.id!==uid)throw new Error('La sesión cambió durante la publicación.');
+  const [doc,currentPublic]=await Promise.all([transaction.get(source),transaction.get(published)]);
+  if(!doc.exists)throw new Error('La campaña ya no está disponible.');
+  const current=normalizeCampaign({...doc.data(),id:c.id,ownerUid:uid});
+  const {updatedAt:publicationTime,...currentPublication}=toPublicCampaign(current);
+  if(current.updatedAt!==c.updatedAt||JSON.stringify(currentPublication)!==JSON.stringify(publication))
+   throw new Error('La campaña cambió mientras se sincronizaba. Actualiza la lista e inténtalo nuevamente.');
+  if(allowed)transaction.set(published,{...publication,updatedAt},{merge:false});
+  else if(currentPublic.exists)transaction.delete(published);
+ }),ADS_REMOTE_WRITE_MS,'La publicación no pudo confirmarse. Comprueba la conexión.');
+ notifyTaskFlowAdsChanged();
  if(allowed){
-  await verifyPublishedCreatives(c);
-  try{
-   await withDeadline(publicCampaignRef(c.id).set(toPublicCampaign(c),{merge:false}),ADS_REMOTE_WRITE_MS,'La publicación no pudo confirmarse. Revisa tu conexión.');
-  }catch(error){
-   console.warn('ADS: publicación no confirmada:',error?.code||error?.message);
-   throw new Error('No se confirmó la publicación de la campaña. Comprueba la conexión e inténtalo nuevamente.');
-  }
   const synchronized=await syncPrivateDelivery(c.id,undefined,true);
   notifyTaskFlowAdsChanged();
   if(!synchronized)throw new Error('El catálogo se actualizó, pero el motor privado no confirmó la sincronización. Revisa la segmentación e inténtalo nuevamente.');
   return true;
  }
- let removed=false;
- try{
-  await withDeadline(publicCampaignRef(c.id).delete(),9000,'No se pudo retirar el anuncio del catálogo público.');
-  removed=true;notifyTaskFlowAdsChanged();
- }catch(error){console.warn('ADS: retirada pública no confirmada:',error?.code||error?.message)}
  const privateDisabled=await syncPrivateDelivery(c.id);
- if(!removed)throw new Error('No se confirmó la retirada pública del anuncio. Revisa la conexión e inténtalo nuevamente.');
  if(!privateDisabled)console.warn('ADS: anuncio retirado; sincronización privada pendiente:',c.id);
  return false;
 }
@@ -2383,6 +2404,15 @@ function updateObjectiveExperience(){
  qa('#objectiveGrid .choice').forEach(x=>{const selected=x.dataset.objective===objective;x.classList.toggle('active',selected);x.setAttribute('aria-pressed',String(selected))});
 }
 function approvalLabel(v){return {pending:'En revisión',approved:'Aprobada',rejected:'Rechazada'}[v]||'En revisión'}function statusLabel(v){return {draft:'Borrador',active:'Activa',paused:'Pausada'}[v]||v}
+function deliveryConflict(c){
+ const country=String(c.country||'').trim().toUpperCase();
+ if(Number(c.radius||0)!==0)return 'Selecciona alcance general sin radio para que TaskFlow pueda entregar la campaña.';
+ if((country&&country!=='ALL')||c.region||c.city||c.neighborhood)return 'Selecciona alcance general. TaskFlow usa la ubicación únicamente para el reloj.';
+ if((Number(c.ageMin)||18)>18||(Number(c.ageMax)||65)<65)return 'Selecciona la audiencia general de 18 a 65 años. TaskFlow no verifica rangos de edad específicos.';
+ const topics=normalizeInterests(c.interestTopics);
+ if(topics.length&&!topics.some(topic=>TF_AD_DELIVERY_TOPICS.has(topic)))return 'Selecciona Educación o Deportes, o deja los temas vacíos.';
+ return '';
+}
 function publicationState(c){
  if(c.status!=='active')return c.status==='paused'?'Pausada · sin entrega':'Borrador · sin entrega';
  if(c.approvalStatus==='rejected')return 'Rechazada · sin entrega';
@@ -2390,6 +2420,7 @@ function publicationState(c){
  if(!campaignReady(c))return 'Archivo pendiente · sin entrega';
  if(Number(c.radius||0)!==0)return 'Radio no verificable · sin entrega';
  if((Number(c.ageMin)||18)>18||(Number(c.ageMax)||65)<65)return 'Edad no verificable · sin entrega';
+ if(deliveryConflict(c))return 'Segmentación no disponible · sin entrega';
  return 'Aprobada · habilitada según audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
 function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openNew,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,syncPrivateDelivery,renderAll,showView,duplicateCampaign,toast}}
@@ -2504,8 +2535,9 @@ function renderRecent(){
  e.className='activity-list tf-recent-list';
  e.innerHTML=list.map(c=>{
   const state=['active','paused','draft'].includes(c.status)?c.status:'draft';
+  const blocked=state==='active'&&c.approvalStatus==='approved'&&deliveryConflict(c);
   const place=locationLabel(c),placement=placementLabel(c.placement);
-  return '<button type="button" class="activity tf-recent-item" data-recent-edit="'+escapeHtml(c.id)+'" title="Editar '+escapeHtml(c.name)+'"><span class="activity-icon tf-thumb-shell">'+creativeThumbMarkup(normalizeCampaign(c).ads[0],'AD')+'</span><span class="activity-info tf-recent-copy"><b>'+escapeHtml(c.name)+'</b><span class="tf-recent-placement">'+escapeHtml(placement)+'</span><span class="tf-recent-location" title="'+escapeHtml(place)+'">'+escapeHtml(place)+'</span><span class="tf-recent-performance" data-tf-recent-metric="'+escapeHtml(c.id)+'">Consultando resultados…</span></span><small class="tf-recent-status tf-recent-status-'+state+'">'+escapeHtml(statusLabel(c.status))+'</small></button>'
+  return '<button type="button" class="activity tf-recent-item" data-recent-edit="'+escapeHtml(c.id)+'" title="Editar '+escapeHtml(c.name)+'"><span class="activity-icon tf-thumb-shell">'+creativeThumbMarkup(normalizeCampaign(c).ads[0],'AD')+'</span><span class="activity-info tf-recent-copy"><b>'+escapeHtml(c.name)+'</b><span class="tf-recent-placement">'+escapeHtml(placement)+'</span><span class="tf-recent-location" title="'+escapeHtml(place)+'">'+escapeHtml(place)+'</span><span class="tf-recent-performance" data-tf-recent-metric="'+escapeHtml(c.id)+'">Consultando resultados…</span></span><small class="tf-recent-status tf-recent-status-'+(blocked?'blocked':state)+'"'+(blocked?' title="'+escapeHtml(blocked)+'"':'')+'>'+escapeHtml(blocked?'Sin entrega':statusLabel(c.status))+'</small></button>'
  }).join('')
 }
 function renderManagerSummary(){const active=campaigns.filter(c=>c.status==='active').length;const daily=campaigns.filter(c=>c.status==='active'&&c.budgetType==='daily').reduce((s,c)=>s+Number(c.budget||0),0);const set=(id,val)=>{const el=$(id);if(el)el.textContent=val};set('stripCampaigns',String(campaigns.length));set('stripActive',String(active));set('stripBudget',money(daily));set('stripPublished',String(campaigns.filter(c=>c.status==='active'&&c.approvalStatus==='approved'&&campaignReady(c)).length));set('tabCampaignCount',selectedCampaignIds.size+' seleccionadas');set('managerAccountLabel',currentUser?.company||currentUser?.name||'Cuenta publicitaria activa');updateBulkActions()}
@@ -2811,6 +2843,8 @@ async function adminReviewCampaign(ownerUid,id,approve){
  c.reviewedAt=now();
  c.reviewedBy=currentUser.id;
  const deliver=approve&&c.status==='active'&&campaignReady(c);
+ const conflict=deliver&&deliveryConflict(c);
+ if(conflict)throw new Error(conflict);
  if(deliver)await verifyPublishedCreatives(c);
  // La aprobación y la publicación se confirman en una sola operación atómica.
  const batch=fbDb.batch();
@@ -3120,7 +3154,7 @@ function setStep(n){
 function resetForm(){
  initWorldwideCountries();
  editingId=null;objective='awareness';pendingMedia=null;existingMediaMeta=null;adDrafts=[];currentAdDraftId=null;
- $('campaignForm').reset();setCampaignInterests();tfGeoPreferred=null;$('country').value='';$('campaignName').value='';$('campaignGroup').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';$('deliveryStrategy').value='balanced';$('frequencyCap').value='3';$('abTest').checked=false;$('requestedImpressions').value='0';
+ $('campaignForm').reset();setCampaignInterests();tfGeoPreferred=null;$('country').value='ALL';$('campaignName').value='';$('campaignGroup').value='';$('ageMin').value=18;$('ageMax').value=65;$('budgetAmount').value=75;$('startDate').value=new Date().toISOString().slice(0,10);$('endDate').value='';$('deliveryStrategy').value='balanced';$('frequencyCap').value='3';$('abTest').checked=false;$('requestedImpressions').value='0';
  updateObjectiveExperience();
  qa('input[name="placement"]').forEach((x,i)=>x.checked=i===0);
  const sys=qa('input[name="budgetDistribution"]').find(x=>x.value==='system');if(sys)sys.checked=true;
@@ -3159,6 +3193,9 @@ function validateStep(){
   if(neighborhood&&!sameNeighborhood&&!tfGeoAreas.some(x=>x.level==='neighborhood'&&x.country===country&&x.region===region&&x.city===city&&x.neighborhood===neighborhood)){msg('El barrio no tiene suficiente actividad reciente.','error');return false}
   if(country==='ALL'&&(clean($('region').value)||clean($('city').value)||clean($('neighborhood').value))){msg('Para segmentar por región o ciudad, selecciona primero un país concreto.','error');return false}
   const min=Number($('ageMin').value),max=Number($('ageMax').value);if(min<13||max>65||min>max){msg('Revisa el rango de edad.','error');return false}
+  const conflict=deliveryConflict({country,region,city,neighborhood,radius:$('radius').value,
+   ageMin:min,ageMax:max,interestTopics:readCampaignInterests()});
+  if(conflict){msg(conflict,'error');return false}
  }
  if(step===3){
    if(!Number.isFinite(Number($('budgetAmount').value))||Number($('budgetAmount').value)<1||Number($('budgetAmount').value)>10000000||Math.abs(Math.round(Number($('budgetAmount').value)*100)-Number($('budgetAmount').value)*100)>0.000001){msg('El presupuesto debe estar entre Q1 y Q10,000,000 con máximo dos decimales.','error');return false}
@@ -3303,6 +3340,8 @@ async function toggleCampaign(id){
  campaignBusy.add(id);
  const previous={...c};
  try{
+  const conflict=c.status!=='active'&&deliveryConflict(c);
+  if(conflict)throw new Error(conflict);
   if(c.status!=='active'&&!campaignReady(c)){
    toast('Preparando archivos de la campaña...');
    await prepareCreativeForActivation(c);
@@ -3321,9 +3360,55 @@ async function toggleCampaign(id){
   toast(error?.message||'No fue posible cambiar el estado de la campaña.');
  }finally{campaignBusy.delete(id)}
 }
+async function removeCampaign(c,uid){
+ const id=c.id;
+ if(currentUser?.id!==uid||campaignBusy.has(id))throw new Error('La campaña ya se está actualizando o la sesión cambió.');
+ campaignBusy.add(id);
+ try{
+  const source=campaignsRef(uid).doc(id),published=publicCampaignRef(id);
+  await withDeadline(fbDb.runTransaction(async transaction=>{
+   const currentPublic=await transaction.get(published);
+   if(currentUser?.id!==uid)throw new Error('La sesión cambió durante la eliminación.');
+   transaction.delete(source);
+   if(currentPublic.exists)transaction.delete(published);
+  }),ADS_REMOTE_WRITE_MS,'No se confirmó la eliminación de la campaña.');
+  notifyTaskFlowAdsChanged();
+  if(currentUser?.id!==uid)return;
+  void syncPrivateDelivery(id);
+  campaigns=campaigns.filter(x=>x.id!==id);
+  selectedCampaignIds.delete(id);
+  saveCampaigns();
+  const cleanup=normalizeCampaign(c).ads.map(a=>deleteCreative(id,a));
+  cleanup.push(clearDraftMedia(id));
+  void Promise.allSettled(cleanup);
+ }finally{campaignBusy.delete(id)}
+}
 async function deleteCampaign(id){
- const c=campaigns.find(x=>x.id===id);if(!c)return;if(!confirm('¿Eliminar la campaña "'+c.name+'"?'))return;
- try{for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete();await publicCampaignRef(id).delete().catch(()=>{});void syncPrivateDelivery(id);campaigns=campaigns.filter(x=>x.id!==id);saveCampaigns();await clearDraftMedia(id);renderAll();toast('Campaña eliminada.')}catch(e){console.error(e);toast('No fue posible eliminar la campaña.')}
+ const c=campaigns.find(x=>x.id===id),uid=currentUser?.id;
+ if(!c||!uid||!confirm('¿Eliminar la campaña "'+c.name+'"?'))return;
+ try{
+  await removeCampaign(c,uid);
+  if(currentUser?.id===uid){renderAll();toast('Campaña eliminada.')}
+ }catch(e){console.error(e);toast(e?.message||'No fue posible eliminar la campaña.')}
+}
+async function deleteSelectedCampaigns(){
+ const items=campaigns.filter(c=>selectedCampaignIds.has(c.id)),uid=currentUser?.id;
+ if(!uid||!items.length||!confirm('¿Eliminar '+items.length+' campaña(s)?'))return;
+ const button=$('bulkDeleteBtn');
+ button.disabled=true;
+ let removed=0;
+ try{
+  for(const c of items){
+   if(currentUser?.id!==uid)return;
+   try{await removeCampaign(c,uid);removed++}catch(error){console.error('ADS: eliminación pendiente',error?.message)}
+  }
+ }finally{
+  if(currentUser?.id===uid){
+   renderAll();
+   const failed=items.length-removed;
+   toast(failed?removed+' eliminadas y '+failed+' pendientes de confirmar.':'Campañas eliminadas.');
+  }
+ }
 }
 function restoreAuthVisuals(){
  const auth=$('authView');if(!auth||auth.hidden)return;
@@ -3430,7 +3515,7 @@ function bind(){document.addEventListener('error',e=>{if(e.target?.matches?.('.t
  const budget=e.target.closest('[data-edit-budget]');if(budget){void openEdit(budget.dataset.editBudget).then(()=>setStep(3));return}
  const admin=e.target.closest('[data-settings-admin]');
  if(admin&&isAdsAdmin&&currentUser)showView('admin');
-});$('menuBtn').addEventListener('click',()=>$('appView').classList.toggle('menu-open'));const scrim=$('menuScrim');if(scrim)scrim.addEventListener('click',()=>$('appView').classList.remove('menu-open'));qa('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));qa('[data-view-link]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewLink)));$('recentCampaigns').addEventListener('click',e=>{const b=e.target.closest('[data-recent-edit]');if(b)void openEdit(b.dataset.recentEdit)});qa('[data-approval-shortcut]').forEach(b=>b.addEventListener('click',()=>{const f=$('approvalFilter');if(f){f.value=b.dataset.approvalShortcut;f.dispatchEvent(new Event('tf-filter-sync'))}showView('campaigns');renderTable()}));qa('[data-new]').forEach(b=>b.addEventListener('click',openNew));$('topCreate').addEventListener('click',openNew);$('closeModal').addEventListener('click',closeModal);$('campaignModal').addEventListener('click',e=>{if(e.target===$('campaignModal'))closeModal()});$('objectiveGrid').addEventListener('click',e=>{const c=e.target.closest('.choice');if(!c)return;objective=c.dataset.objective;updateObjectiveExperience();review()});$('placements').addEventListener('change',()=>{commitCurrentAd();adDrafts.forEach(a=>{a.mediaMeta=null;a._blob=null;a.pendingMediaLocal=false;a.src='';a.storagePath=''});pendingMedia=null;existingMediaMeta=null;updateCreativeRules(true);renderAdDraftList();review()});qa('.step').forEach(s=>s.addEventListener('click',()=>{const n=Number(s.dataset.step);if(n<=step||validateStep())setStep(n)}));$('backBtn').addEventListener('click',()=>setStep(step-1));$('nextBtn').addEventListener('click',async()=>{if(!validateStep())return;if(step<4)setStep(step+1);else await saveCampaign()});$('draftBtn').addEventListener('click',saveDraft);$('campaignForm').addEventListener('input',e=>{if(['budgetAmount','budgetType'].includes(e.target.id)||e.target.name==='budgetDistribution'){renderBudgetAllocation();renderAdDraftList()}if(step===4){commitCurrentAd();review()}});$('search').addEventListener('input',renderTable);$('statusFilter').addEventListener('change',renderTable);$('approvalFilter').addEventListener('change',renderTable);$('orderFilter').addEventListener('change',renderTable);$('exportCampaignsBtn').addEventListener('click',exportCampaignsCSV);$('creativeFile').addEventListener('change',e=>handleCreativeFile(e.target.files&&e.target.files[0]));$('addAdBtn').addEventListener('click',addCampaignAd);$('removeAdBtn').addEventListener('click',removeCampaignAd);$('adDraftList').addEventListener('click',e=>{const b=e.target.closest('[data-ad-draft]');if(b)loadAdDraftEditor(b.dataset.adDraft)});qa('input[name="budgetDistribution"]').forEach(x=>x.addEventListener('change',()=>{renderBudgetAllocation();renderAdDraftList();if(step===4)review()}));const zone=$('uploadZone');['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('drag')}));['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('drag')}));zone.addEventListener('drop',e=>{const f=e.dataTransfer?.files?.[0];if(f)handleCreativeFile(f)});$('campaignBody').addEventListener('click',e=>{const sel=e.target.closest('[data-select-id]');if(sel){if(sel.checked)selectedCampaignIds.add(sel.dataset.selectId);else selectedCampaignIds.delete(sel.dataset.selectId);renderTable();renderManagerSummary();return}const edit=e.target.closest('[data-edit]');if(edit){openEdit(edit.dataset.edit);return}const dup=e.target.closest('[data-duplicate]');if(dup){duplicateCampaign(dup.dataset.duplicate);return}const t=e.target.closest('[data-toggle]');if(t){toggleCampaign(t.dataset.toggle);return}const d=e.target.closest('[data-delete]');if(d)deleteCampaign(d.dataset.delete)});$('refreshBtn').addEventListener('click',async()=>{await loadCampaigns();renderAll();if(window.TaskFlowADSModules?.paintCampaignMetrics&&currentUser)void window.TaskFlowADSModules.paintCampaignMetrics(adsModulesContext(),true);toast('Datos actualizados.')});qa('[data-entity-level]').forEach(btn=>btn.addEventListener('click',()=>{managerLevel=btn.dataset.entityLevel;qa('[data-entity-level]').forEach(x=>x.classList.toggle('active',x===btn));selectedCampaignIds.clear();renderTable();renderManagerSummary()}));const mgrRefresh=$('managerRefresh');if(mgrRefresh)mgrRefresh.addEventListener('click',async()=>{await loadCampaigns();renderAll();if(window.TaskFlowADSModules?.paintCampaignMetrics&&currentUser)void window.TaskFlowADSModules.paintCampaignMetrics(adsModulesContext(),true);toast('Administrador actualizado.')});const clear=$('clearFilters');if(clear)clear.addEventListener('click',()=>{$('search').value='';$('statusFilter').value='all';$('approvalFilter').value='all';$('orderFilter').value='recent';['statusFilter','approvalFilter','orderFilter'].forEach(id=>$(id).dispatchEvent(new Event('tf-filter-sync')));renderTable()});const dupBtn=$('duplicateBtn');if(dupBtn)dupBtn.addEventListener('click',()=>{[...selectedCampaignIds].forEach(id=>duplicateCampaign(id));selectedCampaignIds.clear();renderAll()});const editBtn=$('bulkEditBtn');if(editBtn)editBtn.addEventListener('click',()=>{const id=[...selectedCampaignIds][0];if(id)openEdit(id)});const delBtn=$('bulkDeleteBtn');if(delBtn)delBtn.addEventListener('click',async()=>{const ids=[...selectedCampaignIds];if(!ids.length)return;if(confirm('¿Eliminar '+ids.length+' elemento(s) seleccionado(s)?')){for(const id of ids){const c=campaigns.find(x=>x.id===id);if(c){for(const a of normalizeCampaign(c).ads)await deleteCreative(id,a);await campaignsRef(currentUser.id).doc(id).delete().catch(()=>{});await publicCampaignRef(id).delete().catch(()=>{})}}campaigns=campaigns.filter(c=>!selectedCampaignIds.has(c.id));selectedCampaignIds.clear();saveCampaigns();renderAll();toast('Elementos eliminados.')}});blockExtraction()}
+});$('menuBtn').addEventListener('click',()=>$('appView').classList.toggle('menu-open'));const scrim=$('menuScrim');if(scrim)scrim.addEventListener('click',()=>$('appView').classList.remove('menu-open'));qa('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));qa('[data-view-link]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewLink)));$('recentCampaigns').addEventListener('click',e=>{const b=e.target.closest('[data-recent-edit]');if(b)void openEdit(b.dataset.recentEdit)});qa('[data-approval-shortcut]').forEach(b=>b.addEventListener('click',()=>{const f=$('approvalFilter');if(f){f.value=b.dataset.approvalShortcut;f.dispatchEvent(new Event('tf-filter-sync'))}showView('campaigns');renderTable()}));qa('[data-new]').forEach(b=>b.addEventListener('click',openNew));$('topCreate').addEventListener('click',openNew);$('closeModal').addEventListener('click',closeModal);$('campaignModal').addEventListener('click',e=>{if(e.target===$('campaignModal'))closeModal()});$('objectiveGrid').addEventListener('click',e=>{const c=e.target.closest('.choice');if(!c)return;objective=c.dataset.objective;updateObjectiveExperience();review()});$('placements').addEventListener('change',()=>{commitCurrentAd();adDrafts.forEach(a=>{a.mediaMeta=null;a._blob=null;a.pendingMediaLocal=false;a.src='';a.storagePath=''});pendingMedia=null;existingMediaMeta=null;updateCreativeRules(true);renderAdDraftList();review()});qa('.step').forEach(s=>s.addEventListener('click',()=>{const n=Number(s.dataset.step);if(n<=step||validateStep())setStep(n)}));$('backBtn').addEventListener('click',()=>setStep(step-1));$('nextBtn').addEventListener('click',async()=>{if(!validateStep())return;if(step<4)setStep(step+1);else await saveCampaign()});$('draftBtn').addEventListener('click',saveDraft);$('campaignForm').addEventListener('input',e=>{if(['budgetAmount','budgetType'].includes(e.target.id)||e.target.name==='budgetDistribution'){renderBudgetAllocation();renderAdDraftList()}if(step===4){commitCurrentAd();review()}});$('search').addEventListener('input',renderTable);$('statusFilter').addEventListener('change',renderTable);$('approvalFilter').addEventListener('change',renderTable);$('orderFilter').addEventListener('change',renderTable);$('exportCampaignsBtn').addEventListener('click',exportCampaignsCSV);$('creativeFile').addEventListener('change',e=>handleCreativeFile(e.target.files&&e.target.files[0]));$('addAdBtn').addEventListener('click',addCampaignAd);$('removeAdBtn').addEventListener('click',removeCampaignAd);$('adDraftList').addEventListener('click',e=>{const b=e.target.closest('[data-ad-draft]');if(b)loadAdDraftEditor(b.dataset.adDraft)});qa('input[name="budgetDistribution"]').forEach(x=>x.addEventListener('change',()=>{renderBudgetAllocation();renderAdDraftList();if(step===4)review()}));const zone=$('uploadZone');['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('drag')}));['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('drag')}));zone.addEventListener('drop',e=>{const f=e.dataTransfer?.files?.[0];if(f)handleCreativeFile(f)});$('campaignBody').addEventListener('click',e=>{const sel=e.target.closest('[data-select-id]');if(sel){if(sel.checked)selectedCampaignIds.add(sel.dataset.selectId);else selectedCampaignIds.delete(sel.dataset.selectId);renderTable();renderManagerSummary();return}const edit=e.target.closest('[data-edit]');if(edit){openEdit(edit.dataset.edit);return}const dup=e.target.closest('[data-duplicate]');if(dup){duplicateCampaign(dup.dataset.duplicate);return}const t=e.target.closest('[data-toggle]');if(t){toggleCampaign(t.dataset.toggle);return}const d=e.target.closest('[data-delete]');if(d)deleteCampaign(d.dataset.delete)});$('refreshBtn').addEventListener('click',async()=>{await loadCampaigns();renderAll();if(window.TaskFlowADSModules?.paintCampaignMetrics&&currentUser)void window.TaskFlowADSModules.paintCampaignMetrics(adsModulesContext(),true);toast('Datos actualizados.')});qa('[data-entity-level]').forEach(btn=>btn.addEventListener('click',()=>{managerLevel=btn.dataset.entityLevel;qa('[data-entity-level]').forEach(x=>x.classList.toggle('active',x===btn));selectedCampaignIds.clear();renderTable();renderManagerSummary()}));const mgrRefresh=$('managerRefresh');if(mgrRefresh)mgrRefresh.addEventListener('click',async()=>{await loadCampaigns();renderAll();if(window.TaskFlowADSModules?.paintCampaignMetrics&&currentUser)void window.TaskFlowADSModules.paintCampaignMetrics(adsModulesContext(),true);toast('Administrador actualizado.')});const clear=$('clearFilters');if(clear)clear.addEventListener('click',()=>{$('search').value='';$('statusFilter').value='all';$('approvalFilter').value='all';$('orderFilter').value='recent';['statusFilter','approvalFilter','orderFilter'].forEach(id=>$(id).dispatchEvent(new Event('tf-filter-sync')));renderTable()});const dupBtn=$('duplicateBtn');if(dupBtn)dupBtn.addEventListener('click',()=>{[...selectedCampaignIds].forEach(id=>duplicateCampaign(id));selectedCampaignIds.clear();renderAll()});const editBtn=$('bulkEditBtn');if(editBtn)editBtn.addEventListener('click',()=>{const id=[...selectedCampaignIds][0];if(id)openEdit(id)});$('bulkDeleteBtn').addEventListener('click',()=>void deleteSelectedCampaigns());blockExtraction()}
 document.addEventListener('DOMContentLoaded',()=>{bind();try{initFirebase();fbAuth.onAuthStateChanged(async u=>{try{if(u&&registrationGate)await registrationGate;if(u&&fbAuth.currentUser?.uid!==u.uid)return;await handleAuthState(u)}catch(e){console.error(e);authMsg('No fue posible cargar la cuenta comercial.','error')}})}catch(e){console.error(e);authMsg('No fue posible iniciar el servicio de cuentas.','error');animateAuth()}});
 })();
 </script>
