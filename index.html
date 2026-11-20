@@ -2152,6 +2152,37 @@ body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
  #appView #overviewView .tf-recent-item.activity,
  #appView #overviewView .tf-overview-all{transition:none!important}
 }
+
+/* Detalles del editor y estados que también usaban fondos claros. */
+#campaignModal :is(.tf-goal-explain,.tf-goal-action,.ad-budget-summary,
+ .budget-allocation-preview,.campaign-ad-list,.campaign-ad-editor-head){
+ background:#113553!important;border-color:rgba(107,188,228,.31)!important;
+ color:#e8f5ff!important;
+}
+#campaignModal :is(.tf-goal-explain,.tf-goal-action) :is(strong,b,p,small,span){
+ color:#cde8f9!important;
+}
+#campaignModal :is(.tf-goal-explain,.tf-goal-action) strong{
+ color:#f0fbff!important;
+}
+#campaignModal .tf-goal-hint{color:#bdcede!important}
+#appView #campaignsView .tf-approval-state[data-state="approved"]{
+ background:#103d35!important;border-color:#2f9a76!important;color:#a5f5c6!important;
+}
+#appView #campaignsView .tf-approval-state[data-state="pending"]{
+ background:#413421!important;border-color:#986d36!important;color:#ffd49b!important;
+}
+#appView #campaignsView .tf-approval-state[data-state="rejected"]{
+ background:#432438!important;border-color:#98556d!important;color:#ffc4d1!important;
+}
+#appView #moduleContent .tf-tool-dialog::backdrop{background:rgba(0,7,24,.75)}
+#appView #moduleContent .tf-impression-progress-item{
+ background:#103452!important;border-color:rgba(102,187,221,.3)!important;
+ color:#e8f6ff!important;
+}
+#appView #moduleContent .tf-impression-progress-item :is(b,span,small){
+ color:#d0e7f8!important;
+}
 </style>
 </head>
 <body>
