@@ -3520,7 +3520,7 @@ async function handleAuthState(user){
  isAdsAdmin=admin;
  currentUser={id:user.uid,uid:user.uid,name:user.displayName||business?.ownerName||user.email||'Usuario',company:business?.businessName||'Cuenta comercial',email:user.email||'',accountStatus:business?.accountStatus||'active'};
  enterApp();
- if(isAdsAdmin){void loadAdminReview();void recoverAdministrativeDelivery()}
+ if(isAdsAdmin){startAutoApprovalLoop();void autoApproveQueuedCampaigns(true);void loadAdminReview();void recoverAdministrativeDelivery()}
 }
 function objectiveLabel(v){return {awareness:'Reconocimiento',traffic:'Tráfico',engagement:'Interacción',leads:'Clientes potenciales',sales:'Ventas',app:'Aplicación'}[v]||v}
 
@@ -3552,7 +3552,7 @@ function updateObjectiveExperience(){
  if(cta)cta.textContent=d.cta;
  qa('#objectiveGrid .choice').forEach(x=>{const selected=x.dataset.objective===objective;x.classList.toggle('active',selected);x.setAttribute('aria-pressed',String(selected))});
 }
-function approvalLabel(v){return {pending:'En revisión',approved:'Aprobada',rejected:'Rechazada'}[v]||'En revisión'}function statusLabel(v){return {draft:'Borrador',active:'Activa',paused:'Pausada'}[v]||v}
+function approvalLabel(v){return {pending:'Validación automática',approved:'Validada',rejected:'Rechazada'}[v]||'Validación automática'}function statusLabel(v){return {draft:'Borrador',active:'Activa',paused:'Pausada'}[v]||v}
 function deliveryConflict(c){
  const country=String(c.country||'').trim().toUpperCase();
  if(Number(c.radius||0)!==0)return 'Selecciona alcance general sin radio para que TaskFlow pueda entregar la campaña.';
@@ -3571,7 +3571,7 @@ function publicationState(c){
  if(commercial?.state==='trial')return 'Prueba gratuita de siete días · entrega habilitada';
  if(commercial?.state==='paid')return 'Saldo descontado · entrega habilitada';
  if(c.approvalStatus==='rejected')return 'Rechazada · sin entrega';
- if(c.approvalStatus!=='approved')return 'Pendiente de aprobación · sin entrega';
+ if(c.approvalStatus!=='approved')return 'Validación automática pendiente · sin entrega';
  if(!campaignReady(c))return 'Archivo pendiente · sin entrega';
  if(Number(c.radius||0)!==0)return 'Radio no verificable · sin entrega';
  if((Number(c.ageMin)||18)<18)return 'Segmentación de menores deshabilitada · sin entrega';
@@ -4017,15 +4017,15 @@ async function loadAdminReview(liveSnapshot){
   setMetric('adminCampaignTotal',snap.size);
   if(!pending.length){
    root.className='tf-ads-admin-feedback';
-   root.innerHTML='<strong>No hay campañas pendientes</strong><p>Las solicitudes nuevas aparecerán aquí cuando los anunciantes las envíen a revisión.</p>';
+   root.innerHTML='<strong>No hay campañas esperando validación</strong><p>Las campañas completas se procesan automáticamente cuando existe una sesión administrativa autorizada.</p>';
   }else{
    root.className='tf-ads-admin-rows';
    root.innerHTML=pending.map(c=>
     '<article class="tf-ads-campaign-row"><div class="tf-ads-campaign-title"><b>'+escapeHtml(c.name||'Campaña sin nombre')+'</b>'
     +'<span>'+escapeHtml(c.businessName||'Anunciante')+' · '+escapeHtml(placementLabel(c.placement))+' · '+normalizeCampaign(c).ads.length+' anuncio(s)</span>'
-    +'<span class="tf-ads-campaign-status">Pendiente de aprobación · '+escapeHtml(statusLabel(c.status))+'</span></div>'
-    +'<div class="tf-ads-review-actions"><button type="button" class="tf-ads-approve" data-admin-approve="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Aprobar</button>'
-    +'<button type="button" class="tf-ads-reject" data-admin-reject="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Rechazar</button></div></article>'
+    +'<span class="tf-ads-campaign-status">Validación automática · '+escapeHtml(statusLabel(c.status))+'</span></div>'
+    +'<div class="tf-ads-review-actions"><span class="tf-auto-review-indicator">En cola de validación</span>'
+    +'<button type="button" class="tf-ads-reject" data-admin-reject="'+escapeHtml(c.ownerUid)+'|'+escapeHtml(c.id)+'">Bloquear</button></div></article>'
    ).join('');
   }
   root.onclick=async e=>{
@@ -4065,7 +4065,65 @@ async function loadAdminReview(liveSnapshot){
   if(current()&&refresh?.isConnected)refresh.disabled=false;
  }
 }
-async function adminReviewCampaign(ownerUid,id,approve,displayed){
+
+/* Validación automática usando únicamente una sesión administrativa autenticada.
+   No se publica sin comprobar archivos, objetivos, calendario y presupuesto. */
+let autoApprovalBusy=false,autoApprovalCheckedAt=0,autoApprovalTimer=null;
+function autoApprovalEligible(c){
+ if(!c||c.status!=='active'||c.approvalStatus!=='pending'||!campaignReady(c)||deliveryConflict(c))return false;
+ if(!/^[A-Za-z0-9_-]{3,128}$/.test(String(c.id||''))||!/^[A-Za-z0-9_-]{3,128}$/.test(String(c.ownerUid||'')))return false;
+ const amount=Number(c.budget);
+ if(!Number.isFinite(amount)||amount<1||amount>10000000||!['daily','total'].includes(c.budgetType))return false;
+ if(c.start&&!/^\d{4}-\d{2}-\d{2}$/.test(c.start))return false;
+ if(c.end&&!/^\d{4}-\d{2}-\d{2}$/.test(c.end))return false;
+ if(c.start&&c.end&&c.end<c.start)return false;
+ if(c.budgetType==='total'&&(!c.start||!c.end))return false;
+ const ads=normalizeCampaign(c).ads;
+ return ads.length>0&&ads.length<=12&&ads.every(a=>a.id&&a.mediaMeta&&a.src&&
+   !validateGoalDestination(c.objective||'awareness',a.destination));
+}
+async function autoApproveQueuedCampaigns(force=false){
+ if(autoApprovalBusy||!isAdsAdmin||!currentUser||!fbAuth?.currentUser||
+    fbAuth.currentUser.uid!==currentUser.id||document.visibilityState==='hidden')return;
+ if(!force&&Date.now()-autoApprovalCheckedAt<45000)return;
+ const reviewer=currentUser.id;
+ autoApprovalBusy=true;autoApprovalCheckedAt=Date.now();
+ let accepted=0,rejectedByValidation=0;
+ try{
+  if(!await getAdminClaim(fbAuth.currentUser))return;
+  const snapshot=await withDeadline(fbDb.collectionGroup('adsCampaigns').limit(250).get({source:'server'}),18000,
+    'No se pudo consultar la cola automática de campañas.');
+  const candidates=[];
+  snapshot.forEach(doc=>{
+   const ownerUid=String(doc.ref?.parent?.parent?.id||'');
+   const item=normalizeCampaign({...doc.data(),ownerUid,id:doc.id});
+   if(autoApprovalEligible(item))candidates.push(item);
+  });
+  candidates.sort((a,b)=>String(a.updatedAt||'').localeCompare(String(b.updatedAt||'')));
+  for(const item of candidates.slice(0,8)){
+   if(!isAdsAdmin||currentUser?.id!==reviewer||fbAuth?.currentUser?.uid!==reviewer)break;
+   try{await adminReviewCampaign(item.ownerUid,item.id,true,item,true);accepted++}
+   catch(error){rejectedByValidation++;console.warn('ADS: validación automática pendiente',item.id,error?.code||error?.message)}
+  }
+  if(accepted){
+   console.info('TaskFlow ADS: '+accepted+' campaña(s) publicadas automáticamente.');
+   if($('placeholderView')?.classList.contains('active')&&$('placeholderTitle')?.textContent==='Control ADS')
+    void loadAdminReview();
+  }
+ }catch(error){console.warn('ADS: automatización administrativa no disponible',error?.code||error?.message)}
+ finally{autoApprovalBusy=false;if(rejectedByValidation)console.warn('ADS: '+rejectedByValidation+' campaña(s) no publicadas; requieren corrección.')}
+}
+function startAutoApprovalLoop(){
+ if(autoApprovalTimer)return;
+ autoApprovalTimer=setInterval(()=>{
+  if(isAdsAdmin&&fbAuth?.currentUser?.uid===currentUser?.id)void autoApproveQueuedCampaigns();
+ },90000);
+ document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&isAdsAdmin)void autoApproveQueuedCampaigns();
+ });
+}
+
+async function adminReviewCampaign(ownerUid,id,approve,displayed,silent=false){
  const reviewer=currentUser?.id;
  if(!reviewer||!isAdsAdmin||fbAuth?.currentUser?.uid!==reviewer||!await getAdminClaim(fbAuth.currentUser)){
   isAdsAdmin=false;syncAdminNavigation();
@@ -4116,9 +4174,9 @@ async function adminReviewCampaign(ownerUid,id,approve,displayed){
   throw new Error('No se confirmó la distribución. La campaña continúa pendiente de aprobación para permitir un reintento.');
  }
  if(!privatelySynced)console.warn('ADS: revisión guardada y sincronización privada pendiente:',id);
- toast(approve?(deliver?'Campaña aprobada y sincronizada; la entrega depende de usuarios elegibles.':'Campaña aprobada; la entrega requiere activación y archivos válidos.'):'Campaña rechazada.');
+ if(!silent)toast(approve?(deliver?'Campaña validada y sincronizada; la entrega depende de usuarios elegibles.':'Campaña validada; requiere activación y archivos válidos.'):'Campaña rechazada.');
 }
-function showView(name){if(name==='admin'&&(!isAdsAdmin||!currentUser))return;disconnectAdminWatch();qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={adsets:['Conjuntos de anuncios','Agrupa conjuntos con presupuesto, audiencia y calendario independientes.'],audiences:['Audiencias','Guarda y aplica segmentaciones a tus campañas.'],creatives:['Creativos','Revisa, previsualiza y edita anuncios.'],reports:['Informes','Eventos publicitarios registrados durante los últimos 30 días.'],conversions:['Medición de resultados','Conecta tu sitio para confirmar visitas, contactos, ventas e instalaciones.'],billing:['Presupuestos','Configura límites de campaña. No son cobros.'],settings:['Configuración','Administra tu perfil comercial y seguridad.'],admin:['Control ADS','Aprueba o rechaza campañas publicitarias.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp();requestAnimationFrame(fitSummaryMetricValues)}
+function showView(name){if(name==='admin'&&(!isAdsAdmin||!currentUser))return;disconnectAdminWatch();qa('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));qa('.view').forEach(v=>v.classList.remove('active'));if(name==='overview')$('overviewView').classList.add('active');else if(name==='campaigns')$('campaignsView').classList.add('active');else{const map={adsets:['Conjuntos de anuncios','Agrupa conjuntos con presupuesto, audiencia y calendario independientes.'],audiences:['Audiencias','Guarda y aplica segmentaciones a tus campañas.'],creatives:['Creativos','Revisa, previsualiza y edita anuncios.'],reports:['Informes','Eventos publicitarios registrados durante los últimos 30 días.'],conversions:['Medición de resultados','Conecta tu sitio para confirmar visitas, contactos, ventas e instalaciones.'],billing:['Presupuestos','Configura límites de campaña. No son cobros.'],settings:['Configuración','Administra tu perfil comercial y seguridad.'],admin:['Control ADS','Validación automática de campañas y controles de seguridad.']};const x=map[name]||['Módulo','Administrador comercial.'];$('placeholderTitle').textContent=x[0];$('placeholderText').textContent=x[1];renderModule(name);$('placeholderView').classList.add('active')}$('appView').classList.remove('menu-open');animateApp();requestAnimationFrame(fitSummaryMetricValues)}
 
 function currentBudgetMode(){return qa('input[name="budgetDistribution"]').find(x=>x.checked)?.value||'system'}
 function equalBudgetShares(total,count){
@@ -4472,7 +4530,7 @@ function review(){
  commitCurrentAd();
  const p=selectedPlacement(),spec=placementSpecs[p],mode=currentBudgetMode(),count=adDrafts.length;
  const ready=adDrafts.filter(a=>a.mediaMeta).length;
- $('review').innerHTML='<b>'+escapeHtml(clean($('campaignName').value)||'Campaña sin nombre')+'</b><br>Objetivo: '+escapeHtml(objectiveLabel(objective))+'<br>Acción al pulsar: '+escapeHtml(goalDetails(objective).cta)+'<br>Formato de la campaña: '+escapeHtml(spec.label)+' · '+spec.hdWidth+'×'+spec.hdHeight+' HD o '+spec.width+'×'+spec.height+' estándar<br>Audiencia: '+escapeHtml(locationLabel({city:$('city').value,region:$('region').value,country:$('country').value}))+' · '+escapeHtml($('ageMin').value)+'–'+escapeHtml($('ageMax').value)+' años<br>Presupuesto: '+escapeHtml(money($('budgetAmount').value))+' '+($('budgetType').value==='daily'?'diario':'total')+'<br>Distribución: '+(mode==='system'?'Rotación automática de anuncios':'Partes iguales')+'<br>Estrategia: '+escapeHtml(({balanced:'Equilibrada',reach:'Maximizar oportunidades',steady:'Reducir repeticiones'})[$('deliveryStrategy').value]||'Equilibrada')+'<br>Frecuencia: '+escapeHtml($('frequencyCap').value)+' por sesión y día<br>Anuncios: '+count+' creados · '+ready+' con creativo validado<br>Meta de impresiones: '+(Number($('requestedImpressions').value)>0?escapeHtml($('requestedImpressions').value)+' solicitadas (sin autorización)':'Sin solicitud')+'<br>Prueba A/B: '+($('abTest').checked?'Activada':'Desactivada')+'<br>Estado al guardar: '+escapeHtml((editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='active'?'Activa (pendiente de revisión al editar)':(editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='paused'?'Pausada':'Activación automática al guardar')+'<br>La campaña completa queda activa y requiere aprobación antes de su entrega.';
+ $('review').innerHTML='<b>'+escapeHtml(clean($('campaignName').value)||'Campaña sin nombre')+'</b><br>Objetivo: '+escapeHtml(objectiveLabel(objective))+'<br>Acción al pulsar: '+escapeHtml(goalDetails(objective).cta)+'<br>Formato de la campaña: '+escapeHtml(spec.label)+' · '+spec.hdWidth+'×'+spec.hdHeight+' HD o '+spec.width+'×'+spec.height+' estándar<br>Audiencia: '+escapeHtml(locationLabel({city:$('city').value,region:$('region').value,country:$('country').value}))+' · '+escapeHtml($('ageMin').value)+'–'+escapeHtml($('ageMax').value)+' años<br>Presupuesto: '+escapeHtml(money($('budgetAmount').value))+' '+($('budgetType').value==='daily'?'diario':'total')+'<br>Distribución: '+(mode==='system'?'Rotación automática de anuncios':'Partes iguales')+'<br>Estrategia: '+escapeHtml(({balanced:'Equilibrada',reach:'Maximizar oportunidades',steady:'Reducir repeticiones'})[$('deliveryStrategy').value]||'Equilibrada')+'<br>Frecuencia: '+escapeHtml($('frequencyCap').value)+' por sesión y día<br>Anuncios: '+count+' creados · '+ready+' con creativo validado<br>Meta de impresiones: '+(Number($('requestedImpressions').value)>0?escapeHtml($('requestedImpressions').value)+' solicitadas (sin autorización)':'Sin solicitud')+'<br>Prueba A/B: '+($('abTest').checked?'Activada':'Desactivada')+'<br>Estado al guardar: '+escapeHtml((editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='active'?'Activa (pendiente de revisión al editar)':(editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='paused'?'Pausada':'Activación automática al guardar')+'<br>La campaña completa entra en validación automática. Se publicará solo cuando se complete la verificación y el saldo lo permita.';
  renderAdDraftList();
 }
 async function saveCampaign(){
@@ -4503,7 +4561,7 @@ async function saveCampaign(){
   const stale=previousAds.filter(old=>{const kept=cleanAds.find(a=>a.id===old.id);return !kept||kept.storagePath!==old.storagePath});
   if(stale.length)Promise.allSettled(stale.map(old=>withDeadline(deleteCreative(id,old),5000,'Limpieza aplazada.'))).catch(()=>{});
   withDeadline(clearDraftMedia(id),5000,'Limpieza aplazada.').catch(()=>{});
-  toast(c.status==='draft'?'Cambios guardados. Activa la campaña para solicitar su publicación.':c.approvalStatus==='approved'?'Cambios guardados y campaña activa.':'Cambios guardados; pendiente de aprobación.');
+  toast(c.status==='draft'?'Borrador guardado. Activa la campaña cuando esté completa.':c.approvalStatus==='approved'?'Cambios guardados y campaña sincronizada.':'Campaña guardada. Validación automática pendiente.');
  }catch(e){
   console.warn('No se completó el guardado:',e?.code||e?.message);
   msg('No se pudieron confirmar los cambios. '+(e?.message||'Comprueba la conexión e inténtalo de nuevo.')+' Se conservaron en el formulario.','error');
@@ -4600,7 +4658,7 @@ async function toggleCampaign(id){
   await syncCampaignDoc(updated);
   await syncPublicCampaign(updated);
   Object.assign(c,updated);saveCampaigns();renderAll();
-  toast(updated.status==='active'?(updated.approvalStatus==='approved'?'Campaña activa y sincronizada; su entrega requiere usuarios elegibles.':'Campaña activada, pero pendiente de aprobación. No se mostrará en TaskFlow todavía.'):'Campaña pausada.');
+  toast(updated.status==='active'?(updated.approvalStatus==='approved'?'Campaña activa y sincronizada; su entrega requiere usuarios elegibles.':'Campaña activada; falta la verificación automática antes de entregar anuncios.'):'Campaña pausada.');
  }catch(error){
   // La campaña nunca debe aparecer activada si no se completó el guardado remoto.
   if(previous.status==='active')Object.assign(c,previous);
