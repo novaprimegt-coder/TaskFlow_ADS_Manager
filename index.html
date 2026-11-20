@@ -3224,13 +3224,14 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
   }
   if(!fbAuth||!fbDb){authMsg('No fue posible conectar con el servicio de cuentas. Verifica la conexión e inténtalo nuevamente.','error');return}
   const submit=$('authSubmit');submit.disabled=true;
-  let resolveGate=null,created=false;
+  let resolveGate=null,created=false,createdAccount=null,createdPhotoPath='';
   if(mode==='register')registrationGate=new Promise(resolve=>{resolveGate=resolve});
   try{
    if(mode==='register'){
     const cred=await fbAuth.createUserWithEmailAndPassword(email,pass);
-    created=true;
+    created=true;createdAccount=cred.user;
     const photo=await uploadAccountPhoto(cred.user.uid,profilePhotoFile);
+    createdPhotoPath=photo.photoStoragePath;
     await cred.user.updateProfile({displayName:name,photoURL:photo.photoURL});
     await businessRef(cred.user.uid).set({
      ownerUid:cred.user.uid,ownerName:name,ownerEmail:email,businessName:company,
@@ -3246,9 +3247,18 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
    }
   }catch(err){
    if(mode==='register'&&created){
-    // Evita entrar al panel con un registro empresarial incompleto.
-    try{await fbAuth.signOut()}catch(_){ }
-    authMsg('La cuenta se creó, pero no fue posible guardar el perfil comercial. Comprueba los permisos de acceso y vuelve a iniciar sesión.','error');
+    // No conservar una cuenta recién creada cuando la foto requerida o el
+    // registro empresarial no se pudieron completar.
+    let rolledBack=false;
+    if(createdAccount&&fbAuth?.currentUser?.uid===createdAccount.uid){
+     try{await createdAccount.delete();rolledBack=true}catch(error){
+      console.warn('ADS: no se pudo revertir el registro incompleto',error?.code||error?.message)
+     }
+    }
+    try{if(fbAuth?.currentUser)await fbAuth.signOut()}catch(_){}
+    authMsg(rolledBack?
+     'No se completó el registro ni la foto de perfil. Comprueba la conexión y vuelve a crear la cuenta.':
+     'No se completó el registro de la foto. Si tu correo ya quedó registrado, inicia sesión y añade la foto desde el menú lateral.','error');
    }else authMsg(friendlyAuthError(err),'error');
   }finally{
    if(resolveGate)resolveGate();
