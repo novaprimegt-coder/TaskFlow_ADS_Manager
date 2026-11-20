@@ -494,3 +494,26 @@
  #appView #tfAdsLiveOverview .tf-tool-kpis{grid-template-columns:1fr!important}
  #appView #tfAdsLiveOverview .tf-tool-kpi:last-child:nth-child(odd){grid-column:auto!important}
 }
+
+
+/* TASKFLOW ADS HEADER OPACITY FIX V4 */
+#appView .workspace>.topbar{
+ background:#071e34!important;
+ backdrop-filter:none!important;
+ -webkit-backdrop-filter:none!important;
+ border-bottom:1px solid rgba(109,195,225,.38)!important;
+ box-shadow:0 5px 15px rgba(0,8,21,.22)!important;
+ isolation:isolate;
+ z-index:60!important;
+}
+#appView .workspace>.topbar .top-left>div>small{
+ color:#bddbed!important;
+ opacity:1!important;
+}
+#appView .workspace>.topbar .top-left>div>strong{
+ color:#f2faff!important;
+ opacity:1!important;
+}
+#appView .workspace>.topbar .icon-btn{
+ color:#e7faff!important;
+}
