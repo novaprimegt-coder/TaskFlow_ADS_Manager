@@ -1209,3 +1209,107 @@ body>.tf-filter-menu.tf-filter-portal :is(input,span,small){
 @media(prefers-reduced-motion:reduce){
  #appView button,#campaignModal button{transition:none!important}
 }
+
+
+/* TASKFLOW ADS VISUAL FINISH V6C — etiquetas, barras y estados. */
+#appView.app-shell{background:#071e33!important}
+#appView #campaignsView :is(.selection-info,.table-footer,.table-toolbar){
+ background:#0f2e49!important;border-color:rgba(110,195,231,.3)!important;
+ color:#dceffa!important;
+}
+#appView #campaignsView :is(.selection-info,.table-footer) :is(small,span){
+ color:#c8e1ef!important;
+}
+#appView #campaignsView .table-toolbar select{
+ color:#eefaff!important;-webkit-text-fill-color:#eefaff!important;
+ background:#153b58!important;border:1px solid #5796b8!important;
+}
+#appView #campaignsView .row-actions button,
+#appView #campaignsView .meta-row-actions button{
+ background:#174262!important;
+ border:1px solid #558fb3!important;
+ color:#e5f7ff!important;-webkit-text-fill-color:#e5f7ff!important;
+}
+#appView #campaignsView .row-actions button:hover,
+#appView #campaignsView .meta-row-actions button:hover{
+ background:#215475!important;border-color:#88dcf0!important;
+}
+#appView #campaignsView .place-code{
+ background:#1a425f!important;color:#c8eafb!important;
+ border:1px solid rgba(105,198,229,.34)!important;
+}
+#appView #campaignsView .creative-thumb:not(:has(img,video)),
+#appView #campaignsView .creative-thumb.tf-thumb-shell:not(:has(img,video)){
+ background:#194661!important;border-color:#5c9bbc!important;
+ color:#a7eaff!important;
+}
+#appView #campaignsView .status-active,
+#appView #campaignsView .tf-approval-state[data-state="approved"]{
+ background:#123e34!important;border-color:#469575!important;
+ color:#a4f8d2!important;
+}
+#appView #campaignsView .status-paused{
+ background:#463822!important;border:1px solid #9b7c47!important;
+ color:#ffe0ad!important;
+}
+#appView #campaignsView .status-rejected{
+ background:#462936!important;border:1px solid #ab7183!important;
+ color:#ffcad6!important;
+}
+#appView #overviewView .tf-recent-status.tf-recent-status-blocked{
+ background:#4a3224!important;color:#ffe0ae!important;
+ border-color:#aa8457!important;
+}
+#campaignModal .media-status{
+ background:#153954!important;
+ border:1px solid rgba(96,180,219,.33)!important;
+ color:#c9e4f2!important;
+}
+#campaignModal .media-status.ok{
+ background:#123e34!important;
+ border-color:#489779!important;
+ color:#aff8d4!important;
+}
+#campaignModal .media-status.error{
+ background:#4b2a36!important;
+ border-color:#ae6e83!important;
+ color:#ffd3dd!important;
+}
+#campaignModal .wizard-page :is(.tf-goal-hint,.form-message,.media-status) {
+ overflow-wrap:anywhere;
+}
+#authView #authForm .password-toggle{
+ background:#194764!important;border:1px solid #5d9cbe!important;
+ color:#e8faff!important;
+}
+#authView #authForm .password-toggle:hover{
+ background:#225b7d!important;border-color:#92def1!important;
+}
+#authView #authForm :is(input,textarea):-webkit-autofill{
+ -webkit-text-fill-color:#f1fbff!important;
+ -webkit-box-shadow:0 0 0 1000px #173955 inset!important;
+ box-shadow:0 0 0 1000px #173955 inset!important;
+ caret-color:#f5fdff!important;
+}
+#appView :is(input,textarea):-webkit-autofill,
+#campaignModal :is(input,textarea):-webkit-autofill{
+ -webkit-text-fill-color:#f1fbff!important;
+ -webkit-box-shadow:0 0 0 1000px #193e58 inset!important;
+ box-shadow:0 0 0 1000px #193e58 inset!important;
+ caret-color:#f5fdff!important;
+}
+#appView :is(.tf-tool-table-scroll,.meta-table-wrap,.manager-table-card,.tf-ads-admin-rows),
+#campaignModal .wizard-body{
+ scrollbar-color:#477f9d #0b2942;
+ scrollbar-width:thin;
+}
+#appView :is(button,a,input,select,textarea):focus-visible,
+#campaignModal :is(button,a,input,select,textarea):focus-visible,
+#authView :is(button,a,input,select,textarea):focus-visible{
+ outline:2px solid #7beaf6!important;outline-offset:2px!important;
+}
+@media(max-width:390px){
+ #appView #campaignsView .row-actions button{min-height:34px!important}
+ #appView #tfAdsLiveOverview .tf-tool-kpi>strong{font-size:clamp(25px,7vw,32px)!important}
+ #campaignModal .wizard-footer button{white-space:normal!important}
+}
