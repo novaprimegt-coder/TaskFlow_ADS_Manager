@@ -4075,8 +4075,13 @@ function autoApprovalEligible(c){
  if(!/^[A-Za-z0-9_-]{3,128}$/.test(String(c.id||''))||!/^[A-Za-z0-9_-]{3,128}$/.test(String(c.ownerUid||'')))return false;
  const amount=Number(c.budget);
  if(!Number.isFinite(amount)||amount<1||amount>10000000||!['daily','total'].includes(c.budgetType))return false;
- if(c.start&&!/^\d{4}-\d{2}-\d{2}$/.test(c.start))return false;
- if(c.end&&!/^\d{4}-\d{2}-\d{2}$/.test(c.end))return false;
+ const validDate=v=>{
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||'')))return false;
+  const timestamp=Date.parse(v+'T00:00:00Z');
+  return Number.isFinite(timestamp)&&new Date(timestamp).toISOString().slice(0,10)===v;
+ };
+ if(c.start&&!validDate(c.start))return false;
+ if(c.end&&!validDate(c.end))return false;
  if(c.start&&c.end&&c.end<c.start)return false;
  if(c.budgetType==='total'&&(!c.start||!c.end))return false;
  const ads=normalizeCampaign(c).ads;
