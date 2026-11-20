@@ -1,0 +1,239 @@
+/* TaskFlow ADS — sistema visual unificado v2026.11.19.35.
+   Corrige los estilos residuales claros sin modificar lógica, datos ni permisos. */
+:root{color-scheme:dark}
+#appView,#campaignModal{
+ --tfv-bg:#071b31;--tfv-surface:#0e2b48;--tfv-raised:#153955;
+ --tfv-border:rgba(99,194,226,.38);--tfv-ink:#eff9ff;--tfv-secondary:#bdd8e9;
+ --tfv-cyan:#5fe3f2;
+}
+#appView :is(.panel,.metric,.card,.module-card,.module-list,.module-note,.tf-tool-panel,
+ .tf-tool-creative,.tf-tool-section,.tf-tool-kpi,.tf-adset-group,.tf-adset-entry,
+ .settings-grid,.setting-card,.manager-table-card,.table-wrap,.tf-report-chart,.tf-chart-panel){
+ border-color:rgba(96,173,215,.28)!important;
+}
+#appView :is(.module-content,.tf-tool-heading,.tf-tool-panel,.module-list,.module-card,
+ .tf-tool-section,.tf-tool-creative,.settings-grid,.setting-card,.tf-tool-dialog,
+ .tf-tool-form,.module-row,.tf-tool-row){
+ color:var(--tfv-ink);
+}
+#appView :is(.tf-tool-gallery,.tf-tool-creative,.tf-adset-groups,
+ .tf-tool-table-scroll,.module-grid){min-width:0}
+#appView :is(.tf-tool-creative,.module-card,.setting-card,.tf-tool-section){
+ background:#102e4c!important;border:1px solid var(--tfv-border)!important;
+ border-radius:13px!important;
+}
+#appView :is(.tf-tool-creative-data,.tf-tool-creative-data>b,
+ .tf-tool-creative-data>span,.module-card strong,.setting-card b){color:var(--tfv-ink)!important}
+#appView :is(.module-row small,.setting-card small,.tf-tool-heading p,
+ .tf-tool-note,.tf-tool-row small,.tf-tool-creative-data>small){
+ color:var(--tfv-secondary)!important;
+}
+#appView :is(.tf-tool-panel,.tf-tool-section,.module-list,.module-note,.settings-grid){
+ background:linear-gradient(150deg,#102d4b,#0a203b)!important;
+}
+#appView :is(.tf-tool-form,.module-list,.tf-tool-gallery,.settings-grid,.tf-tool-panel) :is(label,legend){
+ color:#e8f7ff!important;
+}
+#appView :is(input:not([type=checkbox]):not([type=radio]),textarea,select):not([type=hidden]){
+ min-width:0;max-width:100%;
+}
+#appView :is(input,select,textarea):focus-visible,
+#campaignModal :is(input,select,textarea,button):focus-visible{
+ outline:2px solid #68edff!important;outline-offset:2px!important;
+}
+#appView :is(button,.secondary,.primary,.ghost,.tf-tool-buttons>a){
+ transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+#appView :is(.tf-budget-disclaimer,.tf-tool-note,.tf-tool-warning){
+ overflow-wrap:anywhere;
+}
+#campaignModal{
+ color-scheme:dark!important;
+ background:rgba(1,10,25,.87)!important;
+}
+#campaignModal .modal-card,#campaignModal .wizard,#campaignModal .wizard-body{
+ background:var(--tfv-bg)!important;color:var(--tfv-ink)!important;
+}
+#campaignModal .modal-card{border-color:#36769c!important;overscroll-behavior:contain}
+#campaignModal .modal-head{background:linear-gradient(115deg,#103856,#0a223d)!important}
+#campaignModal .modal-head :is(h2,p,.eyebrow){
+ color:#eff9ff!important;overflow-wrap:anywhere;
+}
+#campaignModal .steps{background:#0b2543!important;border-color:var(--tfv-border)!important}
+#campaignModal .step{border:1px solid transparent!important;color:#cde3f3!important}
+#campaignModal .step.active{
+ border-color:rgba(91,219,247,.65)!important;background:#174867!important;
+}
+#campaignModal .wizard-body{scrollbar-color:#3b8eb2 #082238}
+#campaignModal .wizard-page{
+ background:linear-gradient(150deg,#10314f,#0a253f)!important;
+ border:1px solid rgba(90,166,203,.32)!important;
+ border-radius:15px!important;
+ box-shadow:inset 0 1px rgba(158,228,255,.05);
+}
+#campaignModal .section-title{border-color:rgba(110,187,220,.28)!important}
+#campaignModal .section-title :is(h3,.eyebrow){
+ color:#e9f7ff!important;letter-spacing:normal!important;
+}
+#campaignModal .section-title h3{font-size:clamp(16px,2vw,20px)!important;line-height:1.28!important}
+#campaignModal .section-title .eyebrow{
+ color:#9acfe9!important;font-size:clamp(10px,1.3vw,12px)!important;
+ font-weight:800!important;letter-spacing:.075em!important;
+}
+#campaignModal .field{min-width:0}
+#campaignModal .field label,#campaignModal .field>label,
+#campaignModal .tf-impression-request label{
+ color:#e6f5ff!important;font-size:clamp(12px,1.45vw,14px)!important;
+ font-weight:750!important;line-height:1.35!important;
+}
+#campaignModal .formgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+#campaignModal :is(.field input:not([type=checkbox]):not([type=radio]),
+ .field select,.field textarea){
+ box-sizing:border-box!important;max-width:100%!important;
+ min-height:43px!important;height:auto!important;
+ padding:10px 12px!important;font-size:clamp(13px,1.4vw,15px)!important;
+ line-height:1.4!important;
+ color:#f4fbff!important;-webkit-text-fill-color:#f4fbff!important;
+ background:rgba(18,57,87,.72)!important;
+ border:1px solid rgba(102,180,225,.53)!important;border-radius:10px!important;
+ box-shadow:inset 0 1px 3px rgba(0,5,17,.12)!important;
+}
+#campaignModal :is(select,input,textarea):disabled{opacity:.65!important}
+#campaignModal select option{background:#0b2845;color:#effaff}
+#campaignModal :is(.tf-goal-hint,.placement-description,.placement-formats,
+ .notice span,.budget-mode small,.tf-impression-request small){
+ color:#bcd8ec!important;font-size:clamp(11px,1.25vw,13px)!important;
+ line-height:1.53!important;opacity:1!important;
+}
+#campaignModal :is(.choice-grid,.placements,.budget-mode-grid,.spec-grid){min-width:0}
+#campaignModal :is(.choice,.placement-card,.budget-mode>span,.notice,.review,
+ .tf-ads-delivery-controls,.tf-impression-request,.budget-allocation-preview){
+ background:#123855!important;border:1px solid rgba(100,188,225,.35)!important;
+ color:#e8f7ff!important;border-radius:13px!important;
+}
+#campaignModal :is(.choice b,.placement-card b,.budget-mode b,.spec b){
+ color:#f1f9ff!important;font-size:clamp(12px,1.5vw,15px)!important;
+}
+#campaignModal :is(.choice span,.placement-card small,.placement-card span,
+ .budget-mode small,.spec span){
+ color:#bfd9ea!important;
+}
+#campaignModal :is(.choice.active,.placement input:checked+.placement-card,
+ .budget-mode input:checked+span){
+ background:linear-gradient(135deg,#174b6d,#123c59)!important;
+ border-color:#55dcf2!important;
+ box-shadow:inset 0 0 0 1px rgba(88,220,245,.24)!important;
+}
+#campaignModal .placement-card{min-width:0;overflow:hidden}
+#campaignModal .placement-symbol{background:#d9ecfa!important;border-color:#b4d8ec!important}
+#campaignModal .placement-symbol svg{color:#165b83!important;stroke:#165b83!important}
+#campaignModal .placement-check{background:#0d85e6!important;color:#fff!important}
+#campaignModal .tf-ads-interest-fieldset{
+ display:block;min-width:0;margin:16px 0!important;
+ padding:16px!important;border:1px solid rgba(100,188,225,.42)!important;
+ border-radius:14px!important;
+ background:linear-gradient(135deg,#123956,#0b2a47)!important;
+ box-shadow:none!important;color:#ebf8ff!important;
+}
+#campaignModal .tf-ads-interest-fieldset legend{
+ color:#e9f8ff!important;padding:0 8px!important;
+ font-size:clamp(13px,1.5vw,15px)!important;font-weight:800!important;
+}
+#campaignModal .tf-ads-interest-fieldset legend small{color:#a8d1e8!important;font-size:11px!important}
+#campaignModal .tf-ads-interest-fieldset .tf-goal-hint{
+ color:#c5e1f1!important;margin:4px 0 13px!important;
+}
+#campaignModal .tf-ads-interest-choices{display:flex;flex-wrap:wrap;gap:10px!important}
+#campaignModal .tf-ads-interest-choices label{
+ display:inline-flex!important;align-items:center;gap:9px!important;
+ min-height:42px!important;padding:9px 13px!important;
+ color:#eaf6ff!important;background:#173d5c!important;
+ border:1px solid rgba(111,193,228,.43)!important;border-radius:11px!important;
+ font-size:clamp(12px,1.4vw,14px)!important;font-weight:700!important;
+}
+#campaignModal .tf-ads-interest-choices label:has(input:checked){
+ background:#174b70!important;border-color:#5ce2f5!important;color:#f6fdff!important;
+}
+#campaignModal .tf-ads-interest-choices input{
+ appearance:auto!important;accent-color:#27c8eb!important;
+ width:18px!important;height:18px!important;flex:none!important;
+ opacity:1!important;position:static!important;margin:0!important;
+}
+#campaignModal #tfAdsGeoAvailability{
+ padding:10px 13px;background:rgba(17,58,90,.72)!important;
+ border:1px solid rgba(91,171,211,.3);border-radius:10px;
+}
+#campaignModal #tfAdsRefreshGeos{
+ min-height:43px!important;padding:10px 14px!important;
+ background:#174767!important;border:1px solid #458eb1!important;
+ color:#eaf9ff!important;border-radius:10px!important;
+ font-size:13px!important;font-weight:700!important;
+}
+#campaignModal :is(.tf-ads-ab-test-field,.spec,.preview-card,.media-frame,
+ .upload-zone,.ad-draft-item,.campaign-ad-list,.ad-budget-summary){
+ background:#102f4d!important;border-color:rgba(99,185,225,.35)!important;
+ color:#ebf9ff!important;
+}
+#campaignModal :is(.tf-ads-ab-test-field,.spec,.preview-card,.media-frame,
+ .upload-zone,.ad-draft-item,.campaign-ad-list,.ad-budget-summary) :is(b,small,span,p){
+ color:#e0f0fa!important;
+}
+#campaignModal .tf-ads-ab-test-field input{accent-color:#29cde8}
+#campaignModal .notice{display:flex;gap:8px;flex-wrap:wrap}
+#campaignModal .review{line-height:1.55!important;overflow-wrap:anywhere}
+#campaignModal .wizard-footer{
+ position:sticky!important;bottom:0!important;z-index:20;
+ display:flex!important;align-items:center!important;justify-content:space-between!important;
+ gap:10px!important;margin:0!important;
+ padding:12px 14px!important;background:#0a253f!important;
+ border-top:1px solid rgba(98,188,228,.33)!important;
+}
+#campaignModal .wizard-footer :is(button,.primary,.secondary,.ghost){
+ min-height:43px!important;border-radius:10px!important;
+ font-size:clamp(12px,1.5vw,14px)!important;
+ font-weight:800!important;padding:10px 14px!important;
+}
+#campaignModal .wizard-right{display:flex;gap:9px;min-width:0}
+#campaignModal #campaignMessage{
+ min-height:0!important;margin:0!important;
+ padding:0 14px!important;background:#0a253f!important;
+ color:#cbe8f7!important;border:0!important;
+}
+#campaignModal #campaignMessage:not(:empty){
+ padding:10px 14px!important;border-top:1px solid rgba(110,187,220,.28)!important;
+}
+#campaignModal #campaignMessage.error{color:#ffb9cb!important}
+#campaignModal #campaignMessage.success{color:#96f0cc!important}
+#campaignModal .wizard-body::after{background:transparent!important}
+@media(max-width:700px){
+ #campaignModal{padding:0!important}
+ #campaignModal .modal-card{
+  width:100vw!important;max-width:100vw!important;
+  height:100dvh!important;max-height:100dvh!important;
+  margin:0!important;border-radius:0!important;
+ }
+ #campaignModal .modal-head{padding:14px 16px!important}
+ #campaignModal .wizard{grid-template-columns:minmax(0,1fr)!important;min-height:0}
+ #campaignModal .steps{gap:6px!important}
+ #campaignModal .step{min-height:43px!important}
+ #campaignModal .wizard-body{padding:10px 11px 0!important;overflow:auto!important}
+ #campaignModal .wizard-page{width:100%!important;margin:0 auto 12px!important;padding:15px!important}
+ #campaignModal .formgrid{grid-template-columns:minmax(0,1fr);gap:14px}
+ #campaignModal .field{margin-top:0!important}
+ #campaignModal .field+.field{margin-top:9px!important}
+ #campaignModal .wizard-footer{padding:11px 10px!important;flex-wrap:nowrap!important}
+ #campaignModal .wizard-right{flex:1 1 auto}
+ #campaignModal .wizard-right button{min-width:0}
+ #campaignModal .tf-ads-interest-fieldset{padding:13px!important}
+ #campaignModal .placement-card{padding:14px!important}
+ #campaignModal .placement-card b{font-size:14px!important}
+ #campaignModal .modal-head h2{font-size:19px!important}
+}
+@media(max-width:380px){
+ #campaignModal .wizard-footer button{padding:9px 8px!important;font-size:12px!important}
+ #campaignModal .wizard-footer{gap:6px!important}
+ #campaignModal .wizard-right{gap:6px}
+}
+@media(prefers-reduced-motion:reduce){
+ #campaignModal *,#appView .view *{transition:none!important;animation-duration:.001ms!important}
+}
