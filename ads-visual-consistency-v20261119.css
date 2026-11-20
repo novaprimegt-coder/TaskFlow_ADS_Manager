@@ -1452,3 +1452,12 @@ body>.tf-filter-menu.tf-filter-portal :is(input,span,small){
  #authView #profilePhotoInput{font-size:11px}
  #authView #profilePhotoInput::file-selector-button{padding:8px 7px}
 }
+
+
+/* TASKFLOW ADS DESKTOP MENU VISIBILITY V7 */
+@media(min-width:981px){
+ #appView #menuBtn{display:none!important}
+}
+@media(max-width:980px){
+ #appView #menuBtn{display:inline-flex!important}
+}
