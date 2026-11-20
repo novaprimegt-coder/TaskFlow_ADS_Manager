@@ -2342,6 +2342,13 @@ body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
 <form id="authForm" novalidate="">
 <div class="field" hidden="" id="nameField"><label>Nombre completo</label><input autocomplete="name" id="fullName" maxlength="80" placeholder="Nombre del responsable"/></div>
 <div class="field" hidden="" id="companyField"><label>Empresa o marca</label><input id="companyName" maxlength="100" placeholder="Nombre comercial"/></div>
+<div class="field tf-ads-profile-photo-field" hidden="" id="profilePhotoField">
+<label for="profilePhotoInput">Foto de perfil de usuario o empresa <span class="tf-ads-photo-required">(obligatoria)</span></label>
+<div class="tf-ads-profile-photo-picker">
+<span class="tf-ads-photo-preview" id="profilePhotoPreview" aria-hidden="true"><svg class="tf-icon"><use href="#i-image"></use></svg></span>
+<div class="tf-ads-photo-picker-copy"><input accept="image/jpeg,image/png,image/webp" id="profilePhotoInput" type="file" aria-describedby="profilePhotoHelp" required/><small id="profilePhotoHelp">JPG, PNG o WebP · máximo 5 MB. Será la imagen mostrada en tu cuenta.</small></div>
+</div>
+</div>
 <div class="field"><label>Correo electrónico</label><input autocomplete="email" id="email" maxlength="160" placeholder="correo@empresa.com" type="email"/></div>
 <div class="field"><label>Contraseña</label><div class="password-control"><input autocomplete="current-password" id="password" maxlength="128" minlength="8" placeholder="Mínimo 8 caracteres" type="password"/><button class="password-toggle" data-password-target="password" type="button" aria-label="Mostrar contraseña" title="Mostrar contraseña"><svg class="tf-icon" aria-hidden="true"><use href="#i-eye"></use></svg><span>Ver</span></button></div></div>
 <div class="field" hidden="" id="confirmField"><label>Confirmar contraseña</label><div class="password-control"><input autocomplete="new-password" id="confirmPassword" maxlength="128" minlength="8" placeholder="Repite la contraseña" type="password"/><button class="password-toggle" data-password-target="confirmPassword" type="button" aria-label="Mostrar contraseña" title="Mostrar contraseña"><svg class="tf-icon" aria-hidden="true"><use href="#i-eye"></use></svg><span>Ver</span></button></div></div>
@@ -2353,8 +2360,16 @@ body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
 </main>
 </section>
 <div class="shell app-shell" hidden="" id="appView">
-<aside class="sidebar">
-<div class="side-brand"><span class="logo-mark">TF</span><div class="side-brand-copy"><strong>ADS</strong><small>Manager</small></div></div>
+<aside class="sidebar" id="adsSidebar">
+<div class="side-brand tf-ads-account-brand">
+<button class="tf-ads-sidebar-avatar" id="sidebarPhotoButton" type="button" aria-label="Actualizar foto de perfil" title="Actualizar foto de perfil">
+<img id="sidebarProfileImage" alt="" hidden="" referrerpolicy="no-referrer"/>
+<span id="sidebarProfileFallback">TF</span>
+<span class="tf-ads-sidebar-camera" aria-hidden="true"><svg class="tf-icon"><use href="#i-image"></use></svg></span>
+</button>
+<input id="sidebarPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden="" aria-label="Seleccionar nueva foto de perfil"/>
+<div class="side-brand-copy tf-ads-account-copy"><strong id="sidebarAccountTitle">Cuenta comercial</strong><small id="sidebarAccountSubtitle">TaskFlow ADS</small><span class="tf-ads-sidebar-caption">CUENTA PUBLICITARIA</span></div>
+</div>
 <div class="nav-section">Administración</div>
 <nav class="nav"><button class="nav-item active" data-view="overview"><svg class="tf-icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>Resumen</button><button class="nav-item" data-view="campaigns"><svg class="tf-icon" aria-hidden="true"><use href="#i-campaign"></use></svg>Campañas</button><button class="nav-item" data-view="adsets"><svg class="tf-icon" aria-hidden="true"><use href="#i-columns"></use></svg>Conjuntos</button><button class="nav-item" data-view="audiences"><svg class="tf-icon" aria-hidden="true"><use href="#i-users"></use></svg>Audiencias</button><button class="nav-item" data-view="creatives"><svg class="tf-icon" aria-hidden="true"><use href="#i-image"></use></svg>Creativos</button><button class="nav-item" data-view="reports"><svg class="tf-icon" aria-hidden="true"><use href="#i-chart"></use></svg>Informes</button><button class="nav-item" data-view="conversions"><svg class="tf-icon" aria-hidden="true"><use href="#i-flask"></use></svg>Resultados</button></nav>
 <div class="nav-section">Cuenta</div>
@@ -2364,7 +2379,7 @@ body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
 <button class="menu-scrim" id="menuScrim" type="button" aria-label="Cerrar menú"></button>
 <main class="workspace">
 <header class="topbar">
-<div class="top-left"><button class="icon-btn mobile-only" id="menuBtn" type="button"><svg class="tf-icon" aria-hidden="true"><use href="#i-menu"></use></svg></button><div><small>Cuenta comercial</small><strong id="topCompany">TaskFlow ADS</strong></div></div>
+<div class="top-left"><button class="icon-btn mobile-only" id="menuBtn" type="button" aria-label="Abrir menú lateral" aria-controls="adsSidebar" aria-expanded="false" title="Abrir menú"><svg class="tf-icon" aria-hidden="true"><use href="#i-menu"></use></svg></button><div><small>Cuenta comercial</small><strong id="topCompany">TaskFlow ADS</strong></div></div>
 <div class="top-actions"><span class="top-status"><i></i>Cuenta operativa</span><span class="sync">Sincronización activa</span><button class="primary" id="topCreate" type="button">+ Crear campaña</button><button class="account" type="button"><span id="accountInitials">TF</span><div><b id="accountName">Cuenta</b><small id="accountEmail"></small></div></button></div>
 </header>
 <section class="view active" id="overviewView">
@@ -3076,7 +3091,122 @@ function campaignsRef(uid){return fbDb.collection('users').doc(uid).collection('
 function publicCampaignRef(id){return fbDb.collection('adsPublicCampaigns').doc(id)}
 async function getBusiness(uid){try{const snap=await businessRef(uid).get();return snap.exists?snap.data():null}catch(e){console.warn('ADS business load:',e);return null}}
 async function getAdminClaim(user){try{const t=await user.getIdTokenResult(true);return t&&t.claims&&t.claims.taskflowAdsAdmin===true}catch(_){return false}}
-function setAuthMode(mode){resetPasswordVisibility();const reg=mode==='register';$('loginTab').classList.toggle('active',!reg);$('registerTab').classList.toggle('active',reg);$('loginTab').setAttribute('aria-selected',String(!reg));$('registerTab').setAttribute('aria-selected',String(reg));$('nameField').hidden=!reg;$('companyField').hidden=!reg;$('confirmField').hidden=!reg;$('authSubmit').textContent=reg?'Crear cuenta':'Iniciar sesión';$('authForm').dataset.mode=reg?'register':'login';$('password').autocomplete=reg?'new-password':'current-password';window.TaskFlowGooey?.go(reg?1:0);authMsg('')}
+
+/* Foto de cuenta comercial: mismo almacenamiento Firebase Storage de ADS.
+   La foto no se coloca en almacenamiento local, ni se envía a anuncios. */
+const ADS_PROFILE_IMAGE_TYPES=Object.freeze({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'});
+const ADS_PROFILE_PHOTO_MAX=5*1024*1024;
+let profilePreviewObjectUrl='';
+function photoFileError(file){
+ if(!(file instanceof File))return 'Selecciona una foto de perfil para crear la cuenta.';
+ if(!Object.prototype.hasOwnProperty.call(ADS_PROFILE_IMAGE_TYPES,file.type))
+  return 'La foto debe ser JPG, PNG o WebP.';
+ if(file.size<1||file.size>ADS_PROFILE_PHOTO_MAX)
+  return 'La foto no puede superar 5 MB.';
+ return '';
+}
+async function validatePhotoPixels(file){
+ const err=photoFileError(file);if(err)throw Error(err);
+ let image=null;
+ try{
+  if(typeof createImageBitmap==='function'){
+   image=await createImageBitmap(file);
+   if(image.width<96||image.height<96||image.width>12000||image.height>12000)
+    throw Error('Selecciona una imagen de al menos 96 × 96 píxeles.');
+   return true;
+  }
+  // Compatibilidad con navegadores sin createImageBitmap.
+  await new Promise((resolve,reject)=>{
+   const objectUrl=URL.createObjectURL(file),picture=new Image();
+   picture.onload=()=>{
+    const valid=picture.naturalWidth>=96&&picture.naturalHeight>=96&&
+     picture.naturalWidth<=12000&&picture.naturalHeight<=12000;
+    URL.revokeObjectURL(objectUrl);
+    valid?resolve():reject(Error('La foto debe medir al menos 96 × 96 píxeles.'));
+   };
+   picture.onerror=()=>{URL.revokeObjectURL(objectUrl);reject(Error('No se pudo abrir esta imagen.'))};
+   picture.src=objectUrl;
+  });
+  return true;
+ }catch(err){throw Error(err?.message||'El archivo no es una imagen válida.')}
+ finally{try{image?.close?.()}catch(_){}}
+}
+function clearPhotoPreview(){
+ if(profilePreviewObjectUrl){URL.revokeObjectURL(profilePreviewObjectUrl);profilePreviewObjectUrl=''}
+ const preview=$('profilePhotoPreview');
+ if(preview)preview.replaceChildren();
+ if(preview)preview.innerHTML='<svg class="tf-icon" aria-hidden="true"><use href="#i-image"></use></svg>';
+}
+async function showPhotoPreview(file){
+ clearPhotoPreview();
+ if(!file)return;
+ const error=photoFileError(file);
+ if(error){authMsg(error,'error');$('profilePhotoInput').value='';return}
+ try{
+  await validatePhotoPixels(file);
+  profilePreviewObjectUrl=URL.createObjectURL(file);
+  const image=document.createElement('img');
+  image.alt='Vista previa de la foto seleccionada';image.src=profilePreviewObjectUrl;
+  $('profilePhotoPreview')?.replaceChildren(image);
+  authMsg('');
+ }catch(e){authMsg(e?.message||'La imagen no es válida.','error');$('profilePhotoInput').value=''}
+}
+async function uploadAccountPhoto(uid,file){
+ if(!fbStorage||!fbAuth?.currentUser||fbAuth.currentUser.uid!==uid)
+  throw Error('No se pudo verificar el acceso para subir la foto.');
+ await validatePhotoPixels(file);
+ const ext=ADS_PROFILE_IMAGE_TYPES[file.type];
+ // Sigue exactamente la estructura autorizada para archivos ADS por propietario.
+ const storagePath='ads/'+uid+'/profile/avatar/profile_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
+ const target=fbStorage.ref(storagePath);
+ const snapshot=await target.put(file,{contentType:file.type,cacheControl:'private,max-age=3600'});
+ const photoURL=await snapshot.ref.getDownloadURL();
+ if(!/^https:\/\//i.test(photoURL))throw Error('No se obtuvo una dirección segura de la foto.');
+ return {photoURL,photoStoragePath:storagePath};
+}
+function renderBusinessAvatar(){
+ const user=currentUser;if(!user)return;
+ const company=clean(user.company),owner=clean(user.name),label=company&&company!=='Cuenta comercial'?company:owner||'Cuenta comercial';
+ $('sidebarAccountTitle').textContent=label;
+ $('sidebarAccountSubtitle').textContent=owner&&owner!==label?owner:'TaskFlow ADS · cuenta comercial';
+ const url=user.profilePhotoURL||'';
+ const image=$('sidebarProfileImage'),fallback=$('sidebarProfileFallback');
+ fallback.textContent=initials(label,user.email);
+ image.hidden=true;fallback.hidden=false;
+ image.onerror=()=>{image.hidden=true;fallback.hidden=false};
+ if(/^https:\/\//i.test(url)){
+  image.onload=()=>{if(currentUser===user){image.hidden=false;fallback.hidden=true}};
+  image.src=url;
+ }else image.removeAttribute('src');
+}
+function syncMenuAccessibility(){
+ const btn=$('menuBtn'),opened=$('appView').classList.contains('menu-open');
+ btn.setAttribute('aria-expanded',String(opened));
+ btn.setAttribute('aria-label',opened?'Cerrar menú lateral':'Abrir menú lateral');
+ btn.title=opened?'Cerrar menú':'Abrir menú';
+}
+async function updateSidebarProfilePhoto(file){
+ if(!currentUser||!fbAuth?.currentUser||fbAuth.currentUser.uid!==currentUser.id)return;
+ const button=$('sidebarPhotoButton'),owner=currentUser.id;button.disabled=true;
+ try{
+  const photo=await uploadAccountPhoto(owner,file);
+  if(!fbAuth?.currentUser||fbAuth.currentUser.uid!==owner)throw Error('La sesión cambió.');
+  await businessRef(owner).set({
+   profilePhotoURL:photo.photoURL,photoStoragePath:photo.photoStoragePath,
+   updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+  await fbAuth.currentUser.updateProfile({photoURL:photo.photoURL});
+  if(currentUser?.id===owner){
+   currentUser.profilePhotoURL=photo.photoURL;
+   currentUser.photoStoragePath=photo.photoStoragePath;
+   renderBusinessAvatar();
+   toast('Foto de perfil actualizada.');
+  }
+ }catch(err){toast(err?.message||'No se pudo actualizar la foto.')}
+ finally{button.disabled=false;$('sidebarPhotoInput').value=''}
+}
+
+function setAuthMode(mode){resetPasswordVisibility();const reg=mode==='register';$('loginTab').classList.toggle('active',!reg);$('registerTab').classList.toggle('active',reg);$('loginTab').setAttribute('aria-selected',String(!reg));$('registerTab').setAttribute('aria-selected',String(reg));$('nameField').hidden=!reg;$('companyField').hidden=!reg;$('profilePhotoField').hidden=!reg;$('profilePhotoInput').required=reg;$('confirmField').hidden=!reg;if(!reg)clearPhotoPreview();$('authSubmit').textContent=reg?'Crear cuenta':'Iniciar sesión';$('authForm').dataset.mode=reg?'register':'login';$('password').autocomplete=reg?'new-password':'current-password';window.TaskFlowGooey?.go(reg?1:0);authMsg('')}
 function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'auth/email-already-in-use':'Ese correo ya está registrado.','auth/invalid-email':'El correo electrónico no es válido.','auth/weak-password':'La contraseña debe tener al menos 8 caracteres.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Intenta nuevamente más tarde.','auth/network-request-failed':'No hay conexión con el servicio de cuentas.','auth/unauthorized-domain':'Este dominio todavía no está autorizado para iniciar sesión.'};return map[c]||'No fue posible completar el acceso.'}
  async function handleAuth(e){
   e.preventDefault();authMsg('');
@@ -3084,10 +3214,12 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
   const email=clean($('email').value).toLowerCase(),pass=$('password').value||'';
   if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){authMsg('Ingresa un correo válido.','error');return}
   if(pass.length<8){authMsg('La contraseña debe tener al menos 8 caracteres.','error');return}
-  let name='',company='';
+  let name='',company='',profilePhotoFile=null;
   if(mode==='register'){
    name=clean($('fullName').value);company=clean($('companyName').value);
    if(!name||!company){authMsg('Completa el nombre y la empresa.','error');return}
+   profilePhotoFile=$('profilePhotoInput').files?.[0]||null;
+   try{await validatePhotoPixels(profilePhotoFile)}catch(err){authMsg(err.message,'error');return}
    if(pass!==$('confirmPassword').value){authMsg('Las contraseñas no coinciden.','error');return}
   }
   if(!fbAuth||!fbDb){authMsg('No fue posible conectar con el servicio de cuentas. Verifica la conexión e inténtalo nuevamente.','error');return}
@@ -3098,13 +3230,16 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
    if(mode==='register'){
     const cred=await fbAuth.createUserWithEmailAndPassword(email,pass);
     created=true;
-    await cred.user.updateProfile({displayName:name});
+    const photo=await uploadAccountPhoto(cred.user.uid,profilePhotoFile);
+    await cred.user.updateProfile({displayName:name,photoURL:photo.photoURL});
     await businessRef(cred.user.uid).set({
      ownerUid:cred.user.uid,ownerName:name,ownerEmail:email,businessName:company,
+     profilePhotoURL:photo.photoURL,photoStoragePath:photo.photoStoragePath,
      country:'GT',accountStatus:'active',
      createdAt:firebase.firestore.FieldValue.serverTimestamp(),
      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
+    clearPhotoPreview();$('profilePhotoInput').value='';
     authMsg('Cuenta comercial creada correctamente.','success');
    }else{
     await fbAuth.signInWithEmailAndPassword(email,pass);
@@ -3480,7 +3615,7 @@ function clearAdminView(){
 function enterApp(){
  syncAdminNavigation();
  if(!isAdsAdmin)clearAdminView();
- $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);loadCampaigns();void loadCommercialStatus(true);animateApp()
+ $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);renderBusinessAvatar();loadCampaigns();void loadCommercialStatus(true);animateApp()
 }
 async function logout(){
  if(!fbAuth)return;
@@ -3518,7 +3653,7 @@ async function handleAuthState(user){
  const admin=await getAdminClaim(user);
  if(!isCurrent())return;
  isAdsAdmin=admin;
- currentUser={id:user.uid,uid:user.uid,name:user.displayName||business?.ownerName||user.email||'Usuario',company:business?.businessName||'Cuenta comercial',email:user.email||'',accountStatus:business?.accountStatus||'active'};
+ currentUser={id:user.uid,uid:user.uid,name:user.displayName||business?.ownerName||user.email||'Usuario',company:business?.businessName||'Cuenta comercial',email:user.email||'',accountStatus:business?.accountStatus||'active',profilePhotoURL:business?.profilePhotoURL||user.photoURL||'',photoStoragePath:business?.photoStoragePath||''};
  enterApp();
  if(isAdsAdmin){startAutoApprovalLoop();void autoApproveQueuedCampaigns(true);void loadAdminReview();void recoverAdministrativeDelivery()}
 }
@@ -4823,13 +4958,17 @@ function setupCompactFilterMenus(){
  window.addEventListener('scroll',e=>{if(opened&&!opened.menu.contains(e.target))positionMenu(opened)},true);
  window.addEventListener('resize',close,{passive:true});
 }
-function bind(){document.addEventListener('error',e=>{if(e.target?.matches?.('.tf-creative-image'))e.target.remove()},{capture:true});setupCompactFilterMenus();updateObjectiveExperience();qa('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>togglePasswordVisibility(btn)));setAuthMode('login');$('loginTab').addEventListener('click',()=>setAuthMode('login'));$('registerTab').addEventListener('click',()=>setAuthMode('register'));$('authForm').addEventListener('submit',handleAuth);$('moduleContent').addEventListener('click',e=>{
+function bind(){document.addEventListener('error',e=>{if(e.target?.matches?.('.tf-creative-image'))e.target.remove()},{capture:true});setupCompactFilterMenus();updateObjectiveExperience();qa('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>togglePasswordVisibility(btn)));setAuthMode('login');$('loginTab').addEventListener('click',()=>setAuthMode('login'));$('registerTab').addEventListener('click',()=>setAuthMode('register'));$('authForm').addEventListener('submit',handleAuth);
+$('profilePhotoInput').addEventListener('change',e=>void showPhotoPreview(e.target.files?.[0]||null));
+$('sidebarPhotoButton').addEventListener('click',()=>$('sidebarPhotoInput').click());
+$('sidebarPhotoInput').addEventListener('change',e=>{const photo=e.target.files?.[0];if(photo)void updateSidebarProfilePhoto(photo)});
+$('moduleContent').addEventListener('click',e=>{
  const end=e.target.closest('[data-settings-logout]');
  if(end){end.disabled=true;void logout().finally(()=>{if(end.isConnected)end.disabled=false});return}
  const budget=e.target.closest('[data-edit-budget]');if(budget){void openEdit(budget.dataset.editBudget).then(()=>setStep(3));return}
  const admin=e.target.closest('[data-settings-admin]');
  if(admin&&isAdsAdmin&&currentUser)showView('admin');
-});$('menuBtn').addEventListener('click',()=>$('appView').classList.toggle('menu-open'));const scrim=$('menuScrim');if(scrim)scrim.addEventListener('click',()=>$('appView').classList.remove('menu-open'));qa('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));qa('[data-view-link]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewLink)));$('recentCampaigns').addEventListener('click',e=>{const b=e.target.closest('[data-recent-edit]');if(b)void openEdit(b.dataset.recentEdit)});qa('[data-approval-shortcut]').forEach(b=>b.addEventListener('click',()=>{const f=$('approvalFilter');if(f){f.value=b.dataset.approvalShortcut;f.dispatchEvent(new Event('tf-filter-sync'))}showView('campaigns');renderTable()}));qa('[data-new]').forEach(b=>b.addEventListener('click',openNew));$('topCreate').addEventListener('click',openNew);$('closeModal').addEventListener('click',closeModal);$('campaignModal').addEventListener('click',e=>{if(e.target===$('campaignModal'))closeModal()});$('objectiveGrid').addEventListener('click',e=>{const c=e.target.closest('.choice');if(!c)return;objective=c.dataset.objective;updateObjectiveExperience();review()});$('placements').addEventListener('change',()=>{commitCurrentAd();adDrafts.forEach(a=>{a.mediaMeta=null;a._blob=null;a.pendingMediaLocal=false;a.src='';a.storagePath=''});pendingMedia=null;existingMediaMeta=null;updateCreativeRules(true);renderAdDraftList();review()});qa('.step').forEach(s=>s.addEventListener('click',()=>{const n=Number(s.dataset.step);if(n<=step||validateStep())setStep(n)}));$('backBtn').addEventListener('click',()=>setStep(step-1));$('nextBtn').addEventListener('click',async()=>{if(!validateStep())return;if(step<4)setStep(step+1);else await saveCampaign()});$('draftBtn').addEventListener('click',saveDraft);$('campaignForm').addEventListener('input',e=>{if(['budgetAmount','budgetType'].includes(e.target.id)||e.target.name==='budgetDistribution'){renderBudgetAllocation();renderAdDraftList()}if(step===4){commitCurrentAd();review()}});$('search').addEventListener('input',renderTable);$('statusFilter').addEventListener('change',renderTable);$('approvalFilter').addEventListener('change',renderTable);$('orderFilter').addEventListener('change',renderTable);$('exportCampaignsBtn').addEventListener('click',exportCampaignsCSV);$('creativeFile').addEventListener('change',e=>handleCreativeFile(e.target.files&&e.target.files[0]));$('addAdBtn').addEventListener('click',addCampaignAd);$('removeAdBtn').addEventListener('click',removeCampaignAd);$('adDraftList').addEventListener('click',e=>{const b=e.target.closest('[data-ad-draft]');if(b)loadAdDraftEditor(b.dataset.adDraft)});qa('input[name="budgetDistribution"]').forEach(x=>x.addEventListener('change',()=>{renderBudgetAllocation();renderAdDraftList();if(step===4)review()}));const zone=$('uploadZone');['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('drag')}));['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('drag')}));zone.addEventListener('drop',e=>{const f=e.dataTransfer?.files?.[0];if(f)handleCreativeFile(f)});$('campaignBody').addEventListener('click',e=>{const sel=e.target.closest('[data-select-id]');if(sel){if(sel.checked)selectedCampaignIds.add(sel.dataset.selectId);else selectedCampaignIds.delete(sel.dataset.selectId);renderTable();renderManagerSummary();return}const edit=e.target.closest('[data-edit]');if(edit){openEdit(edit.dataset.edit);return}const dup=e.target.closest('[data-duplicate]');if(dup){duplicateCampaign(dup.dataset.duplicate);return}const t=e.target.closest('[data-toggle]');if(t){toggleCampaign(t.dataset.toggle);return}const d=e.target.closest('[data-delete]');if(d)deleteCampaign(d.dataset.delete)});$('refreshBtn').addEventListener('click',async()=>{await loadCampaigns();renderAll();if(window.TaskFlowADSModules?.paintCampaignMetrics&&currentUser)void window.TaskFlowADSModules.paintCampaignMetrics(adsModulesContext(),true);toast('Datos actualizados.')});qa('[data-entity-level]').forEach(btn=>btn.addEventListener('click',()=>{managerLevel=btn.dataset.entityLevel;qa('[data-entity-level]').forEach(x=>x.classList.toggle('active',x===btn));selectedCampaignIds.clear();renderTable();renderManagerSummary()}));const mgrRefresh=$('managerRefresh');if(mgrRefresh)mgrRefresh.addEventListener('click',async()=>{await loadCampaigns();renderAll();if(window.TaskFlowADSModules?.paintCampaignMetrics&&currentUser)void window.TaskFlowADSModules.paintCampaignMetrics(adsModulesContext(),true);toast('Administrador actualizado.')});const clear=$('clearFilters');if(clear)clear.addEventListener('click',()=>{$('search').value='';$('statusFilter').value='all';$('approvalFilter').value='all';$('orderFilter').value='recent';['statusFilter','approvalFilter','orderFilter'].forEach(id=>$(id).dispatchEvent(new Event('tf-filter-sync')));renderTable()});const dupBtn=$('duplicateBtn');if(dupBtn)dupBtn.addEventListener('click',()=>{[...selectedCampaignIds].forEach(id=>duplicateCampaign(id));selectedCampaignIds.clear();renderAll()});const editBtn=$('bulkEditBtn');if(editBtn)editBtn.addEventListener('click',()=>{const id=[...selectedCampaignIds][0];if(id)openEdit(id)});$('bulkDeleteBtn').addEventListener('click',()=>void deleteSelectedCampaigns());blockExtraction()}
+});$('menuBtn').addEventListener('click',()=>{$('appView').classList.toggle('menu-open');syncMenuAccessibility()});const scrim=$('menuScrim');if(scrim)scrim.addEventListener('click',()=>{$('appView').classList.remove('menu-open');syncMenuAccessibility()});qa('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));qa('[data-view-link]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewLink)));$('recentCampaigns').addEventListener('click',e=>{const b=e.target.closest('[data-recent-edit]');if(b)void openEdit(b.dataset.recentEdit)});qa('[data-approval-shortcut]').forEach(b=>b.addEventListener('click',()=>{const f=$('approvalFilter');if(f){f.value=b.dataset.approvalShortcut;f.dispatchEvent(new Event('tf-filter-sync'))}showView('campaigns');renderTable()}));qa('[data-new]').forEach(b=>b.addEventListener('click',openNew));$('topCreate').addEventListener('click',openNew);$('closeModal').addEventListener('click',closeModal);$('campaignModal').addEventListener('click',e=>{if(e.target===$('campaignModal'))closeModal()});$('objectiveGrid').addEventListener('click',e=>{const c=e.target.closest('.choice');if(!c)return;objective=c.dataset.objective;updateObjectiveExperience();review()});$('placements').addEventListener('change',()=>{commitCurrentAd();adDrafts.forEach(a=>{a.mediaMeta=null;a._blob=null;a.pendingMediaLocal=false;a.src='';a.storagePath=''});pendingMedia=null;existingMediaMeta=null;updateCreativeRules(true);renderAdDraftList();review()});qa('.step').forEach(s=>s.addEventListener('click',()=>{const n=Number(s.dataset.step);if(n<=step||validateStep())setStep(n)}));$('backBtn').addEventListener('click',()=>setStep(step-1));$('nextBtn').addEventListener('click',async()=>{if(!validateStep())return;if(step<4)setStep(step+1);else await saveCampaign()});$('draftBtn').addEventListener('click',saveDraft);$('campaignForm').addEventListener('input',e=>{if(['budgetAmount','budgetType'].includes(e.target.id)||e.target.name==='budgetDistribution'){renderBudgetAllocation();renderAdDraftList()}if(step===4){commitCurrentAd();review()}});$('search').addEventListener('input',renderTable);$('statusFilter').addEventListener('change',renderTable);$('approvalFilter').addEventListener('change',renderTable);$('orderFilter').addEventListener('change',renderTable);$('exportCampaignsBtn').addEventListener('click',exportCampaignsCSV);$('creativeFile').addEventListener('change',e=>handleCreativeFile(e.target.files&&e.target.files[0]));$('addAdBtn').addEventListener('click',addCampaignAd);$('removeAdBtn').addEventListener('click',removeCampaignAd);$('adDraftList').addEventListener('click',e=>{const b=e.target.closest('[data-ad-draft]');if(b)loadAdDraftEditor(b.dataset.adDraft)});qa('input[name="budgetDistribution"]').forEach(x=>x.addEventListener('change',()=>{renderBudgetAllocation();renderAdDraftList();if(step===4)review()}));const zone=$('uploadZone');['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('drag')}));['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('drag')}));zone.addEventListener('drop',e=>{const f=e.dataTransfer?.files?.[0];if(f)handleCreativeFile(f)});$('campaignBody').addEventListener('click',e=>{const sel=e.target.closest('[data-select-id]');if(sel){if(sel.checked)selectedCampaignIds.add(sel.dataset.selectId);else selectedCampaignIds.delete(sel.dataset.selectId);renderTable();renderManagerSummary();return}const edit=e.target.closest('[data-edit]');if(edit){openEdit(edit.dataset.edit);return}const dup=e.target.closest('[data-duplicate]');if(dup){duplicateCampaign(dup.dataset.duplicate);return}const t=e.target.closest('[data-toggle]');if(t){toggleCampaign(t.dataset.toggle);return}const d=e.target.closest('[data-delete]');if(d)deleteCampaign(d.dataset.delete)});$('refreshBtn').addEventListener('click',async()=>{await loadCampaigns();renderAll();if(window.TaskFlowADSModules?.paintCampaignMetrics&&currentUser)void window.TaskFlowADSModules.paintCampaignMetrics(adsModulesContext(),true);toast('Datos actualizados.')});qa('[data-entity-level]').forEach(btn=>btn.addEventListener('click',()=>{managerLevel=btn.dataset.entityLevel;qa('[data-entity-level]').forEach(x=>x.classList.toggle('active',x===btn));selectedCampaignIds.clear();renderTable();renderManagerSummary()}));const mgrRefresh=$('managerRefresh');if(mgrRefresh)mgrRefresh.addEventListener('click',async()=>{await loadCampaigns();renderAll();if(window.TaskFlowADSModules?.paintCampaignMetrics&&currentUser)void window.TaskFlowADSModules.paintCampaignMetrics(adsModulesContext(),true);toast('Administrador actualizado.')});const clear=$('clearFilters');if(clear)clear.addEventListener('click',()=>{$('search').value='';$('statusFilter').value='all';$('approvalFilter').value='all';$('orderFilter').value='recent';['statusFilter','approvalFilter','orderFilter'].forEach(id=>$(id).dispatchEvent(new Event('tf-filter-sync')));renderTable()});const dupBtn=$('duplicateBtn');if(dupBtn)dupBtn.addEventListener('click',()=>{[...selectedCampaignIds].forEach(id=>duplicateCampaign(id));selectedCampaignIds.clear();renderAll()});const editBtn=$('bulkEditBtn');if(editBtn)editBtn.addEventListener('click',()=>{const id=[...selectedCampaignIds][0];if(id)openEdit(id)});$('bulkDeleteBtn').addEventListener('click',()=>void deleteSelectedCampaigns());blockExtraction()}
 document.addEventListener('DOMContentLoaded',()=>{bind();try{initFirebase();fbAuth.onAuthStateChanged(async u=>{try{if(u&&registrationGate)await registrationGate;if(u&&fbAuth.currentUser?.uid!==u.uid)return;await handleAuthState(u)}catch(e){console.error(e);authMsg('No fue posible cargar la cuenta comercial.','error')}})}catch(e){console.error(e);authMsg('No fue posible iniciar el servicio de cuentas.','error');animateAuth()}});
 })();
 </script>
