@@ -1388,6 +1388,28 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 @media(prefers-reduced-motion:reduce){
  #authView #authSubmit{transition:none}
 }
+
+/* Ajustes puntuales: franja de aviso e inputs translúcidos de acceso/registro. */
+#authView #authMessage{
+ background:transparent!important;
+ padding:0!important;
+ margin:8px 0 0!important;
+ min-height:0;
+ border:0!important;
+ box-shadow:none!important;
+}
+#authView #authMessage:empty{display:none!important}
+#authView #authForm .field label{color:#e5f3ff!important}
+#authView #authForm .field input{
+ background:rgba(18,50,80,.60)!important;
+ border:1px solid rgba(99,174,222,.58)!important;
+ color:#eef8ff!important;
+ box-shadow:inset 0 1px 3px rgba(0,9,30,.25)!important;
+}
+#authView #authForm .field input:focus{
+ border-color:#28c7f4!important;
+ box-shadow:0 0 0 3px rgba(10,193,239,.16),inset 0 1px 3px rgba(0,9,30,.22)!important;
+}
 </style>
 </head>
 <body>
