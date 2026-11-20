@@ -645,3 +645,244 @@
  #appView .tf-overview-actions{flex-wrap:wrap!important}
  #appView #tfAdsLiveOverview .tf-tool-kpi>strong{font-size:clamp(26px,7.2vw,34px)!important}
 }
+
+
+/* TASKFLOW ADS VISUAL CONTRAST V6 20261120
+   CAPA FINAL EXCLUSIVAMENTE VISUAL. No cambia eventos, datos ni componentes.
+   Superficies oscuras + texto claro, semántica conservada y contraste accesible. */
+#appView,#campaignModal{
+ --tfv6-back:#071e33;--tfv6-surface:#0c2d49;
+ --tfv6-panel:#103753;--tfv6-raised:#174563;
+ --tfv6-line:#4c87a9;--tfv6-primary:#edf9ff;
+ --tfv6-muted:#c2dcea;--tfv6-accent:#80eaff;
+ --tfv6-success:#9cf2c6;--tfv6-warning:#ffe1a3;
+ --tfv6-error:#ffbeca;
+}
+#appView .workspace,
+#appView .view{color:var(--tfv6-primary)!important}
+#appView #placeholderView>.heading h2,
+#appView #campaignsView .manager-titlebar :is(h1,h2,b,strong),
+#appView #overviewView .heading :is(h1,h2,h3){
+ color:var(--tfv6-primary)!important;
+}
+#appView #placeholderView>.heading p,
+#appView #placeholderView>.heading .eyebrow,
+#appView .manager-titlebar :is(p,small),
+#appView #overviewView .heading p{
+ color:var(--tfv6-muted)!important;opacity:1!important;
+}
+#appView :is(.sidebar,.topbar,.workspace) :is(.sync,.account) small{
+ color:#c7dfef!important;
+}
+#appView .sidebar .nav-item:not(.active){
+ color:#d0e5f1!important;
+}
+#appView .sidebar .nav-item:not(.active):hover{color:#f5fcff!important}
+#appView .tf-tool-empty,#appView .manager-empty,
+#appView .tf-tool-note,#appView .tf-tool-loading{
+ color:var(--tfv6-muted)!important;
+}
+
+/* CONFIGURACIÓN: sustituye la mezcla de tarjetas blancas, encabezados
+   pálidos, campos oscuros y textos originales azules. */
+#appView #placeholderView:has(#tfAdsSettingsForm){
+ --tf-settings-ink:var(--tfv6-primary);
+ --tf-settings-border:var(--tfv6-line);
+ --tf-settings-subtle:var(--tfv6-muted);
+ background:transparent!important;
+}
+#appView #placeholderView:has(#tfAdsSettingsForm)>.heading :is(h2,p,.eyebrow){
+ color:var(--tfv6-primary)!important;opacity:1!important;
+}
+#appView #placeholderView:has(#tfAdsSettingsForm)>.heading :is(p,.eyebrow){
+ color:var(--tfv6-muted)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm)>.tf-tool-panel{
+ background:linear-gradient(145deg,#103753,#0b2b47)!important;
+ border:1px solid var(--tfv6-line)!important;
+ box-shadow:0 13px 30px rgba(1,9,24,.25)!important;
+ color:var(--tfv6-primary)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm)>.tf-tool-panel>.tf-tool-heading{
+ background:linear-gradient(120deg,#164363,#10304b)!important;
+ border-bottom:1px solid rgba(127,204,238,.28)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm)>.tf-tool-panel>.tf-tool-heading h3{
+ color:var(--tfv6-primary)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm)>.tf-tool-panel>.tf-tool-heading:before{
+ background-color:#c5ecfa!important;
+ border-color:#7fb9d8!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsForm>label,
+#appView #moduleContent:has(#tfAdsSettingsForm) .tf-tool-panel:has(#tfAdsSecurityMessage) label{
+ color:#e6f6ff!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsForm input{
+ background:#153b59!important;color:#f0fbff!important;
+ -webkit-text-fill-color:#f0fbff!important;
+ border:1px solid #619ec2!important;
+ box-shadow:inset 0 1px 2px rgba(0,7,22,.22)!important;
+ opacity:1!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsForm input:not(:disabled):hover{
+ background:#194563!important;border-color:#85cfea!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsForm input:focus{
+ background:#1b4968!important;border-color:#8eeafa!important;
+ box-shadow:0 0 0 3px rgba(114,228,244,.18)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsForm input:disabled{
+ background:#1b354a!important;color:#bad1df!important;
+ -webkit-text-fill-color:#bad1df!important;
+ border-color:#456b86!important;opacity:1!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsForm>button[type="submit"]{
+ color:#fff!important;-webkit-text-fill-color:#fff!important;
+ background:linear-gradient(110deg,#0869e6,#087fcb,#0c9cba)!important;
+ border-color:#57cce9!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsMessage,
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSecurityMessage{
+ color:#c8e2f1!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSecurityMessage{
+ background:#123955!important;border:1px solid #4b87a9!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm)
+ .tf-tool-panel:has(#tfAdsSecurityMessage) .tf-tool-buttons>button,
+#appView #moduleContent:has(#tfAdsSettingsForm) [data-tf-action="settings-recovery"]{
+ background:#174768!important;color:#f1faff!important;
+ -webkit-text-fill-color:#f1faff!important;
+ border:1px solid #5599bd!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm)
+ .tf-tool-panel:has(#tfAdsSecurityMessage) .tf-tool-buttons>button:hover,
+#appView #moduleContent:has(#tfAdsSettingsForm) [data-tf-action="settings-recovery"]:hover{
+ background:#205979!important;border-color:#83d8eb!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) [data-settings-logout]{
+ background:#482e3a!important;color:#ffd0d9!important;
+ -webkit-text-fill-color:#ffd0d9!important;
+ border-color:#b57a91!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) [data-settings-logout]:hover{
+ background:#5b3543!important;border-color:#df9daf!important;
+}
+
+/* MONEDERO: encabezado, movimientos, campos y mensajes sobre el mismo tema. */
+#appView #moduleContent #tfAdsPayPalWallet{
+ --wallet-ink:var(--tfv6-primary)!important;
+ background:linear-gradient(145deg,#103650,#0b273f)!important;
+ border:1px solid var(--tfv6-line)!important;
+ box-shadow:0 13px 32px rgba(1,8,26,.25)!important;
+ color:var(--tfv6-primary)!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-head{
+ background:linear-gradient(115deg,#174868,#0e314c)!important;
+ border-bottom:1px solid rgba(117,195,225,.30)!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-head h3,
+#appView #tfAdsPayPalWallet h4,
+#appView #tfAdsPayPalWallet .tf-wallet-movement b{
+ color:#f1faff!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-head small,
+#appView #tfAdsPayPalWallet .tf-wallet-recharge>p,
+#appView #tfAdsPayPalWallet .tf-wallet-movement small,
+#appView #tfAdsPayPalWallet .tf-wallet-tip,
+#appView #tfAdsPayPalWallet #tfWalletMovements{
+ color:#c2dcea!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-head>span{
+ background:#144867!important;border-color:#5a9ec1!important;
+ color:#afeffe!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-recharge{
+ border-right-color:rgba(127,203,236,.24)!important;
+ border-bottom-color:rgba(127,203,236,.24)!important;
+}
+#appView #tfAdsPayPalWallet #tfWalletRechargeForm label{
+ color:#e1f3fc!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-input{
+ background:#153b58!important;border-color:#619bbc!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-input:focus-within{
+ border-color:#85e5f5!important;
+ box-shadow:0 0 0 3px rgba(121,228,247,.17)!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-input>span{
+ background:#194765!important;border-right-color:#568fb1!important;
+ color:#d9f2ff!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-input input{
+ background:transparent!important;
+ color:#f0faff!important;-webkit-text-fill-color:#f0faff!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-movement{
+ border-top-color:rgba(125,196,230,.23)!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-movement>strong{
+ color:#98f3c0!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-movement-head button,
+#appView #tfAdsPayPalWallet #tfWalletRetryPayment{
+ background:#164765!important;border:1px solid #599fc0!important;
+ color:#e7f8ff!important;
+}
+#appView #tfAdsPayPalWallet #tfWalletRechargeForm button:disabled{
+ background:#244458!important;color:#cbdfeb!important;
+ -webkit-text-fill-color:#cbdfeb!important;
+ border-color:#4c718b!important;opacity:.68!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-feedback:not(:empty){
+ background:#3d331f!important;border-top:1px solid #93734e!important;
+ color:#ffe3ae!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-feedback:not(:empty) *{
+ color:#ffe3ae!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-footnote{
+ background:#102f49!important;border-top-color:rgba(119,196,228,.29)!important;
+ color:#c4dcea!important;
+}
+
+/* RESULTADOS Y ACTIVIDAD: cada cifra y etiqueta contrasta con su tarjeta. */
+#appView #campaignsView .tf-performance-cell{
+ background:linear-gradient(110deg,#123b57,#102f4c)!important;
+ color:#d5ebf8!important;
+}
+#appView #campaignsView .tf-performance-stat,
+#appView #campaignsView .tf-performance-stat:nth-child(2),
+#appView #campaignsView .tf-performance-stat:nth-child(3){
+ background:#173e5b!important;border:1px solid #4c83a2!important;
+}
+#appView #campaignsView .tf-performance-stat small{
+ color:#c9e1f0!important;opacity:1!important;
+}
+#appView #campaignsView .tf-performance-stat b,
+#appView #campaignsView .tf-performance-stat:nth-child(2) b,
+#appView #campaignsView .tf-performance-stat:nth-child(3) b{
+ color:#80eafa!important;-webkit-text-fill-color:#80eafa!important;
+}
+#appView #campaignsView .tf-performance-foot,
+#appView #campaignsView .tf-performance-unavailable,
+#appView #campaignsView .tf-performance-unavailable small{
+ color:#c2dbea!important;
+}
+#appView #campaignsView .tf-performance-foot.tf-performance-partial{
+ color:#ffe0a1!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-performance strong,
+#appView #overviewView .tf-recent-item .tf-recent-copy b,
+#appView #overviewView .tf-overview-card .tf-recent-copy b{
+ color:#f0faff!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-performance strong{
+ color:#80eafa!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-performance small,
+#appView #overviewView .tf-recent-item .tf-recent-location{
+ color:#c1d9eb!important;opacity:1!important;
+}
