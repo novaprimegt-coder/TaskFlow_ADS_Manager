@@ -517,3 +517,131 @@
 #appView .workspace>.topbar .icon-btn{
  color:#e7faff!important;
 }
+
+
+/* TASKFLOW ADS THEME V5 — uniformidad en todos los módulos comerciales */
+#appView{
+ --ads-ui-bg:#071e33;
+ --ads-ui-panel:#102f4b;
+ --ads-ui-panel-alt:#0d2943;
+ --ads-ui-outline:rgba(105,192,229,.39);
+ --ads-ui-ink:#effaff;
+ --ads-ui-muted:#c4dceb;
+ --ads-ui-accent:#73eaf8;
+ color-scheme:dark!important;
+}
+#appView .workspace,
+#appView .view,
+#appView #placeholderView{
+ background:#071e33!important;color:var(--ads-ui-ink)!important;
+}
+#appView :is(.panel,.metric,.tf-tool-panel,.tf-tool-kpi,.tf-overview-card,
+ .module-card,.module-list,.module-row,.tf-chart-panel,.tf-tool-creative,.tf-report-card,
+ .manager-table-card,.tf-tool-section,.tf-adset-group,.tf-adset-entry,
+ .tf-ads-admin-review,.tf-ads-admin-stat,.tf-approval-summary){
+ border-color:var(--ads-ui-outline)!important;
+}
+#appView :is(.tf-tool-panel,.module-card,.tf-ads-admin-review,.manager-table-card,
+ .tf-tool-section,.tf-tool-creative,.tf-ads-admin-stat,.tf-tool-row){
+ background:linear-gradient(145deg,#103451,#0a263f)!important;
+ color:var(--ads-ui-ink)!important;
+}
+#appView :is(.tf-tool-panel,.tf-tool-row,.tf-ads-admin-review,.module-card,
+ .tf-ads-admin-stat) :is(h2,h3,h4,b,strong){
+ color:#f1fbff!important;
+}
+#appView :is(.tf-tool-row,.module-row,.manager-table,.tf-tool-creative) :is(p,small,span){
+ color:#c9e1ef!important;
+}
+#appView :is(.tf-tool-search,.tf-tool-form,.settings-grid,.tf-tool-table-scroll,
+ .tf-tool-gallery,.tf-ads-admin-rows){
+ min-width:0!important;
+}
+#appView .tf-tool-table-scroll{background:#0c2841!important;border-radius:12px}
+#appView :is(.tf-tool-table,.manager-table) :is(th,td){
+ border-color:rgba(107,178,217,.25)!important;
+}
+#appView :is(.tf-tool-table,.manager-table) th{
+ background:#123854!important;color:#eaf8ff!important;
+ font-weight:770!important;
+}
+#appView :is(.tf-tool-table,.manager-table) td{
+ background:#0c2944!important;color:#d7ebf8!important;
+}
+#appView :is(.tf-tool-table,.manager-table) tr:hover td{
+ background:#16405d!important;
+}
+#appView :is(.tf-tool-table,.manager-table) td :is(b,strong){
+ color:#f1fbff!important;
+}
+#appView :is(.secondary,.ghost,.tf-tool-btn,.tf-tool-filter,
+ .tf-ads-admin-refresh,.tf-overview-actions .secondary),
+#appView #tfAdsLiveOverview .tf-tool-topline button{
+ background:#123c5d!important;border:1px solid #428eb5!important;
+ color:#effaff!important;-webkit-text-fill-color:#effaff!important;
+ box-shadow:none!important;
+}
+#appView :is(.secondary,.ghost,.tf-tool-btn,.tf-tool-filter,
+ .tf-ads-admin-refresh,.tf-overview-actions .secondary):hover{
+ background:#155476!important;border-color:#70d8f0!important;
+}
+#appView :is(button,input,select,textarea):focus-visible{
+ outline:2px solid #77eafa!important;outline-offset:2px!important;
+}
+#appView :is(.field,.tf-tool-form,.tf-audience-form,.tf-tool-search,
+ .settings-grid,.tf-tool-dialog) label{
+ color:#e7f7ff!important;opacity:1!important;
+}
+#appView :is(input:not([type=checkbox]):not([type=radio]),select,textarea){
+ background:#123550!important;
+ border-color:rgba(99,183,225,.55)!important;
+ color:#f2fbff!important;
+ -webkit-text-fill-color:#f2fbff!important;
+}
+#appView :is(input,textarea)::placeholder{
+ color:#accfe2!important;opacity:1!important;
+}
+#appView select option{background:#102c48!important;color:#f2faff!important}
+#appView :is(.tf-tool-warning,.tf-ads-admin-error,.form-message.error){
+ color:#ffe1b1!important;background:#3a3022!important;
+ border-color:rgba(246,188,98,.38)!important;
+}
+#appView :is(.tf-tool-empty,.tf-tool-loading,.module-note,.tf-tool-note,
+ .tf-goal-hint,.manager-scope){
+ color:#c1d9e8!important;
+}
+#appView :is(.tf-tool-heading,.tf-tool-intro,.tf-overview-title,.module-list-head){
+ border-color:rgba(116,198,224,.29)!important;
+}
+#appView .tf-approval-summary{
+ background:linear-gradient(140deg,#10344f,#0a2944)!important;
+ border-radius:15px!important;
+}
+#appView .tf-approval-summary [data-approval-shortcut]{
+ background:#123d59!important;border-color:rgba(95,188,226,.42)!important;
+ color:#e4f7ff!important;
+}
+#appView .tf-approval-summary [data-approval-shortcut] strong{
+ -webkit-text-fill-color:currentColor!important;
+}
+#appView .tf-approval-summary [data-approval-shortcut="approved"] strong{color:#8ef1c0!important}
+#appView .tf-approval-summary [data-approval-shortcut="pending"] strong{color:#ffd29a!important}
+#appView .tf-approval-summary [data-approval-shortcut="rejected"] strong{color:#ffc0d4!important}
+#appView .tf-ads-admin-review .tf-auto-review-indicator{
+ padding:7px 10px;border:1px solid rgba(112,206,230,.35);
+ border-radius:9px;background:#113d59;color:#baf4fc!important;
+ font-size:12px;font-weight:750;
+}
+#campaignModal .wizard-footer{background:#09253c!important}
+#campaignModal #campaignMessage:not(:empty){
+ background:#0c2a43!important;border-top:1px solid rgba(106,196,235,.28)!important;
+ color:#d5edfb!important;
+}
+#campaignModal #campaignMessage:empty{display:none!important}
+@media(max-width:760px){
+ #appView .workspace{min-width:0!important}
+ #appView .tf-ads-admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #appView :is(.tf-tool-table-scroll,.manager-table-card){overflow-x:auto}
+ #appView .tf-overview-actions{flex-wrap:wrap!important}
+ #appView #tfAdsLiveOverview .tf-tool-kpi>strong{font-size:clamp(26px,7.2vw,34px)!important}
+}
