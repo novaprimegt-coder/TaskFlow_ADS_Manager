@@ -2410,11 +2410,11 @@ body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
 </div></div>
 <fieldset class="tf-ads-interest-fieldset">
  <legend>Temas del anuncio <small>Opcional</small></legend>
- <p class="tf-goal-hint">Si eliges temas, la campaña se muestra al abrir una sección compatible en TaskFlow. Para una campaña general, deja los temas vacíos.</p>
+ <p class="tf-goal-hint">Los temas permiten llegar a adultos que autorizaron intereses aprendidos mediante clics confirmados o que consultan una sección compatible. Si quieres una campaña general, déjalos vacíos.</p>
  <div id="tfAdsInterestChoices" class="tf-ads-interest-choices"></div>
 </fieldset>
 <p id="tfAdsGeoAvailability" class="tf-goal-hint" role="status" aria-live="polite">Consultando zonas publicitarias autorizadas…</p><button type="button" id="tfAdsRefreshGeos" class="btn btn-ghost" style="margin:8px 0 10px">Actualizar zonas disponibles</button>
-<div class="formgrid" style="margin-top:14px"><div class="field"><label>País</label><select id="country" aria-label="País o anuncios generales"><option value="">Consultando países activos…</option></select><small class="tf-goal-hint">La segmentación geográfica solo se aplica cuando una persona autoriza expresamente el uso de una zona publicitaria. La ubicación del reloj no se reutiliza para anuncios sin consentimiento.</small></div><div class="field"><label>Departamento / región</label><select id="region"><option value="">Todo el país</option></select></div><div class="field"><label>Ciudad / municipio</label><select id="city"><option value="">Toda la región</option></select></div><div class="field"><label>Colonia / barrio (si hay actividad suficiente)</label><select id="neighborhood"><option value="">Toda la ciudad</option></select></div><div class="field"><label>Radio aproximado</label><select id="radius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select><small class="tf-goal-hint">La segmentación por país, región o municipio requiere zonas declaradas voluntariamente por usuarios de TaskFlow. Los radios de 10–100 km siguen sin validación y no se utilizarán para entregar anuncios.</small></div><div class="field"><label>Edad mínima</label><input id="ageMin" max="65" min="13" type="number" value="18"/></div><div class="field"><label>Edad máxima</label><input id="ageMax" max="65" min="13" type="number" value="65"/><small class="tf-goal-hint">Una audiencia con rango de edad reducido solo podrá recibir anuncios cuando TaskFlow disponga de una edad verificable. Sin ese dato, no se forzará la segmentación.</small></div></div>
+<div class="formgrid" style="margin-top:14px"><div class="field"><label>País</label><select id="country" aria-label="País o anuncios generales"><option value="">Consultando países activos…</option></select><small class="tf-goal-hint">La segmentación geográfica solo se aplica cuando una persona autoriza expresamente el uso de una zona publicitaria. La ubicación del reloj no se reutiliza para anuncios sin consentimiento.</small></div><div class="field"><label>Departamento / región</label><select id="region"><option value="">Todo el país</option></select></div><div class="field"><label>Ciudad / municipio</label><select id="city"><option value="">Toda la región</option></select></div><div class="field"><label>Colonia / barrio (si hay actividad suficiente)</label><select id="neighborhood"><option value="">Toda la ciudad</option></select></div><div class="field"><label>Radio aproximado</label><select id="radius"><option value="0">Sin radio</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select><small class="tf-goal-hint">La segmentación por país, región o municipio requiere zonas declaradas voluntariamente por usuarios de TaskFlow. Los radios de 10–100 km siguen sin validación y no se utilizarán para entregar anuncios.</small></div><div class="field"><label>Edad mínima</label><input id="ageMin" max="120" min="18" type="number" value="18"/></div><div class="field"><label>Edad máxima</label><input id="ageMax" max="120" min="18" type="number" value="65"/><small class="tf-goal-hint">La edad es declarada por el usuario, no verificada documentalmente. La segmentación por edad se aplica solo a adultos que autorizaron la personalización, sin incluir a menores.</small></div></div>
 </section>
 <section class="wizard-page" data-page="3">
 <div class="section-title"><span class="eyebrow">Control de gasto</span><h3>Presupuesto y calendario</h3></div>
@@ -2830,7 +2830,7 @@ const TF_AD_INTERESTS = {
  technology:'Tecnología',education:'Educación',sports:'Deportes',food:'Comida',entertainment:'Entretenimiento',
  shopping:'Compras',travel:'Viajes',home:'Hogar',business:'Negocios',culture:'Cultura'
 };
-const TF_AD_DELIVERY_TOPICS=new Set(['education','sports']);
+const TF_AD_DELIVERY_TOPICS=new Set(Object.keys(TF_AD_INTERESTS));
 function normalizeInterests(topics){
  return Array.isArray(topics)?Object.keys(TF_AD_INTERESTS).filter(id=>topics.includes(id)):[];
 }
@@ -3558,9 +3558,9 @@ function deliveryConflict(c){
  if(Number(c.radius||0)!==0)return 'Selecciona alcance general sin radio para que TaskFlow pueda entregar la campaña.';
  // La selección geográfica ya se valida contra las zonas publicitarias consentidas.
  // El motor privado vuelve a verificar país, región y municipio antes de servir anuncios.
- if((Number(c.ageMin)||18)>18||(Number(c.ageMax)||65)<65)return 'Selecciona la audiencia general de 18 a 65 años. TaskFlow no verifica rangos de edad específicos.';
+ if((Number(c.ageMin)||18)<18||(Number(c.ageMax)||65)>120)return 'La segmentación por edad solo admite audiencias adultas de 18 a 120 años.';
  const topics=normalizeInterests(c.interestTopics);
- if(topics.length&&!topics.some(topic=>TF_AD_DELIVERY_TOPICS.has(topic)))return 'Selecciona Educación o Deportes, o deja los temas vacíos.';
+ if(topics.some(topic=>!TF_AD_DELIVERY_TOPICS.has(topic)))return 'Revisa los temas del anuncio.';
  return '';
 }
 function publicationState(c){
@@ -3574,7 +3574,7 @@ function publicationState(c){
  if(c.approvalStatus!=='approved')return 'Pendiente de aprobación · sin entrega';
  if(!campaignReady(c))return 'Archivo pendiente · sin entrega';
  if(Number(c.radius||0)!==0)return 'Radio no verificable · sin entrega';
- if((Number(c.ageMin)||18)>18||(Number(c.ageMax)||65)<65)return 'Edad no verificable · sin entrega';
+ if((Number(c.ageMin)||18)<18)return 'Segmentación de menores deshabilitada · sin entrega';
  if(deliveryConflict(c))return 'Segmentación no disponible · sin entrega';
  return 'Aprobada · habilitada según consentimiento, ubicación, audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
@@ -4440,7 +4440,7 @@ function validateStep(){
   if(city&&!sameCity&&!tfGeoAreas.some(x=>x.level==='city'&&x.country===country&&x.region===region&&x.city===city)){msg('La ciudad no tiene suficiente actividad reciente.','error');return false}
   if(neighborhood&&!sameNeighborhood&&!tfGeoAreas.some(x=>x.level==='neighborhood'&&x.country===country&&x.region===region&&x.city===city&&x.neighborhood===neighborhood)){msg('El barrio no tiene suficiente actividad reciente.','error');return false}
   if(country==='ALL'&&(clean($('region').value)||clean($('city').value)||clean($('neighborhood').value))){msg('Para segmentar por región o ciudad, selecciona primero un país concreto.','error');return false}
-  const min=Number($('ageMin').value),max=Number($('ageMax').value);if(min<13||max>65||min>max){msg('Revisa el rango de edad.','error');return false}
+  const min=Number($('ageMin').value),max=Number($('ageMax').value);if(min<18||max>120||min>max||!Number.isInteger(min)||!Number.isInteger(max)){msg('La publicidad por edad se dirige solo a adultos de 18 a 120 años.','error');return false}
   const conflict=deliveryConflict({country,region,city,neighborhood,radius:$('radius').value,
    ageMin:min,ageMax:max,interestTopics:readCampaignInterests()});
   if(conflict){msg(conflict,'error');return false}
