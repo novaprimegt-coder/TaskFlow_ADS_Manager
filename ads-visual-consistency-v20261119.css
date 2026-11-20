@@ -1313,3 +1313,142 @@ body>.tf-filter-menu.tf-filter-portal :is(input,span,small){
  #appView #tfAdsLiveOverview .tf-tool-kpi>strong{font-size:clamp(25px,7vw,32px)!important}
  #campaignModal .wizard-footer button{white-space:normal!important}
 }
+
+
+/* TASKFLOW ADS VISUAL V7 — botón de menú visible y perfil de cuenta.
+   Ajustes exclusivos de presentación y accesibilidad visual. */
+#appView #menuBtn{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ width:48px!important;height:46px!important;min-width:48px!important;
+ padding:0!important;border:1.5px solid #55bfda!important;
+ border-radius:13px!important;
+ background:linear-gradient(138deg,#144b70,#0a3154)!important;
+ color:#c9f8ff!important;-webkit-text-fill-color:#c9f8ff!important;
+ box-shadow:0 0 0 1px rgba(47,193,228,.12),0 6px 14px rgba(0,10,28,.25)!important;
+ opacity:1!important;visibility:visible!important;
+}
+#appView #menuBtn .tf-icon{
+ display:block!important;width:26px!important;height:26px!important;
+ color:#e2fbff!important;
+ stroke:#e2fbff!important;stroke-width:2.7px!important;
+ fill:none!important;opacity:1!important;filter:none!important;
+}
+#appView #menuBtn:hover,#appView #menuBtn[aria-expanded="true"]{
+ background:linear-gradient(138deg,#17608a,#0e416b)!important;
+ border-color:#8be8f4!important;
+}
+#appView #menuBtn:active{background:#1b5478!important}
+#appView #menuBtn:focus-visible{outline:3px solid #8aedf9!important;outline-offset:3px!important}
+#appView .sidebar .side-brand.tf-ads-account-brand{
+ display:flex!important;align-items:center!important;justify-content:flex-start!important;
+ gap:13px!important;min-height:91px!important;
+ padding:13px 10px 17px!important;margin:0 0 10px!important;
+ border-bottom:1px solid rgba(111,197,228,.33)!important;
+ background:transparent!important;
+}
+#appView .sidebar .tf-ads-sidebar-avatar{
+ position:relative;display:flex;align-items:center;justify-content:center;
+ flex:0 0 64px;width:64px;height:64px;padding:0;overflow:visible;
+ border:2px solid #5dd0e9!important;border-radius:18px!important;
+ color:#f6fcff!important;font-size:19px;font-weight:850!important;
+ background:linear-gradient(140deg,#0a82e9,#10b5d1)!important;
+ box-shadow:0 8px 20px rgba(0,112,184,.21)!important;
+ cursor:pointer;
+}
+#appView .sidebar .tf-ads-sidebar-avatar img{
+ display:block;position:absolute;inset:0;
+ width:100%;height:100%;object-fit:cover;
+ border-radius:16px!important;background:#0f3855!important;
+}
+#appView .sidebar .tf-ads-sidebar-avatar img[hidden],
+#appView .sidebar .tf-ads-sidebar-avatar span[hidden]{display:none!important}
+#appView .sidebar .tf-ads-sidebar-avatar>span#sidebarProfileFallback{
+ color:#fff!important;font-weight:850!important;
+}
+#appView .sidebar .tf-ads-sidebar-avatar .tf-ads-sidebar-camera{
+ position:absolute;right:-7px;bottom:-6px;z-index:2;
+ display:grid;place-items:center;width:24px;height:24px;
+ border:2px solid #09213a;border-radius:8px;
+ background:#1b6083!important;color:#e6fbff!important;
+ box-shadow:0 2px 7px rgba(1,12,28,.45);
+}
+#appView .sidebar .tf-ads-sidebar-avatar .tf-ads-sidebar-camera svg{
+ width:13px;height:13px;stroke:#ebfbff!important;stroke-width:2.4px!important;
+}
+#appView .sidebar .tf-ads-sidebar-avatar:hover{
+ border-color:#aaf8ff!important;box-shadow:0 0 0 3px rgba(115,230,248,.13)!important;
+}
+#appView .sidebar .tf-ads-sidebar-avatar:disabled{
+ opacity:.6!important;cursor:wait!important;
+}
+#appView .sidebar .tf-ads-account-copy{
+ display:flex!important;flex-direction:column!important;
+ align-items:flex-start!important;justify-content:center!important;
+ gap:4px!important;min-width:0!important;flex:1 1 auto!important;
+}
+#appView .sidebar .tf-ads-account-copy>strong{
+ display:block!important;width:100%;min-width:0;
+ color:#f0faff!important;font-size:clamp(14px,2.3vw,19px)!important;
+ font-weight:830!important;line-height:1.24!important;letter-spacing:-.015em;
+ overflow-wrap:anywhere!important;
+}
+#appView .sidebar .tf-ads-account-copy>small{
+ display:block!important;color:#bfddec!important;
+ font-size:12px!important;line-height:1.38!important;
+ overflow-wrap:anywhere!important;
+}
+#appView .sidebar .tf-ads-sidebar-caption{
+ display:block;font-size:9px;letter-spacing:.10em;font-weight:800;
+ color:#80d9f3!important;
+}
+#authView .tf-ads-profile-photo-field[hidden]{display:none!important}
+#authView .tf-ads-profile-photo-field{
+ margin-top:16px!important;
+}
+#authView .tf-ads-profile-photo-field>label{
+ display:block!important;margin-bottom:10px!important;
+ color:#eaf9ff!important;font-size:clamp(12px,1.5vw,14px)!important;
+ font-weight:780!important;
+}
+#authView .tf-ads-photo-required{
+ color:#9bdef7!important;font-weight:650!important;
+}
+#authView .tf-ads-profile-photo-picker{
+ display:flex;align-items:center;gap:16px;min-width:0;
+ padding:13px;border:1px solid rgba(96,181,221,.48)!important;
+ border-radius:14px!important;background:rgba(17,53,80,.86)!important;
+}
+#authView .tf-ads-photo-preview{
+ display:grid;place-items:center;flex:0 0 74px;
+ width:74px;height:74px;overflow:hidden;border-radius:16px;
+ border:1px solid #5ba5c9;background:#1a486a;color:#a2ebfb;
+}
+#authView .tf-ads-photo-preview svg{width:27px;height:27px;stroke:#a2ebfb}
+#authView .tf-ads-photo-preview img{
+ display:block;width:100%;height:100%;object-fit:cover;
+}
+#authView .tf-ads-photo-picker-copy{flex:1 1 auto;min-width:0}
+#authView #profilePhotoInput{
+ display:block;max-width:100%;min-height:42px;
+ padding:7px 9px;border:1px solid #5898bb;border-radius:10px;
+ color:#eafaff;background:#143b5b;font:650 12px/1.45 system-ui,sans-serif;
+}
+#authView #profilePhotoInput::file-selector-button{
+ margin-right:9px;padding:8px 10px;border:1px solid #72c8e8;border-radius:8px;
+ background:#185b82;color:#fff;font-weight:760;cursor:pointer;
+}
+#authView #profilePhotoHelp{
+ display:block!important;margin-top:8px;color:#c2deed!important;
+ font-size:11px;line-height:1.5;
+}
+@media(max-width:980px){
+ #appView .sidebar .tf-ads-account-copy>strong{font-size:16px!important}
+}
+@media(max-width:420px){
+ #appView #menuBtn{width:46px!important;height:45px!important;min-width:46px!important}
+ #appView .sidebar .side-brand.tf-ads-account-brand{gap:12px!important}
+ #authView .tf-ads-photo-profile-picker{gap:10px}
+ #authView .tf-ads-photo-preview{width:64px;height:64px;flex-basis:64px}
+ #authView #profilePhotoInput{font-size:11px}
+ #authView #profilePhotoInput::file-selector-button{padding:8px 7px}
+}
