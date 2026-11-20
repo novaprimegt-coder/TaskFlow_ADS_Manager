@@ -886,3 +886,326 @@
 #appView #overviewView .tf-recent-item .tf-recent-location{
  color:#c1d9eb!important;opacity:1!important;
 }
+
+
+/* TASKFLOW ADS INTERFACE CONTRAST V6B — navegación, tablas, gráficas,
+   cuadros emergentes y opciones de campañas: visualización únicamente. */
+
+/* ADMINISTRADOR DE CAMPAÑAS: barras, pestañas, búsqueda y tabla. */
+#appView #campaignsView .manager-titlebar,
+#appView #campaignsView .manager-summary-strip,
+#appView #campaignsView .manager-actionsbar,
+#appView #campaignsView .filter-row,
+#appView #campaignsView .manager-table-card{
+ background:#0f2d48!important;
+ border-color:rgba(113,191,227,.36)!important;
+ color:#edf8ff!important;
+}
+#appView #campaignsView .manager-titlebar :is(h2,b,strong),
+#appView #campaignsView .manager-summary-strip b{
+ color:#f0faff!important;
+}
+#appView #campaignsView .manager-summary-strip :is(span,small),
+#appView #campaignsView .manager-titlebar :is(span,small,p),
+#appView #campaignsView .account-context{
+ color:#c1ddeb!important;opacity:1!important;
+}
+#appView #campaignsView .manager-summary-strip>div{
+ border-right-color:rgba(104,184,223,.25)!important;
+}
+#appView #campaignsView .entity-tabs{
+ background:#0a263e!important;
+ border-color:rgba(93,178,219,.28)!important;
+}
+#appView #campaignsView .entity-tab,
+#appView #campaignsView .manager-date,
+#appView #campaignsView .manager-icon,
+#appView #campaignsView .manager-action,
+#appView #campaignsView .filter-chip{
+ background:#123b59!important;
+ color:#dfedf8!important;
+ border:1px solid rgba(104,186,226,.43)!important;
+ box-shadow:none!important;
+}
+#appView #campaignsView .entity-tab :is(b,span),
+#appView #campaignsView .manager-date b{
+ color:#f0faff!important;
+}
+#appView #campaignsView .entity-tab small,
+#appView #campaignsView .manager-date small{
+ color:#bfd9e9!important;opacity:1!important;
+}
+#appView #campaignsView .entity-tab.active{
+ background:linear-gradient(135deg,#155171,#154064)!important;
+ border-color:#77daef!important;
+ border-bottom:3px solid #73e7f5!important;
+ color:#effaff!important;
+}
+#appView #campaignsView .entity-tab.active :is(b,small,span){color:#f1fcff!important}
+#appView #campaignsView .entity-tab .entity-icon{
+ background:#1b4b6a!important;
+ color:#9eeafa!important;
+}
+#appView #campaignsView :is(.manager-action,.filter-chip,.manager-date):hover{
+ background:#1a506f!important;
+ border-color:#73d1e9!important;
+}
+#appView #campaignsView :is(.manager-action,.filter-chip,.entity-tab):disabled{
+ color:#b6cbda!important;opacity:.57!important;
+}
+#appView #campaignsView .manager-search{
+ background:#123b59!important;
+ border:1px solid rgba(103,186,225,.45)!important;
+ border-radius:10px!important;
+}
+#appView #campaignsView .manager-search :is(input,svg,.tf-icon){
+ color:#e7f9ff!important;
+}
+#appView #campaignsView .manager-search input::placeholder{
+ color:#b9d3e2!important;opacity:1!important;
+}
+#appView #campaignsView .manager-table :is(th,td),
+#appView #campaignsView .meta-table :is(th,td){
+ border-color:rgba(110,189,228,.26)!important;
+}
+#appView #campaignsView .manager-table th,
+#appView #campaignsView .meta-table th{
+ background:#16415e!important;color:#e9f8ff!important;
+}
+#appView #campaignsView .manager-table td,
+#appView #campaignsView .meta-table td{
+ background:#0e2b47!important;color:#d5e9f5!important;
+}
+#appView #campaignsView .manager-table tr:hover td,
+#appView #campaignsView .meta-table tr:hover td{
+ background:#174564!important;
+}
+#appView #campaignsView .manager-table td :is(b,strong),
+#appView #campaignsView .meta-table td :is(b,strong){
+ color:#edfaff!important;
+}
+#appView #campaignsView .tf-approval-state[data-state="approved"]{
+ color:#9bf1c2!important;background:#123f36!important;border-color:#44876b!important;
+}
+#appView #campaignsView .tf-approval-state[data-state="pending"]{
+ color:#ffe0a3!important;background:#453725!important;border-color:#8b7545!important;
+}
+#appView #campaignsView .tf-approval-state[data-state="rejected"]{
+ color:#ffc3d1!important;background:#462c39!important;border-color:#9a607a!important;
+}
+#appView #campaignsView .tf-export-action{
+ color:#eaf9ff!important;
+ background:#174766!important;border-color:#5195b8!important;
+}
+#appView #campaignsView .tf-export-action:hover{
+ background:#215575!important;border-color:#7bdeec!important;
+}
+/* Flotantes del filtro: se insertan directamente en body, no dentro de #appView. */
+body>.tf-filter-menu.tf-filter-portal{
+ background:#102e49!important;color:#edfaff!important;
+ border:1px solid #5893b5!important;color-scheme:dark!important;
+}
+body>.tf-filter-menu.tf-filter-portal .tf-filter-choice{
+ color:#e6f5ff!important;background:transparent!important;
+}
+body>.tf-filter-menu.tf-filter-portal .tf-filter-choice:hover,
+body>.tf-filter-menu.tf-filter-portal .tf-filter-choice:focus-visible{
+ color:#fff!important;background:#1b5679!important;
+}
+body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
+ color:#b2f5ff!important;background:#195775!important;
+}
+body>.tf-filter-menu.tf-filter-portal :is(input,span,small){
+ color:#eaf9ff!important;
+}
+
+/* MÓDULOS: eliminar cajas pálidas escondidas bajo textos claros. */
+#appView #moduleContent :is(.tf-budget-row,.tf-impression-request-row,
+ .tf-impression-progress-item,.tf-ads-legacy-history,
+ .tf-ads-private-key,.tf-tool-delivery-panel,
+ .tf-tool-delivery-evidence,.tf-budget-disclaimer,.tf-tool-budget-edit,
+ .tf-budget-ab-toggle,.tf-tool-dialog-body){
+ background:#123953!important;
+ border-color:rgba(107,189,224,.42)!important;
+ color:#eaf8ff!important;
+}
+#appView #moduleContent .tf-budget-row:hover,
+#appView #moduleContent .tf-budget-row:focus-visible{
+ background:#1c4c6a!important;
+}
+#appView #moduleContent :is(.tf-budget-row,.tf-impression-request-row,
+ .tf-impression-progress-item,.tf-tool-delivery-panel,
+ .tf-tool-delivery-evidence,.tf-ads-legacy-history) :is(b,strong,span,p){
+ color:#e8f8ff!important;
+}
+#appView #moduleContent :is(.tf-budget-row,.tf-impression-request-row,
+ .tf-impression-progress-item,.tf-tool-delivery-panel,
+ .tf-tool-delivery-evidence,.tf-ads-legacy-history) :is(small,em){
+ color:#c3ddeb!important;
+}
+#appView #moduleContent .tf-tool-dialog{
+ background:#0c2c48!important;
+ border:1px solid #5a9ac0!important;
+ color:#f1faff!important;color-scheme:dark!important;
+}
+#appView #moduleContent .tf-tool-dialog-head :is(b,strong){
+ color:#f2faff!important;
+}
+#appView #moduleContent .tf-tool-dialog-head button{
+ background:#174765!important;color:#e7faff!important;
+ border:1px solid #5d9fc3!important;
+}
+#appView #moduleContent .tf-tool-dialog-body{
+ background:#123752!important;
+}
+#appView #moduleContent .tf-tool-delivery-panel>h3{
+ color:#f0faff!important;
+}
+#appView #moduleContent .tf-tool-delivery-row{
+ border-color:rgba(112,191,228,.27)!important;
+}
+#appView #moduleContent .tf-tool-delivery-row :is(b,strong){
+ color:#e9f9ff!important;
+}
+#appView #moduleContent .tf-tool-delivery-row :is(span,small){
+ color:#c6deeb!important;
+}
+#appView #moduleContent .tf-tool-form :is(input,select,textarea),
+#appView #moduleContent .tf-tool-budget-edit :is(input,select),
+#appView #moduleContent .tf-budget-row :is(input,select){
+ background:#173d58!important;
+ border:1px solid #619abc!important;
+ color:#f1fbff!important;-webkit-text-fill-color:#f1fbff!important;
+}
+#appView #moduleContent .tf-tool-form :is(input,select,textarea):disabled,
+#appView #moduleContent .tf-tool-budget-edit :is(input,select):disabled{
+ background:#203b51!important;color:#b8d2e1!important;
+ -webkit-text-fill-color:#b8d2e1!important;opacity:.72!important;
+}
+#appView #moduleContent .tf-impression-request-row label,
+#appView #moduleContent .tf-budget-row label{
+ color:#e9f9ff!important;
+}
+#appView #moduleContent .tf-ads-private-key{
+ color:#b2edff!important;font-family:ui-monospace,monospace!important;
+}
+#appView #moduleContent .tf-tool-error{
+ background:#4a2934!important;border-color:#996273!important;
+ color:#ffe1e8!important;
+}
+#appView #moduleContent .tf-tool-error :is(b,span,strong,p){
+ color:#ffe1e8!important;
+}
+/* Mantener gráficos, barras de progreso y métricas diferenciados. */
+#appView #moduleContent .tf-impression-progress-item meter{
+ color-scheme:dark!important;accent-color:#6ee1f1!important;
+}
+#appView #moduleContent :is(.tf-tool-progress-track,.tf-progress-track){
+ background:#1b4867!important;
+}
+#appView #moduleContent :is(.tf-tool-progress-track,.tf-progress-track)>i{
+ background:linear-gradient(90deg,#0878e8,#42e4ed)!important;
+}
+
+/* ASISTENTE DE CAMPAÑA: cajas de objetivo, presupuestos y creativos. */
+#campaignModal :is(.tf-goal-explain,.tf-goal-action,.budget-allocation-row,
+ .campaign-ad-list-head,.campaign-ad-editor-head,.ad-draft-item,
+ .tf-budget-row,.tf-impression-request,
+ .tf-goal-summary,.tf-goal-option){
+ color:#e8f7ff!important;background:#143b57!important;
+ border-color:rgba(111,193,227,.46)!important;
+}
+#campaignModal .tf-goal-explain{
+ border-left:4px solid #64def0!important;
+}
+#campaignModal :is(.tf-goal-explain,.tf-goal-action,.budget-allocation-row,
+ .campaign-ad-list-head,.campaign-ad-editor-head,.ad-draft-item) :is(b,strong,h3){
+ color:#f0faff!important;
+}
+#campaignModal :is(.tf-goal-explain,.tf-goal-action,.budget-allocation-row,
+ .campaign-ad-list-head,.campaign-ad-editor-head,.ad-draft-item) :is(p,small,span){
+ color:#c6dfed!important;
+}
+#campaignModal :is(.tf-goal-explain,.tf-goal-action) small{
+ color:#9decfd!important;
+}
+#campaignModal .ad-draft-item.active{
+ background:#205072!important;border-color:#75dfec!important;
+ color:#fff!important;
+}
+#campaignModal .ad-draft-item:hover:not(.active){
+ background:#1b4a68!important;border-color:#65b8db!important;
+}
+#campaignModal .ad-draft-num{
+ background:#235473!important;color:#e7faff!important;
+}
+#campaignModal .ad-draft-item.active .ad-draft-num{
+ background:#0a7bd4!important;color:#fff!important;
+}
+#campaignModal .upload-box,#campaignModal .upload-zone{
+ background:#163b54!important;
+ border:1px dashed #629fbc!important;
+ color:#deeff8!important;
+}
+#campaignModal #uploadZone:hover,
+#campaignModal #uploadZone:active{
+ background:#205170!important;border-color:#86dcef!important;
+}
+#campaignModal :is(.spec-grid,.preview-card,.ad-budget-summary,
+ .tf-ads-ab-test-field) :is(b,strong,p,span,small){
+ color:#dceefa!important;
+}
+#campaignModal .danger-soft{
+ color:#ffd2de!important;background:#452b39!important;
+ border:1px solid #a8788c!important;
+}
+#campaignModal .danger-soft:hover{
+ background:#573546!important;border-color:#cc91a6!important;
+}
+#campaignModal input[type="checkbox"],#campaignModal input[type="radio"]{
+ accent-color:#46cce8!important;
+}
+#campaignModal .choice :is(b,span),#campaignModal .placement-card :is(b,span,small){
+ opacity:1!important;
+}
+#campaignModal :is(.wizard-footer,.wizard-body,.modal-head){
+ color:#eefaff!important;
+}
+/* Vista de acceso: contraste estable, conservando el cristal azul original. */
+#authView .auth-panel :is(.field label,.auth-logo strong){
+ color:#f2faff!important;
+}
+#authView .auth-panel :is(.auth-logo small,.form-message,.field small,
+ .auth-hint,.auth-footnote){
+ color:#c7deec!important;
+}
+#authView #authForm .field input,
+#authView #authForm .field textarea{
+ background:rgba(17,55,85,.91)!important;
+ border:1px solid #5b99bb!important;
+ color:#eff9ff!important;-webkit-text-fill-color:#eff9ff!important;
+}
+#authView #authForm .field input::placeholder{
+ color:#bdd5e3!important;opacity:1!important;
+}
+#authView #authForm .field input:focus-visible{
+ border-color:#79e0f2!important;
+ outline:2px solid #79e0f2!important;outline-offset:2px!important;
+}
+#authView .auth-panel .auth-tab:not(.active){
+ color:#c7e3f3!important;
+}
+#authView .auth-panel .auth-tab.active{
+ color:#fff!important;
+}
+@media(max-width:620px){
+ #appView #campaignsView .manager-summary-strip>div{min-width:130px!important}
+ #appView #campaignsView .entity-tabs{gap:7px!important}
+ #appView #campaignsView .entity-tab{min-width:0!important}
+ #appView #campaignsView .tf-performance-stat small{font-size:10px!important}
+ #appView #campaignsView .tf-performance-stat b{font-size:12px!important}
+ #campaignModal .tf-ads-interest-choices label{color:#e8f9ff!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #appView button,#campaignModal button{transition:none!important}
+}
