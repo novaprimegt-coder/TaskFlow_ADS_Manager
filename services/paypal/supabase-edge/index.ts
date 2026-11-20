@@ -6,16 +6,17 @@ import { createRemoteJWKSet, jwtVerify } from "npm:jose@6.1.0";
 const ORIGIN = "https://novaprimegt-coder.github.io";
 const PROJECT = "taskflow-b0ece";
 const JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"));
-const MODE = Deno.env.get("TF_PAYPAL_MODE")==="live"?"live":"sandbox";
-const CLIENT_ID = Deno.env.get("TF_PAYPAL_CLIENT_ID")||"";
-const CLIENT_SECRET = Deno.env.get("TF_PAYPAL_CLIENT_SECRET")||"";
+// ADS utiliza credenciales independientes; no modifica TaskFlow sin anuncios.
+const MODE = Deno.env.get("TF_PAYPAL_ADS_MODE")==="live"?"live":"sandbox";
+const KEY_PREFIX = MODE==="live"?"TF_PAYPAL_ADS_LIVE":"TF_PAYPAL_ADS_SANDBOX";
+const CLIENT_ID = Deno.env.get(KEY_PREFIX+"_CLIENT_ID")||"";
+const CLIENT_SECRET = Deno.env.get(KEY_PREFIX+"_CLIENT_SECRET")||"";
 const API_BASE = MODE==="live"?"https://api-m.paypal.com":"https://api-m.sandbox.paypal.com";
-const SANDBOX_EMAIL = Deno.env.get("TF_PAYPAL_ADS_SANDBOX_EMAIL")||"";
-const MERCHANT_EMAIL = MODE==="live"?(Deno.env.get("TF_PAYPAL_ADS_LIVE_MERCHANT_EMAIL")||""):SANDBOX_EMAIL;
-// No activar cobros live sin webhook Live e integración de reembolsos verificados.
-const ENABLE_LIVE_CHECKOUT = false;
-const ENABLE_CHECKOUT = !!CLIENT_ID && !!CLIENT_SECRET && !!MERCHANT_EMAIL && (MODE==="sandbox" || ENABLE_LIVE_CHECKOUT);
-const WEBHOOK_ID = MODE==="sandbox"?"1J021638PV172915X":"";
+const MERCHANT_EMAIL = Deno.env.get(KEY_PREFIX+"_MERCHANT_EMAIL")||"";
+const WEBHOOK_ID = Deno.env.get(KEY_PREFIX+"_WEBHOOK_ID")||"";
+// Live permanece desactivado por defecto; exige webhook propio y autorización explícita.
+const ENABLE_LIVE_CHECKOUT = MODE==="live" && Deno.env.get("TF_PAYPAL_ADS_ENABLE_LIVE")==="true" && !!WEBHOOK_ID;
+const ENABLE_CHECKOUT = !!CLIENT_ID && !!CLIENT_SECRET && !!MERCHANT_EMAIL && !!WEBHOOK_ID && (MODE==="sandbox" || ENABLE_LIVE_CHECKOUT);
 const RETURN_URL = ORIGIN+"/TaskFlow_ADS_Manager/";
 const CURRENCY = "USD";
 const baseHeaders = {"Content-Type":"application/json","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
@@ -209,8 +210,14 @@ Deno.serve(async req=>{
   if(req.method==="POST"&&path==="/webhook")return reply(req,200,await webhook(req));
   const uid=await authUser(req);
   // No exponer públicamente entorno, configuración de claves ni arquitectura.
-  if(req.method==="GET"&&path==="/status")
-   return reply(req,200,{checkoutAvailable:ENABLE_CHECKOUT});
+  if(req.method==="GET"&&path==="/status"){
+   let available=false;
+   if(ENABLE_CHECKOUT){
+    try{await accessToken();available=true}
+    catch{console.warn("TaskFlow ADS PayPal: OAuth no disponible")}
+   }
+   return reply(req,200,{checkoutAvailable:available});
+  }
   if(req.method==="GET"&&path==="/wallet")return reply(req,200,await wallet(uid));
   if(req.method==="POST"&&path==="/orders")return reply(req,201,await create(uid,(await parse(req)).amount));
   if(req.method==="POST"&&path==="/capture")return reply(req,200,await verifyAndCredit(String((await parse(req)).orderId||""),uid));
