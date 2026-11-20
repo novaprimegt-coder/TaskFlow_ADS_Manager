@@ -8,9 +8,29 @@ La cuenta receptora se configura únicamente en las variables privadas del servi
 
 **Servidor activo preparado:** Supabase Edge Function `taskflow-ads-paypal` en el mismo proyecto de Supabase en que está `taskflow-noads`. El código fuente está en `services/paypal/supabase-edge/index.ts`.
 
-La función de ADS lee las mismas variables privadas `TF_PAYPAL_MODE`, `TF_PAYPAL_CLIENT_ID` y `TF_PAYPAL_CLIENT_SECRET` utilizadas por la suscripción **TaskFlow sin anuncios**; los valores **nunca** salen de Supabase. La función original `taskflow-noads` no se ha editado y suscripciones, precios y renovaciones no se han modificado.
+La integración preparada para ADS utiliza variables de PayPal independientes de las de **TaskFlow sin anuncios**. Las credenciales solo se leen en Supabase; nunca llegan al navegador. La función original `taskflow-noads`, suscripciones, precios y renovaciones no se modifican. Este cambio está preparado en una rama de desarrollo y aún no se ha desplegado.
 
 **Frontend y llamadas:** `ads-paypal-wallet.js` consulta a `https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-paypal`. Rutas: `GET /status`, `GET /wallet`, `POST /orders`, `POST /capture`, `POST /webhook`.
+
+## Configuración aislada de PayPal ADS (pendiente de despliegue)
+
+**Sandbox — solamente para pruebas:** configurar como secretos de la Edge Function en Supabase:
+
+- `TF_PAYPAL_ADS_MODE=sandbox`
+- `TF_PAYPAL_ADS_SANDBOX_CLIENT_ID` — identificador de la app REST Sandbox de ADS.
+- `TF_PAYPAL_ADS_SANDBOX_CLIENT_SECRET` — secreto de esa misma app.
+- `TF_PAYPAL_ADS_SANDBOX_MERCHANT_EMAIL` — correo de la cuenta vendedora de Sandbox.
+- `TF_PAYPAL_ADS_SANDBOX_WEBHOOK_ID` — ID del webhook propio de ADS en Sandbox.
+
+Destino del webhook: `https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-paypal/webhook`
+
+Eventos mínimos: `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.REFUNDED` y `PAYMENT.CAPTURE.REVERSED`.
+
+**Live — bloqueado por defecto:** requiere los cuatro campos `TF_PAYPAL_ADS_LIVE_CLIENT_ID`, `TF_PAYPAL_ADS_LIVE_CLIENT_SECRET`, `TF_PAYPAL_ADS_LIVE_MERCHANT_EMAIL` y `TF_PAYPAL_ADS_LIVE_WEBHOOK_ID`, además de `TF_PAYPAL_ADS_MODE=live`. Solo se permitirá habilitar `TF_PAYPAL_ADS_ENABLE_LIVE=true` después de completar verificaciones, probar flujos y obtener autorización de publicación. La existencia de credenciales por sí sola no habilita Live.
+
+Las variables `TF_PAYPAL_*` preexistentes de **TaskFlow sin anuncios** deben permanecer intactas.
+
+El endpoint `/status` solo mostrará que el cobro está disponible si PayPal confirma OAuth válido; no debe confundirse la presencia de variables con conexión verificada.
 
 ## Estado real
 
