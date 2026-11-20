@@ -1663,6 +1663,496 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
  #appView .sidebar .nav-item{transition:none!important}
 }
 </style>
+
+<style id="tfAdsUnifiedContrast20261119">
+/* TaskFlow ADS — coherencia visual integral.
+   Contraste accesible en resumen, campañas, informes, módulos, PayPal y editor.
+   Sin cambios de rutas, lógica, valores o permisos. */
+#appView{
+ --ads-surface:#0b2543;
+ --ads-surface-deep:#081b33;
+ --ads-surface-raised:#123454;
+ --ads-line:rgba(111,190,230,.26);
+ --ads-text:#edf7ff;
+ --ads-secondary:#b8d1e5;
+ --ads-turquoise:#65e9f7;
+ color-scheme:dark;
+}
+#appView :is(button,input,select,textarea):focus-visible,
+#campaignModal :is(button,input,select,textarea):focus-visible{
+ outline:2px solid #70eafb!important;
+ outline-offset:2px;
+}
+#appView .view{min-width:0}
+#appView .view p,#appView .heading p{color:var(--ads-secondary)}
+#appView #overviewView .dashboard{gap:17px;align-items:stretch}
+#appView #overviewView .tf-overview-card{
+ background:linear-gradient(160deg,#102e4d 0%,#0a203b 100%)!important;
+ border:1px solid var(--ads-line)!important;
+ box-shadow:0 13px 32px rgba(0,8,24,.27)!important;
+ border-radius:20px!important;overflow:hidden;
+}
+#appView #overviewView .tf-overview-card .tf-overview-card-head{
+ background:linear-gradient(112deg,#113656,#102a49 69%,#09243c)!important;
+ border-bottom:1px solid rgba(120,195,230,.28)!important;
+}
+#appView #overviewView .tf-overview-card .tf-overview-title h3{
+ color:var(--ads-text)!important;
+ font-size:clamp(17px,2.2vw,20px);line-height:1.28;
+}
+#appView #overviewView .tf-overview-card .tf-overview-title .eyebrow{
+ color:#9fcbe8!important;
+}
+#appView #overviewView .tf-overview-all{
+ color:#e6f8ff!important;
+ background:#113e60!important;border-color:rgba(88,203,241,.35)!important;
+ box-shadow:none!important;
+}
+#appView #overviewView .tf-overview-all span{color:#79eaff!important}
+#appView #overviewView .tf-overview-all:hover{
+ background:#175071!important;
+}
+#appView #overviewView .tf-recent-item.activity{
+ background:transparent!important;color:#f0f8ff!important;
+ border-bottom:1px solid rgba(125,198,228,.18)!important;
+}
+#appView #overviewView .tf-recent-item.activity:hover,
+#appView #overviewView .tf-recent-item.activity:focus-visible{
+ background:#143957!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-copy b{
+ color:#f4faff!important;font-weight:850!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-placement{
+ color:#a8d9f5!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-location{
+ color:#abc4d8!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-performance small,
+#appView #overviewView .tf-recent-item .tf-recent-copy small{
+ color:#a5bdd3!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-performance strong{
+ color:#78e6fb!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-status{
+ background:#193951!important;border-color:#426783!important;
+ color:#d0e7f8!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-status-active{
+ color:#9ff5c5!important;background:rgba(15,106,72,.27)!important;
+ border-color:rgba(62,220,141,.34)!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-status-paused{
+ color:#ffdca4!important;background:rgba(155,94,16,.22)!important;
+ border-color:rgba(252,186,99,.35)!important;
+}
+#appView #overviewView .tf-recent-item .tf-recent-status-draft{
+ color:#c6d6e9!important;background:#152f49!important;
+}
+#appView #overviewView .tf-recent-item .activity-icon.tf-thumb-shell,
+#appView #overviewView .tf-format-icon{
+ background:#123e62!important;border-color:rgba(103,201,238,.35)!important;
+ color:#85ecff!important;
+ box-shadow:inset 0 1px rgba(168,235,255,.11)!important;
+}
+#appView #overviewView .tf-recent-empty{
+ background:transparent!important;color:#b7d3e9!important;
+}
+#appView #overviewView .tf-overview-count{
+ color:#a4f3cc!important;background:rgba(22,109,75,.27)!important;
+ border-color:rgba(85,214,151,.32)!important;
+}
+#appView #overviewView .tf-format-row.side-row{
+ background:transparent!important;
+ border-bottom:1px solid rgba(125,198,228,.20)!important;
+}
+#appView #overviewView .tf-format-row .tf-format-details b{
+ color:#f3faff!important;
+}
+#appView #overviewView .tf-format-row .tf-format-details>span{
+ color:#bad1e6!important;
+}
+#appView #overviewView .tf-format-sizes .tf-format-chip{
+ background:#143a59!important;border:1px solid rgba(104,172,211,.36)!important;
+ color:#d7edfa!important;
+ box-shadow:none!important;
+}
+#appView #overviewView .tf-format-sizes .tf-format-chip-hd{
+ background:#15436d!important;border-color:rgba(80,205,245,.47)!important;
+ color:#9cecfb!important;
+}
+#appView #overviewView .tf-format-icon.tf-format-vertical,
+#appView #overviewView .tf-format-icon.tf-format-interaction{
+ background:#143d5e!important;color:#85ecff!important;
+}
+#appView .tf-approval-summary{
+ background:linear-gradient(120deg,#102e4d,#0a213d)!important;
+ border:1px solid var(--ads-line)!important;
+}
+#appView .tf-approval-summary>span{color:#e0f1ff!important}
+#appView .tf-approval-summary button{
+ background:#143856!important;color:#e3f4ff!important;
+ border:1px solid rgba(109,187,227,.29)!important;
+}
+#appView .tf-approval-summary button:hover{background:#1a4565!important}
+#appView .tf-approval-summary [data-approval-shortcut="approved"] strong{color:#84eabc!important}
+#appView .tf-approval-summary [data-approval-shortcut="pending"] strong{color:#ffcf8c!important}
+#appView .tf-approval-summary [data-approval-shortcut="rejected"] strong{color:#ffa8b3!important}
+#appView .tf-chart-panel,
+#appView .tf-report-chart .tf-chart-panel{
+ background:linear-gradient(150deg,#102e4c,#0a1e36)!important;
+ border-color:var(--ads-line)!important;
+ box-shadow:0 12px 24px rgba(0,8,23,.20)!important;
+}
+#appView .tf-chart-head{border-color:rgba(122,190,220,.24)!important}
+#appView .tf-chart-head small{color:#a5c9e1!important}
+#appView .tf-chart-head h3{color:#f2faff!important}
+#appView .tf-chart-head strong{color:#72e3fa!important}
+#appView .tf-chart-row>span{color:#c2d9eb!important}
+#appView .tf-chart-row>b{color:#eef8ff!important}
+#appView .tf-chart-note{color:#b1c8dd!important}
+#appView .tf-chart-track{background:#173b59!important}
+#appView .tf-chart-track i{background:linear-gradient(90deg,#136ce7,#39dfe9)!important}
+#appView #objectiveInsights .tf-budget-spotlight{
+ background:linear-gradient(160deg,#102e4d,#091d35)!important;
+ border-color:var(--ads-line)!important;
+ box-shadow:0 11px 28px rgba(0,8,23,.23)!important;
+}
+#appView #objectiveInsights .tf-budget-summary{
+ background:radial-gradient(ellipse at 100% 0%,rgba(40,173,235,.15),transparent 60%),
+ linear-gradient(130deg,#123c5f,#102a48)!important;
+ border-color:rgba(108,193,227,.26)!important;
+}
+#appView #objectiveInsights .tf-budget-summary h3,
+#appView #objectiveInsights .tf-budget-body h4{
+ color:#f0f8ff!important;
+}
+#appView #objectiveInsights .tf-budget-eyebrow,
+#appView #objectiveInsights .tf-budget-total>span,
+#appView #objectiveInsights .tf-budget-context,
+#appView #objectiveInsights .tf-budget-category-line span,
+#appView #objectiveInsights .tf-budget-no-data{
+ color:#bed6eb!important;
+}
+#appView #objectiveInsights .tf-budget-total strong,
+#appView #objectiveInsights .tf-budget-category-line strong{color:#81e7f8!important}
+#appView #objectiveInsights .tf-budget-category-track{background:#153958!important}
+#appView #objectiveInsights .tf-budget-disclaimer{
+ background:#102d4b!important;border-color:rgba(116,188,224,.23)!important;
+ color:#bdcede!important;
+}
+#appView #objectiveInsights .tf-budget-disclaimer span{color:#88e8fa!important}
+#appView #campaignsView .manager-scope,
+#appView #campaignsView .manager-titlebar .eyebrow{color:#b9d4ea!important}
+#appView #campaignsView .tf-filter-button{
+ background:#102d4b!important;color:#e4f4ff!important;
+ border-color:rgba(112,189,224,.40)!important;
+}
+#appView #campaignsView .tf-filter-button:hover,
+#appView #campaignsView .tf-filter-button[aria-expanded="true"]{
+ background:#194462!important;border-color:#5aceeb!important;
+}
+#appView #campaignsView .tf-filter-caret{color:#b8deef!important}
+body>.tf-filter-menu.tf-filter-portal{
+ background:#0c2745!important;border-color:#3c7598!important;
+ color:#f1f8ff!important;box-shadow:0 20px 44px rgba(0,5,19,.39)!important;
+ color-scheme:dark;
+}
+body>.tf-filter-menu.tf-filter-portal .tf-filter-choice{
+ background:transparent!important;color:#e6f3ff!important;
+}
+body>.tf-filter-menu.tf-filter-portal .tf-filter-choice:hover{
+ background:#16476a!important;color:#fff!important;
+}
+body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
+ background:#13557b!important;color:#9df1ff!important;
+}
+#appView #campaignsView .tf-performance-cell{
+ background:linear-gradient(90deg,rgba(16,57,85,.5),transparent)!important;
+ color:#b8d6e9!important;
+}
+#appView #campaignsView .tf-performance-stat{
+ background:#123958!important;border-color:rgba(103,179,215,.26)!important;
+}
+#appView #campaignsView .tf-performance-stat small{color:#bdd4e8!important}
+#appView #campaignsView .tf-performance-stat b{color:#8cecff!important}
+#appView #campaignsView .tf-performance-foot,
+#appView #campaignsView .tf-performance-unavailable,
+#appView #campaignsView .tf-performance-unavailable small{color:#b8cede!important}
+#appView #campaignsView .tf-performance-foot.tf-performance-partial{color:#ffcf91!important}
+#appView #campaignsView .meta-table .delivery-cell b{color:#eaf8ff!important}
+#appView #campaignsView .meta-table .delivery-cell small{color:#afc7d9!important}
+#appView #campaignsView .manager-empty{background:transparent!important;color:#b9d4e6!important}
+#appView #moduleContent .tf-tool-panel,
+#appView #moduleContent .tf-tool-kpi{
+ background:linear-gradient(150deg,#0e304e,#091d35)!important;
+ border-color:var(--ads-line)!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-kpi{
+ background:linear-gradient(150deg,#0e304e,#091d35)!important;
+ border:1px solid var(--ads-line)!important;
+ color:#edf8ff!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-topline>strong{color:#edf8ff!important}
+#appView #moduleContent .tf-tool-intro>h3{color:#f2f9ff!important}
+#appView #moduleContent .tf-tool-intro>p,
+#appView #moduleContent .tf-tool-heading,
+#appView #moduleContent .tf-tool-heading p{color:#bdd5e9!important}
+#appView #moduleContent .tf-tool-row b,
+#appView #moduleContent .tf-tool-panel strong{color:#f2faff!important}
+#appView #moduleContent .tf-tool-row span,
+#appView #moduleContent .tf-tool-row small,
+#appView #moduleContent .tf-tool-kpi>span,
+#appView #tfAdsLiveOverview .tf-tool-kpi>span,
+#appView #tfAdsLiveOverview .tf-tool-kpi small{color:#b8d1e7!important}
+#appView #moduleContent .tf-tool-gallery .tf-tool-media{
+ background:#102c4a!important;color:#bad5e9!important;
+}
+#appView #moduleContent .tf-tool-creative-data>span,
+#appView #moduleContent .tf-tool-creative-data>small{color:#bacfe4!important}
+#appView #moduleContent .tf-tool-table th{
+ background:#143956!important;color:#d5edfa!important;
+ border-color:rgba(112,191,225,.22)!important;
+}
+#appView #moduleContent .tf-tool-table td{
+ background:#0d2846!important;color:#e7f5ff!important;
+ border-color:rgba(118,183,213,.19)!important;
+}
+#appView #moduleContent .tf-tool-table small{color:#b4cde2!important}
+#appView #moduleContent :is(button,.tf-tool-buttons a):not([data-settings-logout]){
+ background:#154364!important;border-color:rgba(91,194,229,.43)!important;
+ color:#e6f8ff!important;
+}
+#appView #moduleContent button:hover:not(:disabled):not([data-settings-logout]){
+ background:#1c5779!important;
+}
+#appView #moduleContent button:disabled{opacity:.54!important}
+#appView #moduleContent .tf-tool-warning,
+#appView #tfAdsLiveOverview .tf-tool-warning{color:#ffd29b!important}
+#appView #moduleContent .tf-tool-success{color:#9af4bc!important}
+#appView #moduleContent .tf-tool-error{
+ background:#422333!important;border-color:#8c5065!important;
+ color:#ffe1e8!important;
+}
+#appView #moduleContent .tf-tool-loading,
+#appView #moduleContent .tf-tool-empty,
+#appView #moduleContent .tf-tool-note{color:#c2d4e6!important}
+#appView #moduleContent .tf-budget-row{
+ background:#0d2845!important;border-bottom-color:rgba(113,185,217,.24)!important;
+ color:#eaf7ff!important;
+}
+#appView #moduleContent .tf-budget-row:hover{background:#16405c!important}
+#appView #moduleContent .tf-budget-disclaimer,
+#appView #moduleContent .tf-tool-delivery-evidence,
+#appView #moduleContent .tf-adset-entry,
+#appView #moduleContent .tf-ads-legacy-history{
+ background:#102f4e!important;border-color:rgba(109,185,220,.27)!important;
+ color:#d2e4f4!important;
+}
+#appView #moduleContent :is(.tf-adset-details,.tf-adset-entry-title small,
+ .tf-budget-disclaimer,.tf-tool-delivery-evidence p,
+ .tf-budget-row small){color:#b9d1e3!important}
+#appView #moduleContent :is(.tf-tool-form label,.tf-tool-budget-edit label,
+ .tf-tool-search,.tf-adset-entry-tools label){color:#d2e7f6!important}
+#appView #moduleContent input,
+#appView #moduleContent select,
+#appView #moduleContent textarea{
+ background:#102e4d!important;color:#eef9ff!important;
+ border:1px solid rgba(102,181,219,.45)!important;
+ color-scheme:dark;
+}
+#appView #moduleContent input::placeholder{color:#a5c3da!important}
+#appView #moduleContent input:disabled{
+ background:#15283a!important;color:#aabdcf!important;opacity:1;
+ -webkit-text-fill-color:#aabdcf!important;
+}
+#appView #moduleContent .tf-tool-dialog-body{background:#102d4b!important}
+#appView #moduleContent .tf-tool-dialog-head b{color:#edf8ff!important}
+/* Configuración: conserva la estructura especial y oscurece sus superficies. */
+#appView #moduleContent:has(#tfAdsSettingsForm)>.tf-tool-panel{
+ background:linear-gradient(150deg,#102e4a,#081f38)!important;
+ border-color:var(--ads-line)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm)>.tf-tool-panel>.tf-tool-heading{
+ background:linear-gradient(112deg,#12385a,#0a2442)!important;
+ border-bottom:1px solid rgba(105,180,220,.28)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm)>.tf-tool-panel>.tf-tool-heading h3{
+ color:#f3fbff!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsForm>label{
+ color:#cde2f2!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsForm input{
+ color:#f1f8ff!important;background:#102f4c!important;
+ border:1px solid rgba(100,185,224,.42)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsForm input:disabled{
+ background:#152b44!important;color:#abc4da!important;
+ -webkit-text-fill-color:#abc4da!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsForm>button[type="submit"]{
+ color:#fff!important;border-color:#258ce7!important;
+ background:linear-gradient(110deg,#0c72ef,#0d8ad3 70%,#1ca6ca)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) .tf-tool-panel:has(#tfAdsSecurityMessage) .tf-tool-buttons>button{
+ color:#e3f5ff!important;background:#123d60!important;
+ border-color:rgba(111,192,226,.33)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSecurityMessage{
+ color:#c0d9ed!important;background:#112f4d!important;
+ border-color:rgba(98,183,218,.30)!important;
+}
+#appView #moduleContent:has(#tfAdsSettingsForm) #tfAdsSettingsMessage{color:#9bdceb!important}
+#appView #moduleContent:has(#tfAdsSettingsForm) [data-settings-logout]{
+ color:#ffd4dc!important;background:#42243b!important;
+ border-color:#925269!important;
+}
+/* Saldo publicitario: el diseño original era parcialmente blanco. */
+#appView #moduleContent #tfAdsPayPalWallet{
+ --wallet-ink:#edf8ff!important;
+ background:#0b2847!important;border-color:var(--ads-line)!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-head{
+ background:linear-gradient(110deg,#143b5e,#0c2948)!important;
+ border-bottom-color:rgba(105,189,226,.23)!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-head :is(h3,small){color:#e1f3ff!important}
+#appView #tfAdsPayPalWallet .tf-wallet-head>span{
+ background:#174364!important;color:#9ee9fa!important;border-color:#367399!important;
+}
+#appView #tfAdsPayPalWallet :is(h4,.tf-wallet-movement b){color:#f1faff!important}
+#appView #tfAdsPayPalWallet :is(.tf-wallet-recharge>p,.tf-wallet-input>span,
+ .tf-wallet-tip,.tf-wallet-footnote,.tf-wallet-movement small){color:#c0d4e6!important}
+#appView #tfAdsPayPalWallet .tf-wallet-movement{
+ border-color:rgba(99,179,216,.23)!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-feedback:not(:empty){
+ background:#3e312a!important;color:#ffe4b3!important;
+ border-color:rgba(248,194,121,.26)!important;
+}
+#appView #tfAdsPayPalWallet .tf-wallet-input,
+#appView #tfAdsPayPalWallet .tf-wallet-input input{
+ color:#eef9ff!important;background:#103454!important;
+ border-color:rgba(90,174,214,.4)!important;
+}
+/* Control ADS: tarjetas administrativas, aprobaciones y mensajes. */
+#appView .tf-ads-admin-intro{
+ background:linear-gradient(130deg,#123a5a,#0b213d)!important;
+ border-color:var(--ads-line)!important;
+}
+#appView .tf-ads-admin-intro :is(h2,h3,b,strong){color:#f3faff!important}
+#appView .tf-ads-admin-intro p{color:#c6dcf1!important}
+#appView .tf-ads-admin-review-head{
+ background:#102f4b!important;border-color:var(--ads-line)!important;
+}
+#appView .tf-ads-admin-review-head p{color:#bed3e7!important}
+#appView .tf-ads-campaign-row{border-color:var(--ads-line)!important}
+#appView .tf-ads-campaign-title b{color:#f1f8ff!important}
+#appView .tf-ads-campaign-title span{color:#b7d0e4!important}
+#appView .tf-ads-admin-feedback{color:#c9deef!important}
+#appView .tf-ads-admin-feedback strong{color:#eef8ff!important}
+#appView .tf-ads-campaign-status{
+ background:#493827!important;color:#ffcf8c!important;
+ border:1px solid rgba(243,197,125,.33)!important;
+}
+#appView .tf-ads-approve{
+ background:#0d795e!important;color:#e9fff5!important;
+ border-color:#2bb78f!important;
+}
+#appView .tf-ads-reject{
+ background:#4f2739!important;color:#ffd5dc!important;
+ border-color:#b3647e!important;
+}
+/* El asistente/modal está fuera del contenedor #appView. */
+#campaignModal{color-scheme:dark}
+#campaignModal .modal-card{
+ background:#081b32!important;color:#edf8ff!important;
+ border:1px solid rgba(104,187,224,.33)!important;
+ box-shadow:0 28px 80px rgba(0,3,14,.60)!important;
+}
+#campaignModal .modal-head{
+ background:linear-gradient(120deg,#103759,#09243e)!important;
+ border-bottom:1px solid rgba(105,187,219,.28)!important;
+}
+#campaignModal .modal-head :is(h2,p,.eyebrow){color:#e8f6ff!important}
+#campaignModal .steps{
+ background:#0b2541!important;border-color:rgba(104,184,221,.26)!important;
+}
+#campaignModal .step{color:#c3d7e8!important}
+#campaignModal .step b{color:#e5f4ff!important}
+#campaignModal .step small{color:#b2cadd!important}
+#campaignModal .step.active{background:#16476c!important}
+#campaignModal .step>span{background:#102d49!important;color:#bfefff!important;border-color:#377ea3!important}
+#campaignModal .step.active>span{background:#0a83d8!important;color:#fff!important}
+#campaignModal .wizard-body{background:#081b32!important}
+#campaignModal .wizard-page{
+ background:#0d2946!important;color:#e7f5ff!important;
+ border-color:rgba(101,183,223,.25)!important;
+}
+#campaignModal .section-title{
+ border-color:rgba(101,183,223,.25)!important;
+}
+#campaignModal .section-title :is(h3,.eyebrow),
+#campaignModal .field label{color:#e2f3ff!important}
+#campaignModal :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){
+ color:#effaff!important;background:#102f4c!important;
+ border-color:rgba(115,193,226,.45)!important;color-scheme:dark;
+}
+#campaignModal input::placeholder,#campaignModal textarea::placeholder{color:#a8c1d7!important}
+#campaignModal :is(.choice,.placement-card,.review,.notice,.upload-zone,
+ .tf-ads-delivery-controls,.tf-ads-ab-test-field,.tf-impression-request){
+ color:#e7f5ff!important;background:#123554!important;
+ border-color:rgba(101,185,225,.30)!important;
+}
+#campaignModal :is(.choice,.placement-card) :is(b,span,small),
+#campaignModal :is(.notice,.review) :is(b,span,small),
+#campaignModal .tf-goal-hint{color:#d5e8fa!important}
+#campaignModal .choice.active,
+#campaignModal .placement input:checked+.placement-card{
+ border-color:#48dbf5!important;background:#174a6b!important;
+ box-shadow:inset 0 0 0 1px rgba(91,220,246,.24)!important;
+}
+#campaignModal .wizard-footer{
+ background:linear-gradient(180deg,rgba(8,26,46,.96),#081b32)!important;
+ border-top:1px solid rgba(105,181,224,.29)!important;
+}
+#campaignModal .wizard-footer :is(.secondary,.ghost){
+ background:#143f60!important;color:#ebf7ff!important;
+ border-color:rgba(98,185,225,.32)!important;
+}
+#campaignModal .wizard-footer .primary{
+ background:linear-gradient(110deg,#126df4,#009dcf)!important;color:#fff!important;
+}
+#campaignModal .preview-card,
+#campaignModal .spec,#campaignModal .media-frame{
+ background:#081b30!important;border-color:rgba(106,175,219,.25)!important;
+}
+#campaignModal .media-status{background:#143656!important;color:#c1d8e9!important}
+#campaignModal .media-status.ok{color:#a8f6c9!important}
+#campaignModal .media-status.error{color:#ffd0dc!important}
+@media(max-width:700px){
+ #appView #overviewView .tf-overview-card .tf-overview-card-head{
+  padding:16px!important;gap:10px!important;
+ }
+ #appView #overviewView .tf-recent-item.activity{padding:13px 12px!important}
+ #appView #overviewView .tf-recent-item .tf-recent-status{
+  max-width:100%;font-size:9px!important;padding:6px 8px!important;
+ }
+ #appView #overviewView .tf-format-row.side-row{padding:14px!important}
+ #appView #overviewView .tf-format-sizes{gap:6px}
+ #appView #overviewView .tf-format-sizes .tf-format-chip{
+  white-space:normal!important;text-align:center;line-height:1.3!important;
+ }
+ #campaignModal .wizard-page{width:calc(100% - 14px)!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #appView #overviewView .tf-recent-item.activity,
+ #appView #overviewView .tf-overview-all{transition:none!important}
+}
+</style>
 </head>
 <body>
 
