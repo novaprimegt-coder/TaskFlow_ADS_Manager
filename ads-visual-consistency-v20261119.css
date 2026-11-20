@@ -237,3 +237,260 @@
 @media(prefers-reduced-motion:reduce){
  #campaignModal *,#appView .view *{transition:none!important;animation-duration:.001ms!important}
 }
+
+
+/* TASKFLOW ADS CONTRAST AUDIT V3 — KPI AND MODULE HARMONIZATION */
+/* Capa de presentación; los valores verificados y la lógica comercial no se modifican. */
+#appView {
+ --tfv-text:#effaff;
+ --tfv-text-secondary:#c4dff0;
+ --tfv-number:#69eafd;
+ --tfv-panel:#0c2b49;
+ --tfv-panel-border:rgba(93,190,231,.42);
+}
+#appView #tfAdsLiveOverview{
+ color:var(--tfv-text)!important;
+ margin:18px 0 24px!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-topline{
+ gap:11px!important;
+ align-items:flex-start!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-topline>strong{
+ color:#f2fbff!important;
+ font-size:clamp(15px,2.25vw,19px)!important;
+ line-height:1.38!important;
+ letter-spacing:-.012em!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-topline>span{
+ display:flex!important;flex-wrap:wrap!important;gap:9px!important;
+ min-width:0!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-topline button{
+ min-height:43px!important;
+ border-radius:11px!important;
+ padding:9px 14px!important;
+ border:1px solid rgba(98,199,235,.62)!important;
+ background:linear-gradient(135deg,#133e64,#0b3051)!important;
+ color:#f1fbff!important;
+ font-weight:780!important;
+ font-size:clamp(12px,1.55vw,14px)!important;
+ box-shadow:none!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-topline button:hover,
+#appView #tfAdsLiveOverview .tf-tool-topline button:focus-visible{
+ background:linear-gradient(135deg,#15547c,#10466b)!important;
+ border-color:#78dff4!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-kpis{
+ display:grid!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:13px!important;
+ margin:16px 0 19px!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-kpi,
+#appView #moduleContent .tf-tool-kpi{
+ background:linear-gradient(152deg,#0e3454 0%,#092740 100%)!important;
+ border:1px solid var(--tfv-panel-border)!important;
+ box-shadow:0 7px 20px rgba(0,8,26,.17),inset 0 1px 0 rgba(126,213,248,.07)!important;
+ color:var(--tfv-text)!important;
+ min-width:0!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-kpi{
+ padding:16px 18px!important;
+ border-radius:16px!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-kpi>span,
+#appView #moduleContent .tf-tool-kpi>span{
+ display:block!important;
+ color:#d7eaf8!important;
+ font-size:clamp(12px,1.5vw,14px)!important;
+ font-weight:760!important;
+ line-height:1.38!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-kpi>strong,
+#appView #moduleContent .tf-tool-kpi>strong{
+ display:block!important;
+ color:var(--tfv-number)!important;
+ -webkit-text-fill-color:var(--tfv-number)!important;
+ font-variant-numeric:tabular-nums!important;
+ font-size:clamp(25px,3.25vw,35px)!important;
+ font-weight:850!important;
+ line-height:1.14!important;
+ margin:10px 0 8px!important;
+ white-space:normal!important;
+ overflow:visible!important;
+ overflow-wrap:anywhere!important;
+ text-overflow:clip!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-kpi>small,
+#appView #moduleContent .tf-tool-kpi>small{
+ display:block!important;
+ color:#c7dfec!important;
+ font-size:clamp(11px,1.35vw,13px)!important;
+ line-height:1.48!important;
+ font-weight:530!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-note,
+#appView #tfAdsLiveOverview .tf-tool-warning{
+ color:#c8ddea!important;
+ font-size:clamp(12px,1.55vw,14px)!important;
+ line-height:1.6!important;
+}
+#appView #tfAdsLiveOverview .tf-tool-warning{
+ color:#ffe2aa!important;
+}
+#appView #overviewView .metric strong,
+#appView #overviewView .tf-overview-card :is(.tf-value,.tf-stat-value),
+#appView #moduleContent .module-card strong{
+ color:#79ebfd!important;
+ -webkit-text-fill-color:#79ebfd!important;
+}
+#appView #overviewView .metric small,
+#appView #overviewView .tf-approval-summary>span{
+ color:#c8dfee!important;
+}
+#appView .tf-ads-admin{
+ color:var(--tfv-text)!important;
+}
+#appView .tf-ads-admin-stat{
+ background:linear-gradient(140deg,#103753,#092941)!important;
+ border:1px solid var(--tfv-panel-border)!important;
+ box-shadow:0 8px 22px rgba(0,9,26,.17)!important;
+}
+#appView .tf-ads-admin-stat>span,
+#appView .tf-ads-admin-stat>small{
+ color:#c9e1f0!important;
+ font-weight:650!important;
+}
+#appView .tf-ads-admin-stat>strong{
+ color:#70e8fa!important;
+ -webkit-text-fill-color:#70e8fa!important;
+}
+#appView .tf-ads-admin-review{
+ background:linear-gradient(150deg,#0e304f,#09213d)!important;
+ border:1px solid var(--tfv-panel-border)!important;
+ box-shadow:0 9px 24px rgba(0,9,26,.16)!important;
+ color:var(--tfv-text)!important;
+}
+#appView .tf-ads-admin-review-head{
+ border-bottom:1px solid rgba(123,191,228,.24)!important;
+ background:rgba(11,42,67,.38)!important;
+}
+#appView .tf-ads-admin-review-head h3,
+#appView .tf-ads-admin-feedback strong,
+#appView .tf-ads-campaign-title b{
+ color:#f1faff!important;
+}
+#appView .tf-ads-admin-review-head p,
+#appView .tf-ads-admin-feedback,
+#appView .tf-ads-campaign-title>span{
+ color:#c9e1ee!important;
+}
+#appView .tf-ads-admin-feedback{
+ background:transparent!important;
+}
+#appView .tf-ads-admin-error{
+ background:#392d21!important;
+ color:#ffe2b6!important;
+}
+#appView .tf-ads-campaign-row{
+ border-top:1px solid rgba(106,190,222,.24)!important;
+ background:transparent!important;
+}
+#appView .tf-ads-campaign-row:hover{
+ background:rgba(44,110,145,.14)!important;
+}
+#appView .tf-ads-admin-refresh{
+ background:#123f64!important;
+ border:1px solid #448db6!important;
+ color:#eefaff!important;
+ box-shadow:none!important;
+}
+#appView .tf-ads-admin-refresh:hover,
+#appView .tf-ads-admin-refresh:focus-visible{
+ background:#175679!important;
+ border-color:#73dcf2!important;
+}
+#appView .tf-ads-approve{
+ background:#076ae7!important;
+ color:#fff!important;
+}
+#appView .tf-ads-reject{
+ background:#422c3c!important;
+ color:#ffd5e3!important;
+ border:1px solid #b16d8b!important;
+}
+#appView .tf-ads-campaign-status{
+ background:#3b311d!important;
+ color:#ffe1a3!important;
+ border:1px solid rgba(249,200,109,.32)!important;
+}
+#appView #moduleContent :is(.tf-tool-panel,.tf-tool-row,.tf-tool-section){
+ border-color:rgba(96,180,221,.31)!important;
+}
+#appView #moduleContent .tf-tool-kpi{
+ padding:15px!important;
+}
+#appView #moduleContent .tf-tool-intro>h3,
+#appView #moduleContent .tf-tool-heading h3{
+ color:#eefaff!important;
+}
+#appView #moduleContent :is(.tf-tool-row small,.tf-tool-row span,.tf-tool-note,
+ .tf-tool-empty,.tf-tool-loading,.tf-tool-heading p,.tf-tool-creative-data span){
+ color:var(--tfv-text-secondary)!important;
+}
+#appView #moduleContent .tf-tool-warning{
+ color:#ffdbad!important;
+}
+#appView #campaignsView :is(.manager-summary-strip strong,.manager-stat strong){
+ color:#70e8f7!important;
+}
+#appView #campaignsView :is(.manager-summary-strip small,.manager-scope,
+ .manager-stat small,.manager-stat span){
+ color:#c3dbea!important;
+}
+#appView :is(.tf-performance-stat b,.tf-performance-stats b){
+ color:#7aebfb!important;
+}
+#appView :is(.tf-performance-stat small,.tf-performance-foot){
+ color:#c5ddeb!important;
+}
+#appView :is(.tf-tool-table-scroll,.tf-tool-gallery,.tf-ads-admin-review,.module-grid){
+ min-width:0!important;
+}
+#appView :is(.tf-ads-admin-review,.tf-tool-panel,.tf-tool-kpi,.tf-chart-panel) :is(button,input,select,textarea):focus-visible{
+ outline:2px solid #75e8f9!important;
+ outline-offset:2px!important;
+}
+@media(max-width:850px){
+ #appView #tfAdsLiveOverview .tf-tool-kpis{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+ #appView #tfAdsLiveOverview .tf-tool-kpi:last-child:nth-child(odd){
+  grid-column:1/-1!important;
+ }
+}
+@media(max-width:520px){
+ #appView #tfAdsLiveOverview .tf-tool-topline>span{width:100%!important}
+ #appView #tfAdsLiveOverview .tf-tool-topline>span>button{
+  flex:1 1 140px!important;min-width:0!important;
+ }
+ #appView #tfAdsLiveOverview .tf-tool-kpis{gap:10px!important}
+ #appView #tfAdsLiveOverview .tf-tool-kpi{
+  padding:14px 13px!important;
+ }
+ #appView #tfAdsLiveOverview .tf-tool-kpi>strong{
+  font-size:clamp(25px,7vw,32px)!important;
+ }
+ #appView #tfAdsLiveOverview .tf-tool-kpi:last-child:nth-child(odd){
+  grid-column:1/-1!important;
+ }
+ #appView .tf-ads-admin-stats{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+}
+@media(max-width:350px){
+ #appView #tfAdsLiveOverview .tf-tool-kpis{grid-template-columns:1fr!important}
+ #appView #tfAdsLiveOverview .tf-tool-kpi:last-child:nth-child(odd){grid-column:auto!important}
+}
