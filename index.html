@@ -2184,6 +2184,18 @@ body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
  color:#d0e7f8!important;
 }
 </style>
+
+<style id="tfAdsFreeTrialAndReportCodeStyle20261119">
+#appView .tf-ads-code-lookup{margin:12px 0 20px;background:linear-gradient(135deg,#102e4c,#0b203a)!important;border:1px solid rgba(104,192,225,.32)!important}
+#appView .tf-ads-code-lookup .tf-ads-admin-review-head{padding:16px 19px}
+#appView .tf-ads-code-lookup .tf-ads-admin-review-head :is(h3,p){color:#edf9ff!important}
+#appView .tf-ads-code-form{display:flex;align-items:center;gap:10px;padding:17px 19px 5px}
+#appView .tf-ads-code-form input{width:185px;max-width:100%;min-width:0;height:42px;padding:10px 12px;border-radius:10px;border:1px solid #548bb1;background:#112f4e;color:#f1faff;font-size:17px;font-variant-numeric:tabular-nums;letter-spacing:.12em}
+#appView .tf-ads-code-form input::placeholder{color:#9cbbd0}
+#appView .tf-ads-code-form button{background:#164f76!important;color:#e9faff!important;border-color:#438db4!important}
+#appView .tf-ads-report-result{margin:0;padding:12px 19px 18px;min-height:28px;color:#cae4f6!important;overflow-wrap:anywhere}
+@media(max-width:420px){#appView .tf-ads-code-form{flex-wrap:wrap}#appView .tf-ads-code-form input{flex:1 1 125px}}
+</style>
 </head>
 <body>
 
@@ -3132,6 +3144,7 @@ function loadCampaigns(){
   campaigns=[...index.values()].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
   for(const id of selectedCampaignIds)if(!index.has(id))selectedCampaignIds.delete(id);
   writeJSON(CAMPAIGN_CACHE_KEY+uid,campaigns);renderAll();
+  if(!initialized)void loadCommercialStatus();
   if(initialized)return;
   initialized=true;
   const localOnly=Array.isArray(cache)&&cache.some(c=>c.status==='active'&&!remote.some(x=>x.id===c.id));
@@ -3193,6 +3206,62 @@ async function syncCampaignDoc(c){
 // Private synchronization only sends a campaign identifier and the signed session.
 // Budget and allocation rules never enter the public ad catalog or page HTML.
 const PRIVATE_ADS_DELIVERY='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/sync';
+const ADS_ACCOUNT_STATUS_URL='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/account/status';
+const ADS_REPORT_LOOKUP_URL='https://vgjpzvkfzahziwzwwkbx.supabase.co/functions/v1/taskflow-ads-delivery/admin/report-code';
+const tfAdVerifiedCodes=new Map(),tfAdBillingByCampaign=new Map();
+let tfAdsCommercialPromise=null,tfAdsCommercialAt=0,tfAdsCommercialOwner='';
+function adVerifiedCode(campaignId,adId){return tfAdVerifiedCodes.get(String(campaignId)+'|'+String(adId))||''}
+function readBillingState(campaignId){return tfAdBillingByCampaign.get(String(campaignId))||null}
+function applyCommercialResponse(data,ownerId){
+ if(!ownerId||currentUser?.id!==ownerId||fbAuth?.currentUser?.uid!==ownerId)return;
+ for(const row of Array.isArray(data?.adCodes)?data.adCodes:[]){
+  const id=String(row.campaign_id||row.campaignId||''),adId=String(row.creative_id||row.creativeId||'');
+  const code=String(row.ad_code||row.adCode||'');
+  if(/^[A-Za-z0-9_-]{3,128}$/.test(id)&&/^[A-Za-z0-9_-]{3,128}$/.test(adId)&&/^[0-9]{6}$/.test(code))
+   tfAdVerifiedCodes.set(id+'|'+adId,code);
+ }
+ for(const row of Array.isArray(data?.campaigns)?data.campaigns:[]){
+  const id=String(row.campaign_id||''),state=String(row.billing_state||'');
+  if(/^[A-Za-z0-9_-]{3,128}$/.test(id))
+   tfAdBillingByCampaign.set(id,{state,eligible:row.is_eligible===true,expiresAt:row.billing_trial_expires_at||null});
+ }
+ if(data?.trial?.campaign_id){
+  const id=String(data.trial.campaign_id);
+  const prev=tfAdBillingByCampaign.get(id)||{};
+  tfAdBillingByCampaign.set(id,{...prev,expiresAt:data.trial.expires_at||prev.expiresAt||null});
+ }
+}
+async function loadCommercialStatus(force=false){
+ const uid=currentUser?.id;
+ if(!uid||fbAuth?.currentUser?.uid!==uid)return;
+ if(tfAdsCommercialOwner!==uid){
+  tfAdVerifiedCodes.clear();tfAdBillingByCampaign.clear();
+  tfAdsCommercialOwner=uid;tfAdsCommercialAt=0;tfAdsCommercialPromise=null;
+ }
+ if(tfAdsCommercialPromise)return tfAdsCommercialPromise;
+ if(!force&&Date.now()-tfAdsCommercialAt<120000)return;
+ const work=(async()=>{
+  const token=await fbAuth.currentUser.getIdToken();
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
+  try{
+   const resp=await fetch(ADS_ACCOUNT_STATUS_URL,{
+    method:'POST',mode:'cors',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',
+    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}',signal:controller.signal
+   });
+   if(!resp.ok)throw Error('COMMERCIAL_STATUS_UNAVAILABLE');
+   const data=await resp.json();
+   if(uid!==currentUser?.id)return;
+   applyCommercialResponse(data,uid);
+   tfAdsCommercialAt=Date.now();
+   renderRecent();
+   if($('placeholderView')?.classList.contains('active')&&$('placeholderTitle')?.textContent==='Creativos')renderModule('creatives');
+  }finally{clearTimeout(timeout)}
+ })();
+ tfAdsCommercialPromise=work;
+ try{await work}catch(error){console.warn('TaskFlow ADS: estado comercial pendiente',error?.message||'Sin conexión')}
+ finally{if(tfAdsCommercialPromise===work)tfAdsCommercialPromise=null}
+}
+
 async function syncPrivateDelivery(campaignId,ownerUid,requireEligible=false){
  if(!fbAuth?.currentUser||!currentUser||!campaignId||!/^[A-Za-z0-9_-]{3,128}$/.test(String(campaignId)))return false;
  for(let attempt=0;attempt<2;attempt++){
@@ -3211,6 +3280,14 @@ async function syncPrivateDelivery(campaignId,ownerUid,requireEligible=false){
    });
    if(result.ok){
     const confirmation=await result.json().catch(()=>null);
+    if(confirmation?.ok===true&&(!ownerUid||ownerUid===currentUser.id)){
+     applyCommercialResponse({
+      adCodes:(confirmation.adCodes||[]).map(a=>({...a,campaignId,creativeId:a.creative_id,adCode:a.ad_code})),
+      campaigns:[{campaign_id:campaignId,billing_state:confirmation.billingState,
+       billing_trial_expires_at:confirmation.trialExpiresAt,is_eligible:confirmation.eligible===true}]
+     },currentUser.id);
+     tfAdsCommercialAt=0;
+    }
     return confirmation?.ok===true&&(!requireEligible||confirmation?.eligible===true);
    }
    if(attempt===0&&(result.status===401||result.status===429||result.status>=500))continue;
@@ -3362,7 +3439,7 @@ async function syncPublicCampaign(c){
  }),ADS_REMOTE_WRITE_MS,'La publicación no pudo confirmarse. Comprueba la conexión.');
  notifyTaskFlowAdsChanged();
  if(allowed){
-  const synchronized=await syncPrivateDelivery(c.id,undefined,true);
+  const synchronized=await syncPrivateDelivery(c.id,undefined,false);
   notifyTaskFlowAdsChanged();
   if(!synchronized)throw new Error('El catálogo se actualizó, pero el motor privado no confirmó la sincronización. Revisa la segmentación e inténtalo nuevamente.');
   return true;
@@ -3400,7 +3477,7 @@ function clearAdminView(){
 function enterApp(){
  syncAdminNavigation();
  if(!isAdsAdmin)clearAdminView();
- $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);loadCampaigns();animateApp()
+ $('authView').hidden=true;$('appView').hidden=false;$('topCompany').textContent=currentUser.company;$('accountName').textContent=currentUser.name;$('accountEmail').textContent=currentUser.email;$('accountInitials').textContent=initials(currentUser.name,currentUser.email);loadCampaigns();void loadCommercialStatus(true);animateApp()
 }
 async function logout(){
  if(!fbAuth)return;
@@ -3424,6 +3501,7 @@ async function handleAuthState(user){
   editingId=null;$('appView').hidden=true;
  }
  if(!user){
+  tfAdVerifiedCodes.clear();tfAdBillingByCampaign.clear();tfAdsCommercialAt=0;tfAdsCommercialOwner='';
   const firstDisplay=!authScreenInitialized;authScreenInitialized=true;
   isAdsAdmin=false;currentUser=null;syncAdminNavigation();clearAdminView();campaigns=[];
   $('appView').hidden=true;$('authView').hidden=false;$('authForm').reset();setAuthMode('login');
@@ -3483,6 +3561,11 @@ function deliveryConflict(c){
 }
 function publicationState(c){
  if(c.status!=='active')return c.status==='paused'?'Pausada · sin entrega':'Borrador · sin entrega';
+ const commercial=readBillingState(c.id);
+ if(commercial?.state==='insufficient_balance')return 'Sin saldo · entrega suspendida';
+ if(commercial?.state==='rate_unconfigured')return 'Cobro en espera de conversión GTQ/USD · sin entrega';
+ if(commercial?.state==='trial')return 'Prueba gratuita de siete días · entrega habilitada';
+ if(commercial?.state==='paid')return 'Saldo descontado · entrega habilitada';
  if(c.approvalStatus==='rejected')return 'Rechazada · sin entrega';
  if(c.approvalStatus!=='approved')return 'Pendiente de aprobación · sin entrega';
  if(!campaignReady(c))return 'Archivo pendiente · sin entrega';
@@ -3491,7 +3574,7 @@ function publicationState(c){
  if(deliveryConflict(c))return 'Segmentación no disponible · sin entrega';
  return 'Aprobada · habilitada según audiencia y fechas';
 }function locationLabel(c){return [c.city,c.region,c.country].filter(Boolean).join(', ')||'Sin ubicación'}function placementLabel(v){return placementSpecs[v]?.label||v||'—'}
-function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openNew,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,syncPrivateDelivery,deliveryConflict,toPublicCampaign,publicationMatches,renderAll,showView,duplicateCampaign,toast}}
+function adsModulesContext(){return {root:$('moduleContent'),campaigns,currentUser,fbAuth,fbDb,isAdsAdmin,openNew,openEdit,setStep,loadAdDraftEditor,withDeadline,saveCampaigns,syncPublicCampaign,syncPrivateDelivery,deliveryConflict,toPublicCampaign,publicationMatches,renderAll,showView,duplicateCampaign,toast,adVerifiedCode,readBillingState}}
 function renderAll(){renderMetrics();renderRecent();renderTable();renderManagerSummary();renderObjectiveInsights();if(window.TaskFlowADSModules?.paintOverview&&currentUser)void window.TaskFlowADSModules.paintOverview(adsModulesContext(),false);if(window.TaskFlowADSWallet?.onAuth&&currentUser)window.TaskFlowADSWallet.onAuth(adsModulesContext())}
 function fitSummaryMetricValues(){
  // Mantiene las cifras completas cuando caben; usa formato compacto solo si es necesario.
@@ -3604,8 +3687,13 @@ function renderRecent(){
  e.innerHTML=list.map(c=>{
   const state=['active','paused','draft'].includes(c.status)?c.status:'draft';
   const blocked=state==='active'&&c.approvalStatus==='approved'&&deliveryConflict(c);
+  const commercial=readBillingState(c.id);
+  const commercialText=commercial?.state==='trial'?'Gratis 7 días':
+   commercial?.state==='paid'?'Pagada':
+   commercial?.state==='insufficient_balance'?'Sin saldo':
+   commercial?.state==='rate_unconfigured'?'Pago pendiente':null;
   const place=locationLabel(c),placement=placementLabel(c.placement);
-  return '<button type="button" class="activity tf-recent-item" data-recent-edit="'+escapeHtml(c.id)+'" title="Editar '+escapeHtml(c.name)+'"><span class="activity-icon tf-thumb-shell">'+creativeThumbMarkup(normalizeCampaign(c).ads[0],'AD')+'</span><span class="activity-info tf-recent-copy"><b>'+escapeHtml(c.name)+'</b><span class="tf-recent-placement">'+escapeHtml(placement)+'</span><span class="tf-recent-location" title="'+escapeHtml(place)+'">'+escapeHtml(place)+'</span><span class="tf-recent-performance" data-tf-recent-metric="'+escapeHtml(c.id)+'">Consultando resultados…</span></span><small class="tf-recent-status tf-recent-status-'+(blocked?'blocked':state)+'"'+(blocked?' title="'+escapeHtml(blocked)+'"':'')+'>'+escapeHtml(blocked?'Sin entrega':statusLabel(c.status))+'</small></button>'
+  return '<button type="button" class="activity tf-recent-item" data-recent-edit="'+escapeHtml(c.id)+'" title="Editar '+escapeHtml(c.name)+'"><span class="activity-icon tf-thumb-shell">'+creativeThumbMarkup(normalizeCampaign(c).ads[0],'AD')+'</span><span class="activity-info tf-recent-copy"><b>'+escapeHtml(c.name)+'</b><span class="tf-recent-placement">'+escapeHtml(placement)+'</span><span class="tf-recent-location" title="'+escapeHtml(place)+'">'+escapeHtml(place)+'</span><span class="tf-recent-performance" data-tf-recent-metric="'+escapeHtml(c.id)+'">Consultando resultados…</span></span><small class="tf-recent-status tf-recent-status-'+(blocked?'blocked':state)+'"'+(blocked?' title="'+escapeHtml(blocked)+'"':'')+'>'+escapeHtml(blocked?'Sin entrega':commercialText||statusLabel(c.status))+'</small></button>'
  }).join('')
 }
 function renderManagerSummary(){const active=campaigns.filter(c=>c.status==='active').length;const daily=campaigns.filter(c=>c.status==='active'&&c.budgetType==='daily').reduce((s,c)=>s+Number(c.budget||0),0);const set=(id,val)=>{const el=$(id);if(el)el.textContent=val};set('stripCampaigns',String(campaigns.length));set('stripActive',String(active));set('stripBudget',money(daily));set('stripPublished',String(campaigns.filter(c=>c.status==='active'&&c.approvalStatus==='approved'&&campaignReady(c)).length));set('tabCampaignCount',selectedCampaignIds.size+' seleccionadas');set('managerAccountLabel',currentUser?.company||currentUser?.name||'Cuenta publicitaria activa');updateBulkActions()}
@@ -3709,9 +3797,42 @@ function renderModule(name){const root=$('moduleContent');if(!root)return;if(win
    if(!isAdsAdmin){root.innerHTML=moduleEmpty('Acceso restringido','Este módulo requiere autorización administrativa de TaskFlow ADS.');return}
    root.innerHTML='<section class="tf-ads-admin" aria-label="Control ADS">'
   +'<div class="tf-ads-admin-intro"><div class="tf-ads-admin-topline"><span class="tf-ads-admin-kicker">TaskFlow ADS · Administración</span><span class="tf-ads-admin-status">Administrador autorizado</span></div><h3>Centro de aprobación</h3><p>Revisa las campañas de los anunciantes y autoriza su publicación en TaskFlow.</p></div>'
+  +'<div class="tf-ads-admin-review tf-ads-code-lookup"><div class="tf-ads-admin-review-head"><div><h3>Buscar anuncio por código</h3><p>Escribe los seis dígitos visibles en el anuncio reportado.</p></div></div><form id="tfAdsReportCodeForm" class="tf-ads-code-form"><input id="tfAdsReportCodeInput" type="text" pattern="[0-9]{6}" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="000000" aria-label="Código del anuncio"><button type="submit" class="tf-ads-admin-refresh">Buscar</button></form><p id="tfAdsReportCodeResult" class="tf-ads-report-result" aria-live="polite"></p></div>'
   +'<div class="tf-ads-admin-stats"><article class="tf-ads-admin-stat"><span>Pendientes</span><strong id="adminPendingCount">—</strong><small>Por revisar</small></article><article class="tf-ads-admin-stat"><span>Aprobadas</span><strong id="adminApprovedCount">—</strong><small>Revisadas</small></article><article class="tf-ads-admin-stat"><span>Rechazadas</span><strong id="adminRejectedCount">—</strong><small>Revisadas</small></article><article class="tf-ads-admin-stat"><span>Campañas</span><strong id="adminCampaignTotal">—</strong><small>Total registradas</small></article></div>'
   +'<div class="tf-ads-admin-review"><div class="tf-ads-admin-review-head"><div><h3>Campañas pendientes de aprobación</h3><p>Solo se muestran solicitudes que necesitan una decisión.</p></div><button type="button" class="tf-ads-admin-refresh" id="adminReviewRefresh"><svg class="tf-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>Actualizar</button></div><div id="adminReviewList" class="tf-ads-admin-feedback" role="status" aria-live="polite">Consultando campañas...</div></div><div class="tf-ads-admin-review tf-ads-admin-goal-review"><div class="tf-ads-admin-review-head"><div><h3>Solicitudes de impresiones verificadas</h3><p>La autorización exige historial comprobado. No supone ventas ni garantiza tráfico futuro.</p></div></div><div id="adminImpressionList" class="tf-ads-admin-feedback" role="status" aria-live="polite">Consultando solicitudes...</div></div></section>';
    $('adminReviewRefresh').addEventListener('click',()=>{void loadAdminReview()});
+   $('tfAdsReportCodeForm')?.addEventListener('submit',async event=>{
+    event.preventDefault();
+    const form=event.currentTarget,code=clean($('tfAdsReportCodeInput')?.value);
+    const status=$('tfAdsReportCodeResult'),button=form.querySelector('button');
+    if(!status||!button)return;
+    if(!/^[0-9]{6}$/.test(code)){status.textContent='Escribe exactamente seis dígitos.';return}
+    if(!isAdsAdmin||!fbAuth?.currentUser||!await getAdminClaim(fbAuth.currentUser)){
+     status.textContent='La sesión ya no tiene acceso administrativo.';return;
+    }
+    button.disabled=true;status.textContent='Buscando código…';
+    const ctrl=new AbortController(),stop=setTimeout(()=>ctrl.abort(),12000);
+    try{
+     const token=await fbAuth.currentUser.getIdToken();
+     const response=await fetch(ADS_REPORT_LOOKUP_URL+'?code='+encodeURIComponent(code),{
+      method:'GET',headers:{Authorization:'Bearer '+token},credentials:'omit',
+      mode:'cors',cache:'no-store',referrerPolicy:'no-referrer',signal:ctrl.signal
+     });
+     if(!response.ok)throw Error('No se pudo verificar el código.');
+     const item=await response.json();
+     if(!item.found){status.textContent='No existe un anuncio con el código '+code+'.';return}
+     let label='Campaña '+item.campaignId+' · Anuncio '+item.adId;
+     if(item.ownerUid&&/^[A-Za-z0-9_-]{3,128}$/.test(item.ownerUid)){
+      const snap=await campaignsRef(item.ownerUid).doc(item.campaignId).get();
+      if(snap.exists){
+       const data=snap.data()||{},ad=Array.isArray(data.ads)?data.ads.find(a=>a.id===item.adId):null;
+       label='Campaña: '+(data.name||item.campaignId)+' · Anuncio: '+(ad?.name||item.adId);
+      }
+     }
+     status.textContent='ADS '+code+' · '+label;
+    }catch(error){status.textContent=String(error?.message||'No se pudo completar la consulta.')}
+    finally{clearTimeout(stop);button.disabled=false}
+   });
    watchAdminReview();
  }else root.innerHTML='';
 }
@@ -3813,7 +3934,7 @@ async function reconcileApprovedAds(items){
      }),ADS_REMOTE_WRITE_MS,'No se confirmó la restauración del anuncio.');
      if(result==='changed')return 'skipped';
      if(result==='restored')notifyTaskFlowAdsChanged();
-     if(!await syncPrivateDelivery(actual.id,actual.ownerUid,true))throw Error('Distribución privada no confirmada.');
+     if(!await syncPrivateDelivery(actual.id,actual.ownerUid,false))throw Error('Distribución privada no confirmada.');
      return 'recovered';
     }catch(error){
      console.warn('ADS: campaña aprobada sin recuperación confirmada:',c.id,error?.code||error?.message);
@@ -3965,7 +4086,7 @@ async function adminReviewCampaign(ownerUid,id,approve,displayed){
   else tx.delete(published);
  }),ADS_REMOTE_WRITE_MS,'No fue posible confirmar la revisión. Comprueba la conexión.');
  notifyTaskFlowAdsChanged();
- const privatelySynced=await syncPrivateDelivery(id,ownerUid,deliver);
+ const privatelySynced=await syncPrivateDelivery(id,ownerUid,false);
  if(deliver&&!privatelySynced){
   let reverted=false;
   try{
@@ -4030,7 +4151,7 @@ function renderAdDraftList(){
  $('adCountLabel').textContent=String(adDrafts.length);
  $('addAdBtn').disabled=adDrafts.length>=12;
  $('removeAdBtn').disabled=adDrafts.length<=1;
- root.innerHTML=adDrafts.map((a,i)=>'<button type="button" class="ad-draft-item '+(a.id===currentAdDraftId?'active':'')+'" data-ad-draft="'+escapeHtml(a.id)+'"><span class="ad-draft-num">'+(i+1)+'</span><span class="ad-draft-copy"><b>'+escapeHtml(a.name||('Anuncio '+(i+1)))+'</b><small>'+(a.mediaMeta?escapeHtml(a.mediaMeta.name||'Creativo validado'):'Creativo pendiente')+'</small></span><span class="ad-draft-budget">'+escapeHtml(budgetTextForDraft(i))+'</span></button>').join('');
+ root.innerHTML=adDrafts.map((a,i)=>'<button type="button" class="ad-draft-item '+(a.id===currentAdDraftId?'active':'')+'" data-ad-draft="'+escapeHtml(a.id)+'"><span class="ad-draft-num">'+(i+1)+'</span><span class="ad-draft-copy"><b>'+escapeHtml(a.name||('Anuncio '+(i+1)))+'</b><small>'+(a.mediaMeta?escapeHtml(a.mediaMeta.name||'Creativo validado'):'Creativo pendiente')+(editingId&&adVerifiedCode(editingId,a.id)?' · ADS '+escapeHtml(adVerifiedCode(editingId,a.id)):'')+'</small></span><span class="ad-draft-budget">'+escapeHtml(budgetTextForDraft(i))+'</span></button>').join('');
  const idx=Math.max(0,adDrafts.findIndex(a=>a.id===currentAdDraftId));$('currentAdLabel').textContent='Anuncio '+(idx+1)+' de '+adDrafts.length;
  renderBudgetAllocation();
 }
@@ -4341,7 +4462,7 @@ function review(){
  commitCurrentAd();
  const p=selectedPlacement(),spec=placementSpecs[p],mode=currentBudgetMode(),count=adDrafts.length;
  const ready=adDrafts.filter(a=>a.mediaMeta).length;
- $('review').innerHTML='<b>'+escapeHtml(clean($('campaignName').value)||'Campaña sin nombre')+'</b><br>Objetivo: '+escapeHtml(objectiveLabel(objective))+'<br>Acción al pulsar: '+escapeHtml(goalDetails(objective).cta)+'<br>Formato de la campaña: '+escapeHtml(spec.label)+' · '+spec.hdWidth+'×'+spec.hdHeight+' HD o '+spec.width+'×'+spec.height+' estándar<br>Audiencia: '+escapeHtml(locationLabel({city:$('city').value,region:$('region').value,country:$('country').value}))+' · '+escapeHtml($('ageMin').value)+'–'+escapeHtml($('ageMax').value)+' años<br>Presupuesto: '+escapeHtml(money($('budgetAmount').value))+' '+($('budgetType').value==='daily'?'diario':'total')+'<br>Distribución: '+(mode==='system'?'Rotación automática de anuncios':'Partes iguales')+'<br>Estrategia: '+escapeHtml(({balanced:'Equilibrada',reach:'Maximizar oportunidades',steady:'Reducir repeticiones'})[$('deliveryStrategy').value]||'Equilibrada')+'<br>Frecuencia: '+escapeHtml($('frequencyCap').value)+' por sesión y día<br>Anuncios: '+count+' creados · '+ready+' con creativo validado<br>Meta de impresiones: '+(Number($('requestedImpressions').value)>0?escapeHtml($('requestedImpressions').value)+' solicitadas (sin autorización)':'Sin solicitud')+'<br>Prueba A/B: '+($('abTest').checked?'Activada':'Desactivada')+'<br>Estado al guardar: '+escapeHtml((editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='active'?'Activa (pendiente de revisión al editar)':(editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='paused'?'Pausada':'Borrador')+'<br>La publicación requiere activación y aprobación.';
+ $('review').innerHTML='<b>'+escapeHtml(clean($('campaignName').value)||'Campaña sin nombre')+'</b><br>Objetivo: '+escapeHtml(objectiveLabel(objective))+'<br>Acción al pulsar: '+escapeHtml(goalDetails(objective).cta)+'<br>Formato de la campaña: '+escapeHtml(spec.label)+' · '+spec.hdWidth+'×'+spec.hdHeight+' HD o '+spec.width+'×'+spec.height+' estándar<br>Audiencia: '+escapeHtml(locationLabel({city:$('city').value,region:$('region').value,country:$('country').value}))+' · '+escapeHtml($('ageMin').value)+'–'+escapeHtml($('ageMax').value)+' años<br>Presupuesto: '+escapeHtml(money($('budgetAmount').value))+' '+($('budgetType').value==='daily'?'diario':'total')+'<br>Distribución: '+(mode==='system'?'Rotación automática de anuncios':'Partes iguales')+'<br>Estrategia: '+escapeHtml(({balanced:'Equilibrada',reach:'Maximizar oportunidades',steady:'Reducir repeticiones'})[$('deliveryStrategy').value]||'Equilibrada')+'<br>Frecuencia: '+escapeHtml($('frequencyCap').value)+' por sesión y día<br>Anuncios: '+count+' creados · '+ready+' con creativo validado<br>Meta de impresiones: '+(Number($('requestedImpressions').value)>0?escapeHtml($('requestedImpressions').value)+' solicitadas (sin autorización)':'Sin solicitud')+'<br>Prueba A/B: '+($('abTest').checked?'Activada':'Desactivada')+'<br>Estado al guardar: '+escapeHtml((editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='active'?'Activa (pendiente de revisión al editar)':(editingId?campaigns.find(c=>c.id===editingId)?.status:null)==='paused'?'Pausada':'Activación automática al guardar')+'<br>La campaña completa queda activa y requiere aprobación antes de su entrega.';
  renderAdDraftList();
 }
 async function saveCampaign(){
@@ -4360,7 +4481,7 @@ async function saveCampaign(){
   }
   msg('Guardando datos de la campaña...');
   const first=cleanAds[0]||{},approvalStatus=existing?.approvalStatus==='approved'?'pending':(existing?.approvalStatus||'pending');
-  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),campaignGroup:clean($('campaignGroup').value)||clean($('campaignName').value),objective,status:existing?.status||'draft',approvalStatus,placement:selectedPlacement(),interestTopics:readCampaignInterests(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),neighborhood:clean($('neighborhood').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),requestedImpressions:Number($('requestedImpressions').value)||0,start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
+  const c={id,ownerUid:currentUser.id,businessName:currentUser.company||'',name:clean($('campaignName').value),campaignGroup:clean($('campaignGroup').value)||clean($('campaignName').value),objective,status:existing?.status||'active',approvalStatus,placement:selectedPlacement(),interestTopics:readCampaignInterests(),country:$('country').value,region:clean($('region').value),city:clean($('city').value),neighborhood:clean($('neighborhood').value),radius:Number($('radius').value)||0,ageMin:Number($('ageMin').value)||18,ageMax:Number($('ageMax').value)||65,budgetType:$('budgetType').value,budget:Number($('budgetAmount').value)||0,budgetDistribution:mode,abTest:$('abTest').checked,deliveryStrategy:$('deliveryStrategy').value,frequencyCap:Number($('frequencyCap').value),requestedImpressions:Number($('requestedImpressions').value)||0,start:$('startDate').value,end:$('endDate').value,ads:cleanAds,adCount:cleanAds.length,adName:first.name||'',destination:first.destination||'',sound:!!first.sound,mediaMeta:first.mediaMeta||null,createdAt:existing?.createdAt||now(),updatedAt:now()};
   await syncCampaignDoc(c);
   msg('Confirmando el estado de la campaña...');
   await syncPublicCampaign(c);
