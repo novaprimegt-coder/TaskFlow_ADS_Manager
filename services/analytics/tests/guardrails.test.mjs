@@ -8,7 +8,7 @@ import {TextEncoder} from "node:util";
 const edge=readFileSync(new URL("../supabase-edge/index.ts",import.meta.url),"utf8");
 const sql=readFileSync(new URL("../audience_v1.sql",import.meta.url),"utf8");
 
-function setup({age=21,declaredAt=new Date().toISOString(),admin=false,optins=null}={}){
+function setup({age=21,declaredAt=new Date().toISOString(),admin=false,optins=null,noDedicatedKey=false,noServerKey=false}={}){
  const calls=[];
  const profile={declared_age:age,age_declared_at:declaredAt};
  const permissions=optins??{activity_consent:true,area_consent:true,residence_country:"GT",residence_region:"Huehuetenango"};
@@ -27,8 +27,8 @@ function setup({age=21,declaredAt=new Date().toISOString(),admin=false,optins=nu
  let handler;
  const Deno={
   env:{get(name){return name==="SUPABASE_URL"?"https://example.supabase.co":
-    name==="SUPABASE_SERVICE_ROLE_KEY"?"fake_key_for_offline_tests":
-    name==="TF_ADS_ACTIVITY_HASH_KEY"?"abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ":""}},
+    name==="SUPABASE_SERVICE_ROLE_KEY"?(noServerKey?"":"offline_service_credential_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+    name==="TF_ADS_ACTIVITY_HASH_KEY"?(noDedicatedKey?"":"abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"):""}},
   serve(fn){handler=fn}
  };
  const ctx={Deno,createClient:()=>db,createRemoteJWKSet:()=>({}),
@@ -104,6 +104,31 @@ test("Latidos: identificador se guarda como HMAC y no como UUID visible",async()
  assert.equal(result.recorded,true);
  assert.match(call.args.p_session_digest,/^[a-f0-9]{64}$/);
  assert.notEqual(call.args.p_session_digest,sessionId);
+});
+test("Sin secreto adicional, el servidor firma latidos con HKDF derivado de su clave privada",async()=>{
+ const h=setup({noDedicatedKey:true});
+ const sessionId="cd398c0a-d8a4-4c2d-a7ed-96bdf5d41a12";
+ const first=await h.api.heartbeat(h.db,"account123",{text:async()=>JSON.stringify({sessionId})});
+ const sig1=h.calls.at(-1).args.p_session_digest;
+ const second=await h.api.heartbeat(h.db,"account123",{text:async()=>JSON.stringify({sessionId})});
+ const sig2=h.calls.at(-1).args.p_session_digest;
+ assert.equal(first.recorded,true);
+ assert.equal(second.recorded,true);
+ assert.match(sig1,/^[a-f0-9]{64}$/);
+ assert.equal(sig1,sig2,"HKDF must yield a deterministic digest for the same user and session");
+ const differentUser=await h.api.heartbeat(h.db,"account456",{text:async()=>JSON.stringify({sessionId})});
+ assert.equal(differentUser.recorded,true);
+ assert.notEqual(h.calls.at(-1).args.p_session_digest,sig1,"Different users require unlinkable digests");
+ const dedicated=setup();
+ await dedicated.api.heartbeat(dedicated.db,"account123",{text:async()=>JSON.stringify({sessionId})});
+ assert.notEqual(dedicated.calls.at(-1).args.p_session_digest,sig1,"Dedicated HMAC key takes precedence");
+});
+test("No hay degradación a firmas débiles si faltan ambos secretos",async()=>{
+ const h=setup({noDedicatedKey:true,noServerKey:true});
+ await assert.rejects(()=>h.api.heartbeat(h.db,"account123",{
+  text:async()=>JSON.stringify({sessionId:"cd398c0a-d8a4-4c2d-a7ed-96bdf5d41a12"})
+ }),/HASH_KEY_NOT_CONFIGURED/);
+ assert.equal(h.calls.length,0);
 });
 test("SQL: RLS, caducidad, borrado de cuenta y grupos protegidos",()=>{
  for(const table of ["taskflow_ads_audience_optins","taskflow_ads_audience_daily_activity"]){
