@@ -19,7 +19,11 @@ function json(req,status,object){
 }
 function store(){
  const url=Deno.env.get("SUPABASE_URL")||"";
- const key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+ let key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+ try{
+  const keys=JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}");
+  key=keys.default||key;
+ }catch(_){/* Fallback para proyectos que conservan la clave heredada. */}
  if(!url||!key)throw Error("STORE_NOT_READY");
  return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
 }
