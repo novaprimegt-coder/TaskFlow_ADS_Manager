@@ -41,7 +41,7 @@ function donut(rows,total){
 }
 function ageBreakdown(m,ad){
  // Nunca usar edades objetivo como si fueran edades de personas que hicieron clic.
- const ages=ad?.clicksByAge||ad?.byAge||m?.byAd?.[ad?.id]?.clicksByAge||null;
+ const ages=ad?.clicksByAge||ad?.byAge||m?.byAd?.[ad?.id]?.clicksByAge||m?.byAd?.[ad?.id]?.byAge||null;
  if(!ages||typeof ages!=='object')return note('Clics por edad: datos no disponibles. El servidor todavía no registra edades verificables asociadas a cada clic.');
  const rows=Object.entries(ages).filter(([k,v])=>/^(?:1[89]|[2-9]\d|1[01]\d|120)$/.test(k)&&Number.isSafeInteger(Number(v))&&Number(v)>=0).map(([age,value])=>({name:age+' años',value:Number(value)})).filter(x=>x.value>0).sort((a,b)=>Number(a.name.split(' ')[0])-Number(b.name.split(' ')[0]));
  return rows.length?'<div class="tf-v8-age"><b>Clics por edad declarada</b>'+chart(rows,'Clics')+'</div>':note('Todavía no hay clics con edad declarada disponible.');
@@ -88,9 +88,11 @@ function drawClicks(){
    return {id:a.id,name:a.name||'Anuncio',value:m?(v===undefined?0:Number(v)):null,kind:medium(a)};
   });
   const known=ads.filter(a=>a.value!==null&&Number.isFinite(a.value)&&a.value>=0);
+  const ageAvailable=ads.some(a=>m?.byAd?.[a.id]?.clicksByAge||m?.byAd?.[a.id]?.byAge);
   return blocks(c,'<p class="tf-v8-campaign-count">Clics confirmados · últimos 30 días: <b>'+(m?number(m.clicks):'—')+'</b> <small>· '+esc(c.status==='active'?'Activa':'No activa')+'</small></p>'+
    (known.length?chart(known.map(a=>({name:a.name,value:a.value})),'Clics'):'')+
-   (ads.length?ads.map(a=>'<div class="tf-v8-click-ad"><div class="tf-v8-bar-caption"><b>'+esc(a.name)+'</b><span>'+esc(a.kind)+' · '+(a.value===null?'Sin datos':number(a.value)+' clics')+'</span></div>'+ageBreakdown(m,{id:a.id})+'</div>').join(''):tableEmpty('Sin anuncios registrados.'))+
+   (ads.length?ads.map(a=>'<div class="tf-v8-click-ad"><div class="tf-v8-bar-caption"><b>'+esc(a.name)+'</b><span>'+esc(a.kind)+' · '+(a.value===null?'Sin datos':number(a.value)+' clics')+'</span></div>'+(ageAvailable?ageBreakdown(m,{id:a.id}):'')+'</div>').join(''):tableEmpty('Sin anuncios registrados.'))+
+   (ads.length&&!ageAvailable?note('Clics por edad: datos no disponibles. El servidor todavía no registra edades asociadas a cada clic.'):'')+
    (m?.partial?note('Datos parciales de esta campaña.'):''));
  }).join('');
 }
