@@ -159,7 +159,82 @@ function details(){
   });
  }
 }
-function sync(){cards();details()}
+
+/* Gráficas visibles al final del Resumen: solo presupuestos reales y métricas confirmadas. */
+function analytics(){
+ const target=$('tfAdsOverviewAnalytics');
+ if(!target||!api?.campaigns)return;
+ const live=sortedActive(),budgets=daily().filter(c=>Number(c.budget)>0);
+ const rowBudget=budgets.map(c=>({label:c.name||'Campaña sin nombre',value:Math.max(0,Number(c.budget)||0)}));
+ const knownAds=live.flatMap(c=>{
+  const m=verified(c);
+  return (Array.isArray(c.ads)?c.ads:[]).map(a=>{
+   const result=m?.byAd?.[a.id];
+   if(!result||!Number.isFinite(Number(result.impressions))||!Number.isFinite(Number(result.clicks)))return null;
+   return {label:(a.name||'Anuncio')+' · '+(c.name||'Campaña'),impressions:Math.max(0,Number(result.impressions)),clicks:Math.max(0,Number(result.clicks))};
+  }).filter(Boolean);
+ });
+ const grouped=live.reduce((acc,c)=>{
+  const qty=Array.isArray(c.ads)?c.ads.length:0;
+  if(qty>0){
+   const key=labels[c.placement]||'Otro tipo';
+   acc[key]=(acc[key]||0)+qty;
+  }
+  return acc;
+ },{});
+ const types=Object.entries(grouped).map(([label,value])=>({label,value}));
+ const count=types.reduce((v,a)=>v+a.value,0);
+ const barChart=(rows,format,desc)=>{
+  if(!rows.length)return tableEmpty(desc);
+  const max=Math.max(1,...rows.map(r=>r.value));
+  return '<div class="tf-v11-bar-chart" role="list">'+rows.map(r=>{
+   const percent=Math.min(100,Math.max(0,r.value/max*100)).toFixed(2);
+   return '<div class="tf-v11-bar-row" role="listitem"><div class="tf-v11-bar-caption"><span>'+esc(r.label)+'</span><strong>'+esc(format(r.value))+'</strong></div>'+
+    '<div class="tf-v11-bar-track" role="img" aria-label="'+esc(r.label+': '+format(r.value))+'"><span style="width:'+percent+'%"></span></div></div>';
+  }).join('')+'</div>';
+ };
+ let splitMarkup='';
+ if(count>0){
+  if(types.length>1&&types.length<=PALETTE.length){
+   let offset=0,stops=[];
+   for(let i=0;i<types.length;i++){
+    const start=offset;offset+=types[i].value/count*100;
+    stops.push(PALETTE[i]+' '+start.toFixed(2)+'% '+offset.toFixed(2)+'%');
+   }
+   splitMarkup='<div class="tf-v11-type-chart"><div class="tf-v11-ring" role="img" aria-label="Distribución de anuncios por tipo" style="background:conic-gradient('+stops.join(',')+')"><div><strong>'+number(count)+'</strong><small>Anuncios</small></div></div>'+
+   '<ul class="tf-v11-legend">'+types.map((t,i)=>'<li><i style="background:'+PALETTE[i]+'"></i><span>'+esc(t.label)+'</span><strong>'+number(t.value)+' · '+(t.value/count*100).toFixed(1)+'%</strong></li>').join('')+'</ul></div>';
+  }else{
+   splitMarkup=barChart(types,number,'Sin formatos activos.');
+  }
+ }else splitMarkup=tableEmpty('No existen anuncios activos para comparar.');
+ const performance=knownAds.length?
+  '<div class="tf-v11-performance-list">'+knownAds.map(a=>{
+   const max=Math.max(a.impressions,a.clicks,1);
+   return '<div class="tf-v11-performance-entry"><strong>'+esc(a.label)+'</strong>'+
+    '<div class="tf-v11-bar-caption"><span>Impresiones verificadas</span><b>'+number(a.impressions)+'</b></div>'+
+    '<div class="tf-v11-bar-track"><span style="width:'+(a.impressions/max*100).toFixed(2)+'%"></span></div>'+
+    '<div class="tf-v11-bar-caption"><span>Clics verificados</span><b>'+number(a.clicks)+'</b></div>'+
+    '<div class="tf-v11-bar-track tf-v11-click-track"><span style="width:'+(a.clicks/max*100).toFixed(2)+'%"></span></div>'+
+   '</div>';
+  }).join('')+'</div>':
+  tableEmpty('Todavía no hay métricas confirmadas por anuncio. No se muestran gráficas de resultados ficticios.');
+ const checked=live.length>0&&live.every(c=>!!verified(c));
+ target.innerHTML=
+  '<div class="tf-v11-insights-head"><div><span class="tf-v11-eyebrow">ANÁLISIS DE CAMPAÑAS</span><h3>Estadísticas y distribución</h3><p>Presupuestos configurados y resultados confirmados de tus anuncios.</p></div><span class="tf-v11-insights-mark">ADS <span>ANALYTICS</span></span></div>'+
+  '<div class="tf-v11-insights-grid">'+
+   '<article class="tf-v11-graph-card"><header><span class="tf-v11-graph-icon">01</span><div><h4>Presupuesto diario por campaña</h4><p>Comparación de campañas activas con presupuesto diario</p></div></header>'+
+    barChart(rowBudget,money,'No hay campañas activas con presupuesto diario.')+
+    '<small class="tf-v11-graph-foot">Importes configurados, no representan dinero gastado.</small></article>'+
+   '<article class="tf-v11-graph-card"><header><span class="tf-v11-graph-icon">02</span><div><h4>Tipos de publicidad activos</h4><p>Participación real de anuncios por formato de ubicación</p></div></header>'+
+    splitMarkup+'<small class="tf-v11-graph-foot">Cantidad de anuncios activos por tipo de ubicación.</small></article>'+
+   '<article class="tf-v11-graph-card tf-v11-graph-wide"><header><span class="tf-v11-graph-icon">03</span><div><h4>Rendimiento por anuncio</h4><p>Impresiones y clics verificados · últimos 30 días</p></div></header>'+
+    performance+
+    (knownAds.length&&!checked?note('Solo se incluyen anuncios con métricas confirmadas; otras campañas tienen medición pendiente.'):'')+
+    '<small class="tf-v11-graph-foot">Los datos no disponibles nunca se reemplazan por estimaciones.</small></article>'+
+  '</div>';
+}
+
+function sync(){cards();analytics();details()}
 async function update(force=false){
  if(!api?.currentUser?.id||!window.TaskFlowADSModules?.getVerifiedMetrics)return;
  if(busy)return busy;
