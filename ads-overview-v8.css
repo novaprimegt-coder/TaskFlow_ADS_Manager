@@ -1,133 +1,325 @@
-/* TaskFlow ADS · únicamente Resumen V8 y tamaño del botón del menú lateral. */
+/* TaskFlow ADS · Resumen V10: identidad azul/cian y ventana de detalle.
+ * Alcance: exclusivamente tarjetas del Resumen, su diálogo y botón móvil.
+ */
 #appView #overviewView{max-width:100%;min-width:0}
 #appView #overviewView .tf-ads-summary-grid{
- display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;
- margin:18px 0 10px;align-items:stretch
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:13px;
+ margin:21px 0 12px;align-items:stretch
 }
 #appView #overviewView .tf-ads-summary-card{
- position:relative;display:flex;flex-direction:column;gap:12px;align-items:flex-start;
- justify-content:space-between;min-width:0;min-height:152px;width:100%;
- padding:20px 17px 16px;border:1px solid rgba(106,178,214,.36);
- border-radius:17px;background:linear-gradient(155deg,#123451,#0e253c);
- box-shadow:0 9px 23px rgba(4,24,48,.14);color:#e7f7ff;
- text-align:left;cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease
+ --tf-card-accent:#40cee9;
+ position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:space-between;
+ align-items:flex-start;min-width:0;min-height:155px;width:100%;gap:13px;
+ padding:20px 17px 17px;border:1px solid rgba(82,181,217,.33);border-radius:19px;
+ background:
+  radial-gradient(ellipse at 100% -10%,rgba(44,194,228,.18),transparent 63%),
+  linear-gradient(147deg,#103653 0%,#0b2945 55%,#071e35 100%);
+ box-shadow:inset 0 1px 0 rgba(198,244,255,.10),0 13px 28px rgba(1,15,33,.19);
+ color:#f3fbff;text-align:left;cursor:pointer;
+ transition:transform .19s ease,border-color .19s ease,box-shadow .19s ease;
+ overflow:hidden
 }
+#appView #overviewView .tf-ads-summary-card::before{
+ content:"";position:absolute;top:0;left:18px;right:18px;height:2px;
+ border-radius:0 0 8px 8px;background:linear-gradient(90deg,transparent,var(--tf-card-accent),transparent);
+ opacity:.95;pointer-events:none
+}
+#appView #overviewView .tf-ads-summary-card::after{
+ content:"";position:absolute;z-index:-1;right:-48px;bottom:-76px;width:175px;height:175px;
+ background:radial-gradient(circle,rgba(34,172,222,.11),transparent 68%);pointer-events:none
+}
+#appView #overviewView .tf-ads-summary-card:nth-child(2){--tf-card-accent:#65a8ff}
+#appView #overviewView .tf-ads-summary-card:nth-child(3){--tf-card-accent:#30e0bd}
+#appView #overviewView .tf-ads-summary-card:nth-child(4){--tf-card-accent:#9e9cff}
+#appView #overviewView .tf-ads-summary-card:nth-child(5){--tf-card-accent:#42c8fa}
 #appView #overviewView .tf-ads-summary-card:hover{
- transform:translateY(-2px);border-color:#57d5ed;box-shadow:0 12px 28px rgba(4,24,48,.2)
+ transform:translateY(-2px);border-color:rgba(102,216,241,.75);
+ box-shadow:inset 0 1px 0 rgba(223,248,255,.14),0 17px 33px rgba(2,15,35,.28)
 }
+#appView #overviewView .tf-ads-summary-card:active{transform:translateY(0)}
 #appView #overviewView .tf-ads-summary-card.is-selected{
- border-color:#51d6f0;background:linear-gradient(155deg,#1a4c70,#113755);
- box-shadow:0 0 0 2px rgba(69,204,236,.24),0 12px 28px rgba(4,24,48,.2)
+ border-color:var(--tf-card-accent);
+ box-shadow:0 0 0 1px var(--tf-card-accent),0 16px 33px rgba(1,19,40,.25)
 }
 #appView #overviewView .tf-ads-summary-card:focus-visible,
-#appView #overviewView .tf-v8-detail-head button:focus-visible{
- outline:3px solid #5bdaf1;outline-offset:3px
+#tfAdsSummaryDetail :focus-visible{
+ outline:3px solid #56dbf2!important;outline-offset:3px
 }
-#appView #overviewView .tf-v8-card-title{color:#b8e2f6!important;font-size:12px!important;font-weight:740!important;line-height:1.35;letter-spacing:.01em}
+#appView #overviewView .tf-v8-card-title{
+ color:#c7ebf8!important;font-size:13px!important;font-weight:750!important;
+ letter-spacing:.012em;line-height:1.4
+}
 #appView #overviewView .tf-v8-card-number{
- display:block;max-width:100%;color:#fff!important;font-weight:820;font-size:clamp(21px,2.4vw,30px);
- line-height:1.1;letter-spacing:-.025em;overflow-wrap:anywhere;font-variant-numeric:tabular-nums
+ display:block;max-width:100%;color:#fff!important;
+ font-weight:850;font-size:clamp(23px,2.6vw,31px);line-height:1.15;
+ letter-spacing:-.03em;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;
+ text-shadow:0 1px 14px rgba(122,209,241,.1)
 }
-#appView #overviewView #tfSummaryDaily{font-size:clamp(19px,2.2vw,26px)}
+#appView #overviewView #tfSummaryDaily{
+ font-size:clamp(16px,1.85vw,23px);line-height:1.21;letter-spacing:-.02em
+}
 #appView #overviewView .tf-v8-card-hint{
- display:flex;align-items:center;justify-content:space-between;width:100%;gap:7px;
- font-size:11px;color:#93c9dc!important;line-height:1.45
+ display:flex;justify-content:space-between;align-items:flex-end;gap:9px;
+ width:100%;font-size:11px!important;line-height:1.48;
+ color:#abccdf!important
 }
-#appView #overviewView .tf-v8-card-hint svg{width:15px;height:15px;flex:none;stroke:currentColor}
+#appView #overviewView .tf-v8-card-hint span[aria-hidden="true"]{
+ flex:none;display:grid;place-items:center;
+ width:24px;height:24px;border-radius:8px;background:rgba(75,169,213,.13);
+ color:#82e2f7;font-size:18px;font-weight:600
+}
 #appView #overviewView .tf-v8-live{
- margin:8px 2px 18px;color:#647d91!important;font-size:12px!important;line-height:1.5
+ margin:10px 3px 22px;color:#9ab9c9!important;font-size:12px!important;line-height:1.55
 }
-#appView #overviewView .tf-ads-summary-detail{
- min-width:0;margin:12px 0 25px;padding:25px;
- border:1px solid rgba(66,152,198,.30);border-radius:18px;
- background:linear-gradient(160deg,#f6fbff,#fff 65%);
- box-shadow:0 9px 25px rgba(15,56,91,.09);color:#183850
+
+/* El modal vive fuera del contenedor principal; nunca expande el Resumen. */
+body.tf-ads-summary-modal-open{overflow:hidden!important}
+#tfAdsSummaryDetail{
+ position:fixed;inset:0;z-index:12000;
+ display:flex;align-items:center;justify-content:center;
+ padding:max(14px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right))
+         max(14px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+ isolation:isolate
 }
-#appView #overviewView .tf-ads-summary-detail[hidden]{display:none!important}
-#appView #overviewView .tf-v8-detail-head{
- display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 20px;
- padding-bottom:16px;border-bottom:1px solid #dbe7ef
+#tfAdsSummaryDetail[hidden]{display:none!important}
+#tfAdsSummaryDetail .tf-v9-backdrop{
+ position:absolute;inset:0;z-index:0;
+ background:rgba(2,11,24,.79);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+ cursor:pointer
 }
-#appView #overviewView .tf-v8-detail-head small{display:block;color:#4686a5!important;font-size:11px!important;font-weight:750;text-transform:uppercase}
-#appView #overviewView .tf-v8-detail-head h3{margin:4px 0 0;color:#173a55!important;font-size:clamp(18px,2.4vw,24px);line-height:1.2}
-#appView #overviewView .tf-v8-detail-head button{
- min-height:38px;padding:8px 13px;background:#eaf3f8;color:#145071;
- border:1px solid #b9dce9;border-radius:9px;font-size:12px;font-weight:750;cursor:pointer
+#tfAdsSummaryDetail .tf-v9-dialog-window{
+ position:relative;z-index:1;width:min(760px,100%);
+ max-height:min(790px,calc(100vh - 28px));
+ max-height:min(790px,calc(100dvh - 28px));
+ display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;
+ background:
+  radial-gradient(ellipse at 96% 0%,rgba(23,132,199,.19),transparent 39%),
+  linear-gradient(155deg,#0d2b46 0%,#082139 55%,#06182b 100%);
+ color:#edf9ff;border:1px solid rgba(106,209,239,.48);border-radius:23px;
+ box-shadow:0 30px 92px rgba(0,7,20,.66),inset 0 1px 0 rgba(183,230,251,.12)
 }
-#appView #overviewView .tf-v8-row{
- margin:0 0 12px;padding:18px;border:1px solid #dce8f1;border-radius:13px;background:#fff;
- box-shadow:0 2px 6px rgba(16,65,98,.035)
+#tfAdsSummaryDetail .tf-v9-dialog-window::before{
+ content:"";height:3px;flex:none;
+ background:linear-gradient(90deg,#1767bd 0%,#27d7ee 51%,#238ad2 100%)
 }
-#appView #overviewView .tf-v8-row-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-#appView #overviewView .tf-v8-row-head strong{display:block;color:#183e5d;font-size:15px;font-weight:800;line-height:1.4;overflow-wrap:anywhere}
-#appView #overviewView .tf-v8-row-head small{display:block;color:#627f95!important;font-size:12px!important;margin-top:4px;line-height:1.4}
-#appView #overviewView .tf-v8-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
-#appView #overviewView .tf-v8-tags span{
- display:inline-flex;padding:6px 10px;border-radius:8px;background:#ecf6fc;
- color:#245878;font-size:11px;font-weight:700
+#tfAdsSummaryDetail .tf-v8-detail-head{
+ display:flex;align-items:center;justify-content:space-between;gap:18px;
+ flex:none;margin:0;padding:23px 25px 20px;
+ background:linear-gradient(100deg,rgba(18,63,96,.50),rgba(5,30,55,.3));
+ border-bottom:1px solid rgba(116,197,230,.20)
 }
-#appView #overviewView .tf-v8-formats{list-style:none;display:flex;flex-direction:column;gap:0;padding:0;margin:15px 0 0}
-#appView #overviewView .tf-v8-formats li{
- display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-top:1px solid #e5edf3;
- font-size:12px;color:#2a516c;overflow-wrap:anywhere
+#tfAdsSummaryDetail .tf-v8-detail-head>div{min-width:0}
+#tfAdsSummaryDetail .tf-v8-detail-head small{
+ display:block;margin-bottom:5px;color:#78d9ec!important;
+ text-transform:uppercase;font-size:11px!important;font-weight:800!important;letter-spacing:.08em
 }
-#appView #overviewView .tf-v8-formats li>span:last-child,#appView #overviewView .tf-v8-formats li>b{color:#295d7b;font-weight:750;text-align:right}
-#appView #overviewView .tf-v8-budget{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 16px;margin:15px 0}
-#appView #overviewView .tf-v8-budget span{color:#627f95;font-size:12px}
-#appView #overviewView .tf-v8-budget strong{color:#085786;font-size:24px;font-weight:850;font-variant-numeric:tabular-nums}
-#appView #overviewView .tf-v8-budget small{color:#627f95!important;font-size:11px!important}
-#appView #overviewView .tf-v8-total{
- display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;
- padding:17px 19px;margin-bottom:15px;border-radius:14px;background:#e6f4fc;border:1px solid #b6d9ed
+#tfAdsSummaryDetail .tf-v8-detail-head h3{
+ margin:0;color:#f5fcff!important;font-size:clamp(19px,2.5vw,25px);
+ font-weight:820;line-height:1.2;overflow-wrap:anywhere
 }
-#appView #overviewView .tf-v8-total span{max-width:65ch;color:#385e76;font-size:13px;line-height:1.5}
-#appView #overviewView .tf-v8-total strong{color:#074f7b;font-size:clamp(25px,3.6vw,36px);font-weight:850;font-variant-numeric:tabular-nums}
-#appView #overviewView .tf-v8-bars{display:grid;gap:12px;margin:14px 0 17px}
-#appView #overviewView .tf-v8-bar-item{min-width:0}
-#appView #overviewView .tf-v8-bar-caption{display:flex;justify-content:space-between;align-items:baseline;gap:15px;margin:0 0 7px;font-size:12px;color:#385e78}
-#appView #overviewView .tf-v8-bar-caption span:first-child{min-width:0;overflow-wrap:anywhere}
-#appView #overviewView .tf-v8-bar-caption b{flex-shrink:0;color:#12567c;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
-#appView #overviewView .tf-v8-track{height:10px;overflow:hidden;border-radius:99px;background:#e3edf5}
-#appView #overviewView .tf-v8-track>span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#169ace,#3cc9de);transition:width .2s ease}
-#appView #overviewView .tf-v8-pie{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:26px;margin:22px 0;padding:18px;border-radius:14px;background:#f0f7fb}
-#appView #overviewView .tf-v8-donut{display:grid;place-items:center;width:174px;aspect-ratio:1;border-radius:50%;flex-shrink:0}
-#appView #overviewView .tf-v8-donut>div{
- display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
- width:114px;aspect-ratio:1;border-radius:50%;background:#f0f7fb;text-align:center;padding:8px
+#tfAdsSummaryDetail .tf-v9-dialog-close{
+ display:inline-flex;justify-content:center;align-items:center;gap:8px;
+ flex:none;min-width:95px;min-height:42px;padding:9px 13px;
+ border-radius:12px;border:1px solid rgba(93,185,225,.43);
+ background:linear-gradient(135deg,#144768,#0b304b);color:#eafaff;
+ font-size:12px;font-weight:750;cursor:pointer;
+ transition:background .15s ease,border-color .15s ease
 }
-#appView #overviewView .tf-v8-donut strong{color:#124465;font-size:15px;overflow-wrap:anywhere}
-#appView #overviewView .tf-v8-donut small{color:#66859a!important;font-size:11px!important}
-#appView #overviewView .tf-v8-legend{list-style:none;display:flex;flex-direction:column;gap:10px;min-width:180px;padding:0;margin:0;flex:1;max-width:480px}
-#appView #overviewView .tf-v8-legend li{display:grid;grid-template-columns:11px minmax(0,1fr) auto;align-items:center;gap:9px;color:#325875;font-size:12px}
-#appView #overviewView .tf-v8-swatch{width:11px;height:11px;border-radius:3px}
-#appView #overviewView .tf-v8-legend b{color:#1b5476;font-variant-numeric:tabular-nums}
-#appView #overviewView .tf-v8-campaign-count{margin:14px 0 12px;color:#4f7289;font-size:13px}
-#appView #overviewView .tf-v8-campaign-count b{color:#0d608a;font-size:18px}
-#appView #overviewView .tf-v8-campaign-count small{color:#74899b!important;font-size:11px!important}
-#appView #overviewView .tf-v8-click-ad{margin:12px 0;padding:11px 12px;border:1px solid #e1eef6;border-radius:12px;background:#f8fbfd}
-#appView #overviewView .tf-v8-age{padding:9px 0}
-#appView #overviewView .tf-v8-age>b{color:#35647f;font-size:12px}
-#appView #overviewView .tf-v8-empty,#appView #overviewView .tf-v8-note{
- margin:14px 0;padding:11px 14px;border-radius:9px;background:#edf6fc;color:#345d79!important;
- font-size:12px!important;line-height:1.55
+#tfAdsSummaryDetail .tf-v9-dialog-close:hover{border-color:#62d4eb;background:#175776}
+#tfAdsSummaryDetail .tf-v9-dialog-close span{font-size:21px;line-height:1;color:#9eeaff}
+#tfAdsSummaryDetail .tf-v9-dialog-scroll{
+ min-height:0;flex:1;overflow-x:hidden;overflow-y:auto;
+ padding:23px 25px 26px;overscroll-behavior:contain;
+ scrollbar-width:thin;scrollbar-color:#3f7494 #0a253d;
+ -webkit-overflow-scrolling:touch
 }
-#appView #overviewView .tf-v8-empty{background:#f2f5f8;color:#597388!important}
-#appView #menuBtn{width:37px!important;height:37px!important;min-width:37px!important;min-height:37px!important;border-radius:10px!important}
+#tfAdsSummaryDetail .tf-v9-dialog-scroll::-webkit-scrollbar{width:7px}
+#tfAdsSummaryDetail .tf-v9-dialog-scroll::-webkit-scrollbar-thumb{background:#477e9e;border-radius:8px}
+#tfAdsSummaryDetail .tf-v8-row{
+ margin:0 0 13px;padding:19px 19px 17px;
+ background:linear-gradient(146deg,rgba(22,65,96,.80),rgba(11,40,68,.92));
+ border:1px solid rgba(88,160,204,.27);border-radius:17px;
+ box-shadow:inset 0 1px 0 rgba(207,244,255,.06),0 7px 24px rgba(0,13,27,.12);
+ color:#dcf0fb;overflow-wrap:anywhere
+}
+#tfAdsSummaryDetail .tf-v8-row:last-child{margin-bottom:0}
+#tfAdsSummaryDetail .tf-v8-row-head{
+ display:flex;align-items:flex-start;justify-content:space-between;gap:12px
+}
+#tfAdsSummaryDetail .tf-v8-row-head strong{
+ display:block;color:#f6fbff;font-size:16px;font-weight:820;line-height:1.4
+}
+#tfAdsSummaryDetail .tf-v8-row-head small{
+ display:block;margin-top:4px;color:#a8cddd!important;font-size:12px!important;line-height:1.4
+}
+#tfAdsSummaryDetail .tf-v8-tags{
+ display:flex;gap:7px;flex-wrap:wrap;margin:16px 0 2px
+}
+#tfAdsSummaryDetail .tf-v8-tags span{
+ display:inline-flex;align-items:center;min-height:30px;
+ padding:7px 10px;border:1px solid rgba(90,177,212,.23);border-radius:9px;
+ background:rgba(25,96,135,.31);color:#d2effc;font-size:11px;font-weight:750;line-height:1.38
+}
+#tfAdsSummaryDetail .tf-v8-formats{
+ display:flex;flex-direction:column;gap:0;list-style:none;padding:0;margin:15px 0 0
+}
+#tfAdsSummaryDetail .tf-v8-formats li{
+ display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+ padding:12px 1px;border-top:1px solid rgba(141,201,229,.16);
+ font-size:12px;line-height:1.5;color:#e8f6ff;min-width:0
+}
+#tfAdsSummaryDetail .tf-v8-formats li span:first-child{min-width:0;overflow-wrap:anywhere}
+#tfAdsSummaryDetail .tf-v8-formats li span:last-child,
+#tfAdsSummaryDetail .tf-v8-formats li>b{
+ flex:0 1 auto;color:#a5e3f5;font-weight:740;text-align:right;overflow-wrap:anywhere
+}
+#tfAdsSummaryDetail .tf-v8-budget{
+ display:flex;align-items:baseline;gap:9px 16px;flex-wrap:wrap;margin:17px 0
+}
+#tfAdsSummaryDetail .tf-v8-budget span{color:#b6d4e3;font-size:13px}
+#tfAdsSummaryDetail .tf-v8-budget strong{
+ color:#5ce1f4;font-size:clamp(21px,3.2vw,27px);font-weight:820;
+ font-variant-numeric:tabular-nums
+}
+#tfAdsSummaryDetail .tf-v8-budget small{color:#a3c5d8!important;font-size:12px!important}
+#tfAdsSummaryDetail .tf-v8-total{
+ display:flex;justify-content:space-between;align-items:center;gap:18px;
+ flex-wrap:wrap;padding:21px 22px;margin-bottom:17px;
+ border:1px solid rgba(78,203,229,.34);border-radius:17px;
+ background:linear-gradient(126deg,rgba(15,95,137,.57),rgba(13,49,83,.70))
+}
+#tfAdsSummaryDetail .tf-v8-total span{max-width:62ch;color:#cbe7f3;font-size:13px;line-height:1.55}
+#tfAdsSummaryDetail .tf-v8-total strong{
+ color:#8ef2f4;font-size:clamp(26px,4vw,39px);font-weight:850;font-variant-numeric:tabular-nums
+}
+#tfAdsSummaryDetail .tf-v8-bars{display:grid;gap:14px;margin:15px 0 19px}
+#tfAdsSummaryDetail .tf-v8-bar-item{min-width:0}
+#tfAdsSummaryDetail .tf-v8-bar-caption{
+ display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+ margin:0 0 8px;font-size:12px;line-height:1.5;color:#d0e8f5
+}
+#tfAdsSummaryDetail .tf-v8-bar-caption>span:first-child{min-width:0;overflow-wrap:anywhere}
+#tfAdsSummaryDetail .tf-v8-bar-caption b{
+ flex-shrink:0;color:#b3f1ff;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums
+}
+#tfAdsSummaryDetail .tf-v8-track{
+ height:10px;border-radius:99px;background:rgba(129,186,218,.14);overflow:hidden
+}
+#tfAdsSummaryDetail .tf-v8-track>span{
+ display:block;height:100%;border-radius:99px;
+ background:linear-gradient(90deg,#268ce1,#47e0eb);
+ transition:width .2s ease
+}
+#tfAdsSummaryDetail .tf-v8-pie{
+ display:flex;justify-content:center;align-items:center;flex-wrap:wrap;
+ gap:24px;margin:19px 0;padding:21px;
+ background:rgba(19,66,98,.35);border:1px solid rgba(94,159,195,.2);border-radius:16px
+}
+#tfAdsSummaryDetail .tf-v8-donut{
+ display:grid;place-items:center;flex-shrink:0;
+ width:174px;aspect-ratio:1;border-radius:50%
+}
+#tfAdsSummaryDetail .tf-v8-donut>div{
+ display:flex;align-items:center;justify-content:center;flex-direction:column;
+ width:115px;aspect-ratio:1;gap:4px;padding:8px;border-radius:50%;
+ background:#0d2b47;text-align:center
+}
+#tfAdsSummaryDetail .tf-v8-donut strong{color:#eafaff;font-size:15px;overflow-wrap:anywhere}
+#tfAdsSummaryDetail .tf-v8-donut small{color:#a2cadc!important;font-size:11px!important}
+#tfAdsSummaryDetail .tf-v8-legend{
+ display:flex;flex-direction:column;gap:10px;flex:1;min-width:172px;max-width:480px;
+ list-style:none;margin:0;padding:0
+}
+#tfAdsSummaryDetail .tf-v8-legend li{
+ display:grid;grid-template-columns:11px minmax(0,1fr) auto;
+ gap:9px;align-items:center;color:#d0e9f5;font-size:12px
+}
+#tfAdsSummaryDetail .tf-v8-swatch{width:11px;height:11px;border-radius:3px}
+#tfAdsSummaryDetail .tf-v8-legend b{color:#b4e6f4;font-variant-numeric:tabular-nums}
+#tfAdsSummaryDetail .tf-v8-campaign-count{
+ margin:14px 0 12px;color:#bedbeb;font-size:13px;line-height:1.5
+}
+#tfAdsSummaryDetail .tf-v8-campaign-count b{color:#75e7f5;font-size:18px}
+#tfAdsSummaryDetail .tf-v8-campaign-count small{color:#94bbce!important;font-size:12px!important}
+#tfAdsSummaryDetail .tf-v8-click-ad{
+ margin:11px 0;padding:13px;
+ border:1px solid rgba(96,166,201,.22);border-radius:12px;
+ background:rgba(13,44,72,.64)
+}
+#tfAdsSummaryDetail .tf-v8-age{padding:9px 0}
+#tfAdsSummaryDetail .tf-v8-age>b{color:#8bdff0;font-size:12px}
+#tfAdsSummaryDetail .tf-v8-note,#tfAdsSummaryDetail .tf-v8-empty{
+ margin:14px 0;padding:12px 14px;
+ border:1px solid rgba(73,173,207,.23);border-radius:11px;
+ background:rgba(27,86,119,.33);
+ color:#c0dfeb!important;font-size:12px!important;line-height:1.55
+}
+#tfAdsSummaryDetail .tf-v8-empty{background:rgba(31,68,92,.35);color:#b6d0df!important}
+
+/* El tamaño del disparador móvil sigue reducido, conforme a la versión anterior. */
+#appView #menuBtn{
+ width:37px!important;height:37px!important;
+ min-width:37px!important;min-height:37px!important;border-radius:10px!important
+}
 #appView #menuBtn .tf-icon{width:20px!important;height:20px!important;stroke-width:2.3px!important}
-@media(max-width:1180px){#appView #overviewView .tf-ads-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:780px){#appView #overviewView .tf-ads-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#appView #overviewView .tf-ads-summary-detail{padding:17px}}
+
+@media(max-width:1160px){
+ #appView #overviewView .tf-ads-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:780px){
+ #appView #overviewView .tf-ads-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #appView #overviewView .tf-ads-summary-card:last-child{grid-column:1/-1}
+}
+@media(max-width:560px){
+ #appView #overviewView .tf-ads-summary-grid{gap:10px;margin-top:15px}
+ #appView #overviewView .tf-ads-summary-card{
+  gap:10px;min-height:154px;padding:17px 14px 14px;border-radius:16px
+ }
+ #appView #overviewView .tf-ads-summary-card:last-child{
+  min-height:119px;display:grid;grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;gap:7px 12px
+ }
+ #appView #overviewView .tf-ads-summary-card:last-child .tf-v8-card-title{grid-column:1/-1}
+ #appView #overviewView .tf-ads-summary-card:last-child .tf-v8-card-hint{
+  align-self:center;justify-content:flex-end
+ }
+ #appView #overviewView .tf-v8-card-title{font-size:12px!important}
+ #appView #overviewView .tf-v8-card-number{font-size:clamp(22px,5.7vw,29px);line-height:1.2}
+ #appView #overviewView #tfSummaryDaily{font-size:clamp(15px,4.1vw,19px);line-height:1.25}
+ #appView #overviewView .tf-v8-card-hint{font-size:10.5px!important}
+ #tfAdsSummaryDetail{padding:10px}
+ #tfAdsSummaryDetail .tf-v9-dialog-window{
+  width:100%;max-height:calc(100vh - 20px);max-height:calc(100dvh - 20px);
+  border-radius:19px
+ }
+ #tfAdsSummaryDetail .tf-v8-detail-head{padding:18px 17px 16px;gap:10px}
+ #tfAdsSummaryDetail .tf-v8-detail-head h3{font-size:19px}
+ #tfAdsSummaryDetail .tf-v8-detail-head small{font-size:9.5px!important;letter-spacing:.04em}
+ #tfAdsSummaryDetail .tf-v9-dialog-close{min-width:74px;min-height:42px;padding:9px 10px;font-size:11px}
+ #tfAdsSummaryDetail .tf-v9-dialog-scroll{padding:16px 15px 21px}
+ #tfAdsSummaryDetail .tf-v8-row{padding:16px 14px;border-radius:14px}
+ #tfAdsSummaryDetail .tf-v8-formats li{flex-direction:column;gap:4px}
+ #tfAdsSummaryDetail .tf-v8-formats li span:last-child,
+ #tfAdsSummaryDetail .tf-v8-formats li>b{text-align:left}
+ #tfAdsSummaryDetail .tf-v8-total{padding:17px}
+ #tfAdsSummaryDetail .tf-v8-total strong{font-size:26px}
+ #tfAdsSummaryDetail .tf-v8-pie{padding:14px;gap:18px}
+ #tfAdsSummaryDetail .tf-v8-donut{width:152px}
+ #tfAdsSummaryDetail .tf-v8-donut>div{width:104px}
+}
+@media(max-width:375px){
+ #appView #overviewView .tf-ads-summary-grid{gap:8px}
+ #appView #overviewView .tf-ads-summary-card{padding:15px 11px 13px}
+ #appView #overviewView #tfSummaryDaily{font-size:15px}
+ #tfAdsSummaryDetail .tf-v8-detail-head{align-items:flex-start}
+}
 @media(max-width:420px){
- #appView #overviewView .tf-ads-summary-grid{gap:9px}
- #appView #overviewView .tf-ads-summary-card{padding:15px 12px;min-height:144px}
- #appView #overviewView .tf-v8-card-number{font-size:20px}
- #appView #overviewView .tf-v8-formats li{flex-direction:column;gap:2px}
- #appView #overviewView .tf-v8-formats li>span:last-child,#appView #overviewView .tf-v8-formats li>b{text-align:left}
- #appView #overviewView .tf-v8-detail-head{align-items:flex-start}
  #appView #menuBtn{width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important}
  #appView #menuBtn .tf-icon{width:19px!important;height:19px!important}
 }
 @media(prefers-reduced-motion:reduce){
  #appView #overviewView .tf-ads-summary-card,
- #appView #overviewView .tf-v8-track>span{transition:none}
+ #tfAdsSummaryDetail .tf-v8-track>span,
+ #tfAdsSummaryDetail .tf-v9-dialog-close{transition:none}
  #appView #overviewView .tf-ads-summary-card:hover{transform:none}
 }
