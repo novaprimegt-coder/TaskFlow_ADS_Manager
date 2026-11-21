@@ -1,0 +1,27 @@
+name: TaskFlow ADS — production audience security checks
+on:
+  push:
+    branches:
+      - qa/audience-live-smoke-20261121
+      - main
+    paths:
+      - 'services/analytics/**'
+      - '.github/workflows/ads-audience-live-smoke.yml'
+  pull_request:
+    paths:
+      - 'services/analytics/**'
+      - '.github/workflows/ads-audience-live-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-endpoint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Confirm live auth barriers, CORS and read-only health
+        run: node --test services/analytics/tests/live-smoke.test.mjs
