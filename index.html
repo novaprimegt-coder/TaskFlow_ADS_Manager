@@ -2995,6 +2995,7 @@ function withDeadline(operation,ms,message){
  ]).finally(()=>clearTimeout(timer));
 }
  let registrationGate=null;
+let tfAdsAuthCheck=null;
 let authScreenInitialized=false;
 let fbApp=null,fbAuth=null,fbDb=null,fbStorage=null,currentUser=null,campaigns=[],step=1,objective='awareness',editingId=null,pendingMedia=null,existingMediaMeta=null,currentPreviewUrl=null,managerLevel='campaigns',selectedCampaignIds=new Set(),adDrafts=[],currentAdDraftId=null,isAdsAdmin=false,authReady=false;
 const placementSpecs={banner:{label:'Banner',width:1200,height:180,hdWidth:2400,hdHeight:360,accept:'image/jpeg,image/png,image/webp,image/gif',formats:'JPG · PNG · WEBP · GIF',specFormat:'Imagen / GIF',duration:'No aplica',frame:'banner'},entry:{label:'Anuncio de ingreso',width:1080,height:1920,hdWidth:2160,hdHeight:3840,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'Video: 10 s – 3 min',frame:'vertical'},interaction:{label:'Por interacción',width:1080,height:1920,hdWidth:2160,hdHeight:3840,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'Video: 10 s – 3 min',frame:'vertical'}};
@@ -3250,6 +3251,17 @@ async function updateSidebarProfilePhoto(file){
 
 function setAuthMode(mode){resetPasswordVisibility();const reg=mode==='register';$('loginTab').classList.toggle('active',!reg);$('registerTab').classList.toggle('active',reg);$('loginTab').setAttribute('aria-selected',String(!reg));$('registerTab').setAttribute('aria-selected',String(reg));$('nameField').hidden=!reg;$('companyField').hidden=!reg;$('profilePhotoField').hidden=!reg;$('profilePhotoInput').required=reg;$('confirmField').hidden=!reg;if(!reg){$('profilePhotoInput').value='';clearPhotoPreview()}$('authSubmit').textContent=reg?'Crear cuenta':'Iniciar sesión';$('authForm').dataset.mode=reg?'register':'login';$('password').autocomplete=reg?'new-password':'current-password';window.TaskFlowGooey?.go(reg?1:0);authMsg('')}
 function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'auth/email-already-in-use':'Ese correo ya está registrado.','auth/invalid-email':'El correo electrónico no es válido.','auth/weak-password':'La contraseña debe tener al menos 8 caracteres.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Intenta nuevamente más tarde.','auth/network-request-failed':'No hay conexión con el servicio de cuentas.','auth/unauthorized-domain':'Este dominio todavía no está autorizado para iniciar sesión.','auth/user-disabled':'Esta cuenta está deshabilitada. Contacta con el administrador.','auth/operation-not-allowed':'El acceso con correo y contraseña no está habilitado en Firebase.','auth/web-storage-unsupported':'El navegador impide guardar la sesión. Comprueba la privacidad y el almacenamiento del navegador.','auth/internal-error':'El servicio de inicio de sesión devolvió un error interno.'};return map[c]||'No fue posible completar el acceso.'}
+function ensureSessionReady(user){
+ // Un único chequeo por usuario; permite reintentar si Firebase ya conservaba la sesión.
+ if(!user?.uid)return handleAuthState(user);
+ if(currentUser?.id===user.uid&&!$('appView')?.hidden)return Promise.resolve();
+ if(tfAdsAuthCheck?.uid===user.uid)return tfAdsAuthCheck.promise;
+ const promise=Promise.resolve().then(()=>handleAuthState(user));
+ tfAdsAuthCheck={uid:user.uid,promise};
+ const clear=()=>{if(tfAdsAuthCheck?.promise===promise)tfAdsAuthCheck=null};
+ void promise.then(clear,clear);
+ return promise;
+}
  async function handleAuth(e){
   e.preventDefault();authMsg('');
   const mode=$('authForm').dataset.mode||'login';
@@ -3286,8 +3298,10 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
     authMsg('Cuenta comercial creada correctamente.','success');
    }else{
     authMsg('Comprobando credenciales…');
-     await withDeadline(fbAuth.signInWithEmailAndPassword(email,pass),12000,'El servicio de autenticación no confirmó el acceso.');
-     // El listener decide si la cuenta puede entrar. No sobrescribir sus errores con un éxito tardío.
+     const credential=await withDeadline(fbAuth.signInWithEmailAndPassword(email,pass),12000,'El servicio de autenticación no confirmó el acceso.');
+     // No depender de un nuevo evento de Firebase cuando se trata del mismo usuario.
+     // El listener y el formulario comparten una verificación sin duplicarla.
+     await ensureSessionReady(credential.user||fbAuth.currentUser);
    }
   }catch(err){
    if(mode==='register'&&created){
@@ -3303,7 +3317,7 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
     authMsg(rolledBack?
      'No se completó el registro ni la foto de perfil. Comprueba la conexión y vuelve a crear la cuenta.':
      'No se completó el registro de la foto. Si tu correo ya quedó registrado, inicia sesión y añade la foto desde el menú lateral.','error');
-   }else authMsg(err?.code==='ads/timeout'?err.message:friendlyAuthError(err),'error');
+   }else authMsg(['ads/profile-unavailable','ads/profile-denied','ads/profile-session'].includes(err?.code)?err.message:err?.code==='ads/timeout'?'El servicio de autenticación no respondió a tiempo.':friendlyAuthError(err),'error');
   }finally{
    if(resolveGate)resolveGate();
    registrationGate=null;submit.disabled=false;submit.textContent=initialSubmitText;
@@ -5031,7 +5045,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    try{
     if(user&&registrationGate)await registrationGate;
     if(user&&fbAuth.currentUser?.uid!==user.uid)return;
-    await handleAuthState(user);
+    await ensureSessionReady(user);
    }catch(err){
     console.error('ADS: no fue posible completar la carga de sesión',err);
     authMsg(['ads/profile-unavailable','ads/profile-denied','ads/profile-session'].includes(err?.code)?err.message:err?.code==='ads/timeout'?'El servicio de inicio no respondió a tiempo.':'No se confirmó el acceso comercial. Inténtalo nuevamente.','error');
