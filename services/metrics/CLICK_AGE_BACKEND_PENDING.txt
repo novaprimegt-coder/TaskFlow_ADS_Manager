@@ -1,0 +1,70 @@
+TASKFLOW ADS — MODIFICACIONES PENDIENTES AL SERVICIO PRIVADO DE MÉTRICAS
+Baseline: Supabase Edge Function taskflow-ads-delivery V34.
+Estado: propuesta de integración no desplegada. El código del motor privado NO debe subirse al repositorio público.
+
+Antes de aplicar esta modificación:
+1. Ejecutar y verificar servicios/metrics/taskflow_ads_click_age_v1.sql en staging.
+2. Obtener la última versión REAL de taskflow-ads-delivery; comparar con V34.
+3. Realizar los cambios focalizados indicados a continuación en el servicio privado.
+4. Probar consentimiento, eventos repetidos, reintentos, edades no elegibles, límites y permisos.
+5. Publicar únicamente tras LANZAR y superar las pruebas de regresión.
+
+A. confirmDelivery(req, db), exclusivamente cuando status === 'recorded' && type === 'click'.
+El bloque ya comprueba el JWT con identity(req) antes de aprender intereses.
+Después de obtener viewer y antes de registrar intereses, añadir:
+
+    const personal = await privatePersonalization(db, viewer.uid);
+    if (Number.isInteger(personal.age) && personal.age >= 18 && personal.age <= 120) {
+      const {error: ageError} = await db.from('taskflow_ads_delivery_selections')
+        .update({click_age: personal.age})
+        .eq('selection_token', token)
+        .eq('campaign_id', id)
+        .not('click_at', 'is', null);
+      if (ageError) console.warn('Age analytics write not confirmed');
+    }
+
+Notas: privatePersonalization ya retorna age:null si no existe consentimiento adulto
+vigente; no obtiene edad de los parámetros de clic ni del objetivo del anuncio.
+No ejecutar si el evento se marcó duplicate; no reconstruir métricas previas.
+
+B. verifiedMetrics(req, db), después de confirmar ids autorizados:
+    const {data:ages,error:ageError}=await db.rpc('taskflow_ads_click_age_counts', {
+      p_ids:authorized,
+      p_since:new Date(Date.now()-30*86400000).toISOString()
+    });
+
+Si ageError, informar que el desglose por edad no está disponible sin
+romper las impresiones ni los clics confirmados.
+
+En la respuesta de cada campaña, construir el map de anuncios existente
+SIN modificar sus totales de impresiones o clics. Solo si ages existe:
+
+    const byAd = {...(row.by_ad||{})};
+    if(!ageError){
+      for(const ageRow of ages||[]){
+        if(ageRow.campaign_id!==id)continue;
+        const adId=String(ageRow.creative_id||'');
+        const age=Number(ageRow.declared_age);
+        const n=Number(ageRow.clicks);
+        if(!/^[A-Za-z0-9_-]{3,128}$/.test(adId)
+           || !Number.isInteger(age) || age<18 || age>120
+           || !Number.isSafeInteger(n) || n<5)continue;
+        const original=byAd[adId]||{impressions:0,clicks:0};
+        byAd[adId]={...original,
+          clicksByAge:{...(byAd[adId]?.clicksByAge||{}),[String(age)]:n}};
+      }
+    }
+
+Usar byAd en el objeto de respuesta en lugar de row.by_ad||{}.
+No devolver nombres, correos, UID, session_hash, tokens, eventos individuales
+ni edades de grupos con menos de cinco clics por anuncio.
+Las cifras de edades son DECLARADAS, NO VERIFICADAS DOCUMENTALMENTE.
+
+C. Regresión:
+- Un clic duplicado no debe duplicar una edad.
+- Usuario menor, sin consentimiento o con consentimiento caducado: click_age es NULL.
+- Dos anuncios de la misma campaña mantienen cifras independientes.
+- Menos de cinco clics de la misma edad/ad: no devolver esa combinación.
+- El total de clics confirmados no cambia ni se altera por edades omitidas.
+- Un error en las estadísticas de edad no bloquea las métricas principales.
+- Solo propietario autenticado o administrador ve sus campañas.
