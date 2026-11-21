@@ -104,7 +104,7 @@ function drawClicks(){
   return blocks(c,'<p class="tf-v8-campaign-count">Clics confirmados · últimos 30 días: <b>'+(m?number(m.clicks):'—')+'</b> <small>· '+esc(c.status==='active'?'Activa':'No activa')+'</small></p>'+
    (known.length?chart(known.map(a=>({name:a.name,value:a.value})),'Clics'):'')+
    (ads.length?ads.map(a=>'<div class="tf-v8-click-ad"><div class="tf-v8-bar-caption"><b>'+esc(a.name)+'</b><span>'+esc(a.kind)+' · '+(a.value===null?'Sin datos':number(a.value)+' clics')+'</span></div>'+(ageAvailable?ageBreakdown(m,{id:a.id}):'')+'</div>').join(''):tableEmpty('Sin anuncios registrados.'))+
-   (ads.length&&!ageAvailable?note('Clics por edad: datos no disponibles. El servidor todavía no registra edades asociadas a cada clic.'):'')+
+   (ads.length?(ageAvailable?note('Edades declaradas con consentimiento: se muestran grupos de 5 o más clics. Algunos clics no tendrán edad disponible.'):note('Clics por edad: datos no disponibles. El servidor todavía no registra edades asociadas a cada clic.')):'')+
    (m?.partial?note('Datos parciales de esta campaña.'):''));
  }).join('');
 }
