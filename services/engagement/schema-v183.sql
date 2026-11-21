@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.taskflow_ads_engagement_preferences (
  region text NOT NULL DEFAULT '',
  residence_consent boolean NOT NULL DEFAULT false,
  activity_consent boolean NOT NULL DEFAULT false,
+ policy_version text NOT NULL DEFAULT '2026-11-21.v183',
  residence_consented_at timestamptz,
  activity_consented_at timestamptz,
  updated_at timestamptz NOT NULL DEFAULT now(),
@@ -105,10 +106,11 @@ AS $$
 DECLARE target_uid text;
 BEGIN
  target_uid=CASE WHEN TG_OP='DELETE' THEN OLD.uid ELSE NEW.uid END;
- IF TG_OP='DELETE'
-    OR NEW.profiling_consent IS DISTINCT FROM true
-    OR NEW.declared_age < 18
- THEN
+ IF TG_OP='DELETE' THEN
+  DELETE FROM public.taskflow_ads_engagement_receipts WHERE uid=target_uid;
+  DELETE FROM public.taskflow_ads_engagement_daily WHERE uid=target_uid;
+  DELETE FROM public.taskflow_ads_engagement_preferences WHERE uid=target_uid;
+ ELSIF NEW.profiling_consent IS DISTINCT FROM true OR NEW.declared_age < 18 THEN
   DELETE FROM public.taskflow_ads_engagement_receipts WHERE uid=target_uid;
   DELETE FROM public.taskflow_ads_engagement_daily WHERE uid=target_uid;
   DELETE FROM public.taskflow_ads_engagement_preferences WHERE uid=target_uid;
