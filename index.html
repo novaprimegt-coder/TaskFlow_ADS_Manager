@@ -3095,14 +3095,41 @@ function businessRef(uid){return fbDb.collection('users').doc(uid).collection('a
 function campaignsRef(uid){return fbDb.collection('users').doc(uid).collection('adsCampaigns')}
 function publicCampaignRef(id){return fbDb.collection('adsPublicCampaigns').doc(id)}
 async function getBusiness(uid){
- // Ninguna petición de perfil puede dejar el inicio de sesión esperando indefinidamente.
- // Si falla, no asumir que la cuenta comercial está autorizada.
- const snap=await withDeadline(businessRef(uid).get(),12000,'No se pudo cargar el perfil comercial. Comprueba tu conexión e inténtalo nuevamente.');
- return snap.exists?snap.data():null;
+ // Consulta exclusivamente el documento remoto autorizado. Firestore SDK y REST
+ // son rutas alternativas para evitar bloqueos WebChannel en algunos móviles.
+ const user=fbAuth?.currentUser;
+ if(!user||user.uid!==uid)throw Object.assign(new Error('La sesión no está disponible.'),{code:'ads/profile-session'});
+ const abort=new AbortController();
+ const sdkRead=businessRef(uid).get({source:'server'}).then(snap=>snap.exists?snap.data():null);
+ const restRead=(async()=>{
+  const token=await user.getIdToken(false);
+  if(fbAuth?.currentUser?.uid!==uid)throw Object.assign(new Error('La sesión cambió.'),{code:'ads/profile-session'});
+  const url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE_CONFIG.projectId)+'/databases/(default)/documents/users/'+encodeURIComponent(uid)+'/adsManager/business';
+  const response=await fetch(url,{method:'GET',headers:{Authorization:'Bearer '+token},cache:'no-store',referrerPolicy:'no-referrer',signal:abort.signal});
+  if(response.status===404)return null;
+  if(!response.ok)throw Object.assign(new Error('Acceso al perfil rechazado.'),{code:response.status===401||response.status===403?'ads/profile-denied':'ads/profile-service'});
+  const raw=await response.json();
+  if(!raw||typeof raw.fields!=='object')throw Object.assign(new Error('Respuesta de perfil inválida.'),{code:'ads/profile-invalid'});
+  const data={};
+  for(const key of ['ownerUid','ownerName','ownerEmail','businessName','accountStatus','profilePhotoURL','photoStoragePath','country']){
+   const field=raw.fields[key];
+   if(field&&typeof field.stringValue==='string')data[key]=field.stringValue;
+  }
+  return data;
+ })();
+ try{
+  return await withDeadline(Promise.any([sdkRead,restRead]),5500,'El servicio de perfiles no respondió.');
+ }catch(err){
+  const causes=Array.isArray(err?.errors)?err.errors:[err];
+  const denied=causes.some(e=>['permission-denied','ads/profile-denied'].includes(e?.code));
+  const message=denied?'El servicio de perfiles rechazó esta consulta. Revisa los permisos de acceso.':'Firebase aceptó las credenciales, pero no se pudo confirmar el perfil comercial. No se han cambiado las cuentas ni los permisos.';
+  throw Object.assign(new Error(message),{code:denied?'ads/profile-denied':'ads/profile-unavailable'});
+ }finally{abort.abort()}
 }
 async function getAdminClaim(user){
  try{
-  const t=await withDeadline(user.getIdTokenResult(true),10000,'La verificación administrativa tardó demasiado.');
+  // El token de Firebase recién autenticado ya contiene los permisos firmados.
+  const t=await withDeadline(user.getIdTokenResult(false),3500,'No se pudieron confirmar permisos administrativos.');
   return t?.claims?.taskflowAdsAdmin===true;
  }catch(err){console.warn('ADS: permisos administrativos aún no confirmados',err?.code||err?.message);return false}
 }
@@ -3258,8 +3285,9 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
     clearPhotoPreview();$('profilePhotoInput').value='';
     authMsg('Cuenta comercial creada correctamente.','success');
    }else{
-    await withDeadline(fbAuth.signInWithEmailAndPassword(email,pass),20000,'El servicio de inicio de sesión no respondió. Comprueba tu conexión e inténtalo nuevamente.');
-     authMsg('Credenciales verificadas. Cargando perfil comercial…','success');
+    authMsg('Comprobando credenciales…');
+     await withDeadline(fbAuth.signInWithEmailAndPassword(email,pass),12000,'El servicio de autenticación no confirmó el acceso.');
+     // El listener decide si la cuenta puede entrar. No sobrescribir sus errores con un éxito tardío.
    }
   }catch(err){
    if(mode==='register'&&created){
@@ -3672,12 +3700,12 @@ async function handleAuthState(user){
   return;
  }
  authScreenInitialized=true;
- if($('authView')?.hidden===false)authMsg('Verificando perfil y acceso comercial…');
-  const business=await getBusiness(user.uid);
+ if($('authView')?.hidden===false)authMsg('Credenciales aceptadas. Confirmando el estado de la cuenta comercial…');
+ // La suspensión depende del documento confirmado en servidor. No otorgar
+ // acceso administrativo si no se verificaron los claims.
+ const [business,admin]=await Promise.all([getBusiness(user.uid),getAdminClaim(user)]);
  if(!isCurrent())return;
- if(business&&business.accountStatus==='suspended'){authMsg('Esta cuenta comercial está suspendida.','error');await fbAuth.signOut();return}
- const admin=await getAdminClaim(user);
- if(!isCurrent())return;
+ if(business?.accountStatus==='suspended'){authMsg('Esta cuenta comercial está suspendida.','error');await fbAuth.signOut();return}
  isAdsAdmin=admin;
  currentUser={id:user.uid,uid:user.uid,name:user.displayName||business?.ownerName||user.email||'Usuario',company:business?.businessName||'Cuenta comercial',email:user.email||'',accountStatus:business?.accountStatus||'active',profilePhotoURL:business?.profilePhotoURL||user.photoURL||'',photoStoragePath:business?.photoStoragePath||''};
  enterApp();
@@ -5006,7 +5034,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     await handleAuthState(user);
    }catch(err){
     console.error('ADS: no fue posible completar la carga de sesión',err);
-    authMsg(err?.code==='ads/timeout'?err.message:'No fue posible confirmar el perfil comercial. Comprueba tu conexión e inténtalo nuevamente.','error');
+    authMsg(['ads/profile-unavailable','ads/profile-denied','ads/profile-session'].includes(err?.code)?err.message:err?.code==='ads/timeout'?'El servicio de inicio no respondió a tiempo.':'No se confirmó el acceso comercial. Inténtalo nuevamente.','error');
     const submit=$('authSubmit');if(submit){submit.disabled=false;submit.textContent='Iniciar sesión'}
    }
   },error=>{
