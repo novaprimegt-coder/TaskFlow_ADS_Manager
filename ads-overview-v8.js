@@ -105,7 +105,8 @@ function cards(){
  const validActive=activeList.every(c=>verified(c)),validAll=clicked.every(c=>verified(c));
  const sum=(arr,key)=>arr.reduce((a,c)=>a+(metric(c,key)||0),0);
  setText('tfSummaryActive',number(activeList.length));
- setText('tfSummaryDaily',number(daily().length)+' diarios · '+number(activeList.filter(c=>c.budgetType==='total').length)+' finales');
+ const nDaily=daily().length,nFixed=activeList.filter(c=>c.budgetType==='total').length;
+ setText('tfSummaryDaily',number(nDaily)+(nDaily===1?' diario':' diarios')+' · '+number(nFixed)+(nFixed===1?' final':' finales'));
  setText('tfSummaryTotal',money(totalDaily()));
  setText('tfSummaryImpressions',activeList.length?(data&&validActive?number(sum(activeList,'impressions')):'—'):'0');
  setText('tfSummaryClicks',clicked.length?(data&&validAll?number(sum(clicked,'clicks')):'—'):'0');
