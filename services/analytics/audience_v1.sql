@@ -1,4 +1,4 @@
--- TaskFlow ADS · analítica opcional de adultos V1. PREPARADA, NO APLICADA.
+-- TaskFlow ADS · analítica opcional de adultos V1. Aplicada en Supabase 21/11/2026.
 -- Almacenamiento privado por usuario autenticado, sin IP, GPS ni textos de rutinas.
 -- Las cuentas sin consentimiento no producen filas de actividad.
 BEGIN;
