@@ -58,7 +58,7 @@ test('presupuesto diario excluye presupuestos finales y campañas pausadas',asyn
   cmp003:{impressions:4,clicks:1,byAd:{ad003:{impressions:4,clicks:1}}}};
  const app=mount(campaigns,m);await app.window.TaskFlowADSOverview.refresh(app.ctx);
  assert.equal(app.nodes.tfSummaryActive.textContent,'2');
- assert.match(app.nodes.tfSummaryDaily.textContent,/1 diarios.*1 finales/);
+ assert.match(app.nodes.tfSummaryDaily.textContent,/1 diario.*1 final/);
  assert.match(app.nodes.tfSummaryTotal.textContent,/100/);
  assert.equal(app.nodes.tfSummaryImpressions.textContent,'19');
  assert.equal(app.nodes.tfSummaryClicks.textContent,'6');
