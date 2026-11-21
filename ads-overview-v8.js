@@ -216,6 +216,15 @@ function render(ctx){
     selected='';sync();
    }
   },true);
+  // Cuando la sesión sale del sistema, ocultar inmediatamente el diálogo
+  // independiente y liberar el desplazamiento de la página.
+  const app=$('appView');
+  if(app&&typeof MutationObserver==='function'){
+   const watch=new MutationObserver(()=>{
+    if(app.hidden&&dialog&&!dialog.hidden){selected='';sync()}
+   });
+   watch.observe(app,{attributes:true,attributeFilter:['hidden']});
+  }
   setInterval(()=>{
    if(!visible()&&!dialog?.hidden){selected='';sync()}
    if(visible()&&!busy&&Date.now()-loadedAt>=20000)void update();
