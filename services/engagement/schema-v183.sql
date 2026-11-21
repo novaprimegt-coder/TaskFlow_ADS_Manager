@@ -172,10 +172,18 @@ REVOKE ALL ON FUNCTION public.taskflow_ads_engagement_cleanup()
 GRANT EXECUTE ON FUNCTION public.taskflow_ads_engagement_cleanup()
  TO service_role;
 
+-- Supabase pg_cron existente: verificado mediante consulta READ ONLY.
+-- Una única tarea de limpieza diaria para 90 días de actividad y 2 días
+-- de recibos, además de perfiles cuyos permisos caducaron.
+SELECT cron.schedule(
+ 'taskflow-ads-engagement-retention-v183',
+ '17 3 * * *',
+ 'SELECT public.taskflow_ads_engagement_cleanup();'
+);
+
 COMMIT;
 
--- OBLIGATORIO ANTES DEL LANZAMIENTO:
--- Programar diariamente SELECT public.taskflow_ads_engagement_cleanup()
--- mediante Supabase Cron o servicio programado equivalente.
--- No habilitar registro de actividad si no se verifica la ejecución diaria de limpieza.
--- Los anunciantes NO acceden a estas tablas, ni por Data API ni por Edge Function.
+-- Obligatorio antes de LANZAR: verificar job en cron.job, ejecutar
+-- depuración de ensayo y comprobar el éxito en cron.job_run_details.
+-- Los anunciantes NO acceden a estas tablas ni al servicio de perfiles.
+
