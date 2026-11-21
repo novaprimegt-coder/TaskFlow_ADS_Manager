@@ -35,7 +35,7 @@ function chart(entries,kind,maxInput){
  }).join('')+'</div>';
 }
 function donut(rows,total){
- if(rows.length<2||total<=0)return '';
+ if(rows.length<2||rows.length>PALETTE.length||total<=0)return '';
  let cursor=0;const stops=rows.map((r,i)=>{const start=cursor;cursor+=r.value/total*100;return PALETTE[i%PALETTE.length]+' '+start.toFixed(3)+'% '+cursor.toFixed(3)+'%'}).join(',');
  return '<div class="tf-v8-pie"><div class="tf-v8-donut" role="img" aria-label="Distribución de presupuesto por campaña" style="background:conic-gradient('+stops+')"><div><strong>'+money(total)+'</strong><small>Suma diaria</small></div></div><ul class="tf-v8-legend">'+rows.map((r,i)=>'<li><span class="tf-v8-swatch" style="background:'+PALETTE[i%PALETTE.length]+'"></span><span>'+esc(r.name)+'</span><b>'+(r.value/total*100).toFixed(1)+' %</b></li>').join('')+'</ul></div>';
 }
@@ -103,7 +103,7 @@ function cards(){
  const validActive=activeList.every(c=>verified(c)),validAll=clicked.every(c=>verified(c));
  const sum=(arr,key)=>arr.reduce((a,c)=>a+(metric(c,key)||0),0);
  setText('tfSummaryActive',number(activeList.length));
- setText('tfSummaryDaily',number(activeList.length)+' campañas');
+ setText('tfSummaryDaily',number(daily().length)+' diarios · '+number(activeList.filter(c=>c.budgetType==='total').length)+' finales');
  setText('tfSummaryTotal',money(totalDaily()));
  setText('tfSummaryImpressions',activeList.length?(data&&validActive?number(sum(activeList,'impressions')):'—'):'0');
  setText('tfSummaryClicks',clicked.length?(data&&validAll?number(sum(clicked,'clicks')):'—'):'0');
