@@ -138,6 +138,12 @@ CREATE OR REPLACE FUNCTION public.taskflow_ads_audience_minor_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp
 AS $function$
 BEGIN
+ -- Al borrar una cuenta se retiran también todas sus autorizaciones y
+ -- la actividad diaria se elimina mediante la clave foránea ON DELETE CASCADE.
+ IF TG_OP='DELETE' THEN
+  DELETE FROM public.taskflow_ads_audience_optins WHERE uid=OLD.uid;
+  RETURN OLD;
+ END IF;
  IF NEW.declared_age IS NULL OR NEW.declared_age<18 THEN
   DELETE FROM public.taskflow_ads_audience_optins WHERE uid=NEW.uid;
  END IF;
@@ -148,7 +154,7 @@ REVOKE ALL ON FUNCTION public.taskflow_ads_audience_minor_guard() FROM PUBLIC,an
 DROP TRIGGER IF EXISTS taskflow_ads_minor_removes_audience_consent
  ON public.taskflow_ads_user_profiles;
 CREATE TRIGGER taskflow_ads_minor_removes_audience_consent
- AFTER UPDATE OF declared_age ON public.taskflow_ads_user_profiles
+ AFTER UPDATE OF declared_age OR DELETE ON public.taskflow_ads_user_profiles
  FOR EACH ROW EXECUTE FUNCTION public.taskflow_ads_audience_minor_guard();
 
 -- Reporte agregado para una ruta autenticada del administrador (nunca directo al cliente).
@@ -181,6 +187,11 @@ WITH active_per_user AS (
  FROM eligible
  WHERE area_consent AND residence_country IS NOT NULL AND residence_region IS NOT NULL
  GROUP BY residence_country,residence_region HAVING COUNT(*)>=5
+),totals AS (
+ SELECT COUNT(*)::integer AS users,
+  COALESCE(SUM(seconds),0)::bigint AS seconds,
+  COALESCE(SUM(sessions),0)::bigint AS sessions
+ FROM eligible
 ),topic_cohorts AS (
  SELECT s.topic,COUNT(DISTINCT s.uid)::integer AS users
  FROM public.taskflow_ads_interest_scores s
@@ -192,9 +203,11 @@ WITH active_per_user AS (
 )
 SELECT jsonb_build_object(
  'periodDays',30,
- 'usersWithActivityConsent',(SELECT COUNT(*) FROM eligible),
- 'activityMinutes',(SELECT ROUND(COALESCE(SUM(seconds),0)::numeric/60,1) FROM eligible),
- 'sessions',(SELECT COALESCE(SUM(sessions),0) FROM eligible),
+ -- No revelar ni siquiera los totales de uso cuando hay menos de
+ -- cinco adultos autorizados: podrían identificar a una sola persona.
+ 'usersWithActivityConsent',(SELECT CASE WHEN users>=5 THEN users ELSE NULL END FROM totals),
+ 'activityMinutes',(SELECT CASE WHEN users>=5 THEN ROUND(seconds::numeric/60,1) ELSE NULL END FROM totals),
+ 'sessions',(SELECT CASE WHEN users>=5 THEN sessions ELSE NULL END FROM totals),
  'ageGroups',(SELECT COALESCE(jsonb_agg(jsonb_build_object('group',age_group,'users',users)
     ORDER BY age_group),'[]'::jsonb) FROM age_cohorts),
  'regions',(SELECT COALESCE(jsonb_agg(jsonb_build_object('country',country,'region',region,'users',users)
