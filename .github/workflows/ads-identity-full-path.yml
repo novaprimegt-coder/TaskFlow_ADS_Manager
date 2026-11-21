@@ -1,0 +1,25 @@
+name: ADS identity live full-path acceptance
+on:
+  push:
+    branches:
+      - qa/audience-identity-full-path-20261121
+    paths:
+      - 'services/analytics/tests/real-firebase-full-path.mjs'
+      - '.github/workflows/ads-identity-full-path.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ads-identity-full-path
+  cancel-in-progress: false
+jobs:
+  firebase-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test actual Firebase ID token and Supabase privacy operations
+        run: node services/analytics/tests/real-firebase-full-path.mjs
