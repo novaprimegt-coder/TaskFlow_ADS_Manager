@@ -10,7 +10,7 @@ const safe=v=>{try{const u=new URL(String(v||''));return u.protocol==='https:'&&
 const objective={awareness:'Reconocimiento',traffic:'Tráfico',engagement:'Interacción',leads:'Clientes potenciales',sales:'Ventas',app:'Aplicación'};
 const cta={awareness:'Conocer la marca',traffic:'Visitar sitio web',engagement:'Participar',leads:'Solicitar información',sales:'Comprar ahora',app:'Descargar aplicación'};
 const specs={banner:'1200×180 / 2400×360',entry:'1080×1920 / 2160×3840',interaction:'1080×1920 / 2160×3840'};
-let current=null,view='',metricCache=null,metricOwner='',metricKey='',metricAt=0,pendingMetrics=null,revision=0,campaignMetricsRevision=0;
+let current=null,view='',metricCache=null,metricOwner='',metricKey='',metricAt=0,pendingMetrics=null,campaignMetricsRevision=0;
 let audiencePresets=[],audienceOwner='',audienceLoaded=false;
 const mounted=new WeakSet();
 function section(title,body){return '<section class="tf-tool-panel"><div class="tf-tool-heading"><h3>'+esc(title)+'</h3></div>'+body+'</section>'}
@@ -90,99 +90,6 @@ function totals(metrics){
 function metricValue(m,key){return m&&!m.error&&Number.isFinite(Number(m[key]))?number(m[key]):'—'}
 function csvCell(s){return '"'+String(s==null?'':s).replace(/"/g,'""')+'"'}
 function csvDownload(name,rows){const csv='\uFEFF'+rows.map(row=>row.map(csvCell).join(';')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(href),3000)}
-
-/* Resultados recientes por campaña: reutiliza únicamente la consulta verificada del Resumen. */
-function paintRecentCampaignMetrics(data){
- document.querySelectorAll('[data-tf-recent-metric]').forEach(node=>{
-  const id=node.getAttribute('data-tf-recent-metric');
-  const m=data?.campaigns?.[id];
-  const impressions=Number(m?.impressions),clicks=Number(m?.clicks);
-  if(!m||m.error||!Number.isFinite(impressions)||!Number.isFinite(clicks)||impressions<0||clicks<0){
-   node.innerHTML='<small>Resultados no disponibles</small>';
-   return;
-  }
-  const ctr=impressions>0?100*clicks/impressions:0;
-  node.innerHTML='<small>Últimos 30 días</small><strong>'+esc(number(impressions))+' impresiones · '+esc(number(clicks))+' clics</strong>'+
-   '<small>CTR '+esc(ctr.toFixed(2))+' %'+(m.partial?' · Datos parciales':'')+'</small>';
- });
-}
-
-async function paintOverview(api,refresh){current=api;
- const overview=document.getElementById('overviewView');if(!overview||!api.currentUser)return;
- let slot=document.getElementById('tfAdsLiveOverview');
- if(!slot){slot=document.createElement('section');slot.id='tfAdsLiveOverview';slot.className='tf-tool-overview';const anchor=overview.querySelector('.dashboard');if(anchor)anchor.insertAdjacentElement('beforebegin',slot);else overview.appendChild(slot)}
- const token=++revision;slot.innerHTML='<div class="tf-tool-topline"><strong>Rendimiento publicitario real · últimos 30 días</strong><span><button type="button" data-tf-overview-refresh>Actualizar estadísticas</button> <button type="button" data-tf-overview-delivery>Comprobar entrega</button></span></div><div class="tf-tool-kpis">'+mini('…','Impresiones')+mini('…','Clics en anuncios')+mini('…','CTR')+'</div>';
- if(!mounted.has(slot)){mounted.add(slot);slot.addEventListener('click',e=>{if(e.target.closest('[data-tf-overview-refresh]'))void paintOverview(current,true);else if(e.target.closest('[data-tf-overview-delivery]'))void checkDelivery(current);else{const b=e.target.closest('[data-tf-delivery-resync]');if(b)void resyncDelivery(current,b)}})}
- try{
-  const data=await getVerifiedMetrics(api);
-  if(token!==revision||!slot.isConnected||api.currentUser.id!==current?.currentUser?.id)return;
-  const t=totals(data),empty=!api.campaigns.length;
-  slot.innerHTML='<div class="tf-tool-topline"><strong>Rendimiento publicitario real · últimos 30 días</strong><span><button type="button" data-tf-overview-refresh>Actualizar estadísticas</button> <button type="button" data-tf-overview-delivery>Comprobar entrega</button></span></div><div class="tf-tool-kpis">'+mini(empty?'0':t.known?number(t.impressions):'—','Impresiones','Confirmadas por el servidor')+mini(empty?'0':t.known?number(t.clicks):'—','Clics en anuncios','Confirmados por el servidor')+mini(empty?'0 %':t.known?t.ctr.toFixed(2)+' %':'—','CTR','Clics ÷ impresiones')+'</div>'+(data.failed.length?'<p class="tf-tool-warning">No se pudieron consultar '+data.failed.length+' campaña(s). Los valores no disponibles no se han inventado.</p>':'')+(t.partial?'<p class="tf-tool-warning">El servicio devolvió una medición parcial.</p>':'')+'<p class="tf-tool-note">Los clics no acreditan ventas, formularios enviados ni instalaciones. Sin costo de entrega confirmado no se calcula CPC o gasto.</p>';
-  paintRecentCampaignMetrics(data);
- }catch(e){paintRecentCampaignMetrics({campaigns:{}});if(slot.isConnected)slot.innerHTML='<div class="tf-tool-error">No se pudieron consultar las métricas: '+esc(e.message)+'</div>'}
-}
-
-async function resyncDelivery(api,button){
- const c=api.campaigns.find(x=>x.id===button.dataset.tfDeliveryResync);
- if(!c||c.status!=='active'||c.approvalStatus!=='approved')return;
- button.disabled=true;button.textContent='Resincronizando…';
- try{await api.syncPublicCampaign(c);api.toast('Publicación actualizada. Verificando…');await checkDelivery(api)}
- catch(e){button.disabled=false;button.textContent='Resincronizar publicación';api.toast('No se pudo sincronizar: '+(e.message||'Comprueba la conexión.'))}
-}
-async function assetWorks(ad,placement){
- const url=safe(ad?.src),meta=ad?.mediaMeta||{};
- if(!url||placement==='banner'&&meta.kind==='video')return false;
- return await new Promise(resolve=>{
-  let ended=false,media=null;
-  const done=ok=>{if(ended)return;ended=true;clearTimeout(timer);if(media){media.onload=null;media.onerror=null;media.onloadedmetadata=null;if(media.tagName==='VIDEO'){media.removeAttribute('src');media.load()}}resolve(ok)};
-  const timer=setTimeout(()=>done(false),9500);
-  media=meta.kind==='video'?document.createElement('video'):new Image();
-  if(meta.kind==='video'){
-   media.preload='metadata';
-   media.onloadedmetadata=()=>done(placement!=='banner'&&[1080,2160].includes(media.videoWidth)&&media.videoHeight===media.videoWidth*16/9&&Number.isFinite(media.duration)&&media.duration>=9.95&&media.duration<=180.05);
-  }else{
-   media.onload=()=>done(placement==='banner'?([1200,2400].includes(media.naturalWidth)&&media.naturalHeight===media.naturalWidth*.15):([1080,2160].includes(media.naturalWidth)&&media.naturalHeight===media.naturalWidth*16/9));
-  }
-  media.onerror=()=>done(false);
-  media.src=url;
- });
-}
-async function checkDelivery(api){
- if(!api?.currentUser)return;
- const owner=api.currentUser.id,overview=document.getElementById('tfAdsLiveOverview');
- if(!overview)return;
- let target=document.getElementById('tfAdsDeliveryCheck');
- if(!target){target=document.createElement('div');target.id='tfAdsDeliveryCheck';overview.appendChild(target)}
- target.innerHTML='<p class="tf-tool-loading">Comprobando catálogo público y archivos de los anuncios…</p>';
- try{
-  const rows=[];
-  for(const c of api.campaigns){
-   if(api.fbAuth?.currentUser?.uid!==owner||!target.isConnected)return;
-   let message='',kind='warn',canRepair=false;
-   const conflict=api.deliveryConflict(c);
-   if(c.status!=='active')message='Borrador o pausada. No se entrega.';
-   else if(c.approvalStatus!=='approved')message='Falta aprobación administrativa. No se entrega.';
-   else if(conflict)message='Sin entrega. '+conflict;
-   else if(!Array.isArray(c.ads)||!c.ads.length)message='No hay anuncios con archivos.';
-   else{
-    try{
-     const ref=api.fbDb.collection('adsPublicCampaigns').doc(c.id);
-     const snapshot=await api.withDeadline(ref.get({source:'server'}),12000,'El catálogo tardó demasiado.');
-     if(!api.publicationMatches(snapshot,api.toPublicCampaign(c))){
-      message=snapshot.exists?'La versión publicada difiere de la campaña aprobada.':'La campaña aprobada todavía no figura en el catálogo.';
-      canRepair=true;
-     }else{
-      const checks=await Promise.all(c.ads.slice(0,12).map(a=>assetWorks(a,c.placement)));
-      if(checks.every(Boolean)){message='Versión publicada y archivos verificados.';kind='ok'}
-      else message='Algún archivo publicado no carga o incumple las dimensiones.';
-     }
-    }catch(_){message='No se pudo consultar esta campaña en el servidor.'}
-   }
-   rows.push('<article class="tf-tool-delivery-row"><div><b>'+esc(c.name)+'</b><span class="'+(kind==='ok'?'tf-tool-success':'tf-tool-warning')+'">'+esc(message)+'</span></div>'+(canRepair?'<button type="button" data-tf-delivery-resync="'+esc(c.id)+'">Resincronizar publicación</button>':'')+'</article>');
-  }
-  if(api.fbAuth?.currentUser?.uid===owner&&target.isConnected)target.innerHTML='<div class="tf-tool-delivery-panel"><h3>Comprobación del catálogo</h3>'+(rows.join('')||'<p class="tf-tool-empty">No hay campañas para comprobar.</p>')+'</div>';
- }catch(e){target.innerHTML='<p class="tf-tool-error">Comprobación no completada: '+esc(e.message||'Error de conexión')+'</p>'}
-}
 
 function audienceRows(api,filter){
  const list=api.campaigns.filter(c=>([c.name,c.country,c.region,c.city].join(' ')).toLocaleLowerCase('es').includes(filter.toLocaleLowerCase('es')));
@@ -934,5 +841,5 @@ function render(name,api){
  else return false;
  return true;
 }
-window.TaskFlowADSModules=Object.freeze({render,paintOverview,paintCampaignMetrics,getVerifiedMetrics});
+window.TaskFlowADSModules=Object.freeze({render,paintCampaignMetrics,getVerifiedMetrics});
 })();
