@@ -17,13 +17,18 @@ function json(req,status,object){
  if(req.headers.get("origin")===ALLOWED_ORIGIN)headers.set("Access-Control-Allow-Origin",ALLOWED_ORIGIN);
  return new Response(JSON.stringify(object),{status,headers});
 }
-function store(){
- const url=Deno.env.get("SUPABASE_URL")||"";
+// Esta credencial existe únicamente en el servidor de Supabase, nunca en TaskFlow.
+function serviceCredential(){
  let key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
  try{
   const keys=JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}");
-  key=keys.default||key;
- }catch(_){/* Fallback para proyectos que conservan la clave heredada. */}
+  key=keys.default||keys.service_role||key;
+ }catch(_){/* La clave legacy sigue siendo válida. */}
+ return key;
+}
+function store(){
+ const url=Deno.env.get("SUPABASE_URL")||"";
+ const key=serviceCredential();
  if(!url||!key)throw Error("STORE_NOT_READY");
  return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
 }
@@ -87,10 +92,25 @@ async function preferences(db,uid,request){
  if(data!==true)throw Error("NOT_ELIGIBLE");
  return {ok:true,profile:await ownProfile(db,uid)};
 }
+async function activitySigningKey(){
+ const dedicated=Deno.env.get("TF_ADS_ACTIVITY_HASH_KEY")||"";
+ if(dedicated.length>=32){
+  return crypto.subtle.importKey("raw",encoder.encode(dedicated),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
+ }
+ // Configuración compatible: derivar una clave DISTINTA con HKDF desde la
+ // credencial privada del servidor. No enviar ni almacenar esa credencial o
+ // el UID sin procesar en la tabla de actividad.
+ const basis=serviceCredential();
+ if(basis.length<32)throw Error("HASH_KEY_NOT_CONFIGURED");
+ const root=await crypto.subtle.importKey("raw",encoder.encode(basis),"HKDF",false,["deriveKey"]);
+ return crypto.subtle.deriveKey({
+  name:"HKDF",hash:"SHA-256",
+  salt:encoder.encode("taskflow-ads-audience-v1-session-salt"),
+  info:encoder.encode("taskflow-ads-session-digest-only")
+ },root,{name:"HMAC",hash:"SHA-256",length:256},false,["sign"]);
+}
 async function digest(uid,sessionId){
- const secret=Deno.env.get("TF_ADS_ACTIVITY_HASH_KEY")||"";
- if(secret.length<32)throw Error("HASH_KEY_NOT_CONFIGURED");
- const key=await crypto.subtle.importKey("raw",encoder.encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
+ const key=await activitySigningKey();
  const result=await crypto.subtle.sign("HMAC",key,encoder.encode(uid+"|"+sessionId));
  return [...new Uint8Array(result)].map(byte=>byte.toString(16).padStart(2,"0")).join("");
 }
