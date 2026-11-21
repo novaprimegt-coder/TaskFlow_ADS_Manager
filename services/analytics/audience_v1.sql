@@ -46,7 +46,7 @@ CREATE OR REPLACE FUNCTION public.taskflow_ads_audience_preferences(
 LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp
 AS $function$
 DECLARE v_country text := NULLIF(upper(trim(p_country)),'');
-DECLARE v_region text := NULLIF(trim(p_region),'');
+ v_region text := NULLIF(trim(p_region),'');
 BEGIN
  IF p_uid IS NULL OR p_uid !~ '^[A-Za-z0-9_-]{3,128}$'
  OR p_activity IS NULL OR p_area IS NULL THEN RETURN false; END IF;
