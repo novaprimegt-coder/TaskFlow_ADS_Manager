@@ -134,6 +134,31 @@ SET search_path TO 'pg_catalog','public'
 AS $$
 DECLARE removed integer:=0,part integer:=0;
 BEGIN
+ -- Caducidad de la autorización principal: no conservar preferencias
+ -- vinculadas a perfiles que ya no son adultos consentidos y vigentes.
+ DELETE FROM public.taskflow_ads_engagement_receipts r
+  WHERE NOT EXISTS (
+   SELECT 1 FROM public.taskflow_ads_user_profiles p
+   JOIN public.taskflow_ads_engagement_preferences e ON e.uid=p.uid
+   WHERE p.uid=r.uid AND p.declared_age>=18 AND p.profiling_consent=true
+     AND p.age_declared_at>now()-interval '365 days'
+  );
+ GET DIAGNOSTICS part=ROW_COUNT;removed=removed+part;
+ DELETE FROM public.taskflow_ads_engagement_daily d
+  WHERE NOT EXISTS (
+   SELECT 1 FROM public.taskflow_ads_user_profiles p
+   JOIN public.taskflow_ads_engagement_preferences e ON e.uid=p.uid
+   WHERE p.uid=d.uid AND p.declared_age>=18 AND p.profiling_consent=true
+     AND p.age_declared_at>now()-interval '365 days'
+  );
+ GET DIAGNOSTICS part=ROW_COUNT;removed=removed+part;
+ DELETE FROM public.taskflow_ads_engagement_preferences e
+  WHERE NOT EXISTS (
+   SELECT 1 FROM public.taskflow_ads_user_profiles p
+   WHERE p.uid=e.uid AND p.declared_age>=18 AND p.profiling_consent=true
+     AND p.age_declared_at>now()-interval '365 days'
+  );
+ GET DIAGNOSTICS part=ROW_COUNT;removed=removed+part;
  DELETE FROM public.taskflow_ads_engagement_daily
   WHERE day_utc < (now() AT TIME ZONE 'UTC')::date-90;
  GET DIAGNOSTICS part=ROW_COUNT;removed=removed+part;
