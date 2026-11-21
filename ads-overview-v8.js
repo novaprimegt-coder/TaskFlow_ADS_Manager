@@ -118,7 +118,8 @@ function cards(){
  const sum=(arr,key)=>arr.reduce((a,c)=>a+(metric(c,key)||0),0);
  setText('tfSummaryActive',number(activeList.length));
  const nDaily=daily().length,nFixed=activeList.filter(c=>c.budgetType==='total').length;
- setText('tfSummaryDaily',number(nDaily)+(nDaily===1?' diario':' diarios')+' · '+number(nFixed)+(nFixed===1?' final':' finales'));
+ setText('tfSummaryDaily',number(nDaily));
+ setText('tfSummaryBudgetKind',number(nDaily)+(nDaily===1?' diario':' diarios')+' · '+number(nFixed)+(nFixed===1?' final':' finales'));
  setText('tfSummaryTotal',money(totalDaily()));
  setText('tfSummaryImpressions',activeList.length?(data&&validActive?number(sum(activeList,'impressions')):'—'):'0');
  setText('tfSummaryClicks',clicked.length?(data&&validAll?number(sum(clicked,'clicks')):'—'):'0');
@@ -134,9 +135,14 @@ function details(){
  const dialog=panel(),content=$('tfAdsSummaryContent'),heading=$('tfAdsSummaryTitle');
  if(!dialog||!content||!heading)return;
  if(!selected){
-  if(!dialog.hidden){
-   dialog.hidden=true;
-   document.body.classList.remove('tf-ads-summary-modal-open');
+  const wasOpen=dialog.open||dialog.hasAttribute('open');
+  if(wasOpen){
+   if(typeof dialog.close==='function')dialog.close();
+   else dialog.removeAttribute('open');
+  }
+  dialog.hidden=true;
+  document.body.classList.remove('tf-ads-summary-modal-open');
+  if(wasOpen){
    content.replaceChildren();
    if(lastFocus?.isConnected){
     try{lastFocus.focus({preventScroll:true})}catch(_){}
@@ -145,17 +151,19 @@ function details(){
   }
   return;
  }
- const opening=dialog.hidden;
+ const opening=!dialog.open&&!dialog.hasAttribute('open');
  const previousScroll=opening?0:content.scrollTop;
  if(opening)lastFocus=document.activeElement;
  heading.textContent=headings[selected]||'Detalle';
  content.innerHTML=handlers[selected]?handlers[selected]():'';
  content.scrollTop=previousScroll;
- dialog.hidden=false;
- document.body.classList.add('tf-ads-summary-modal-open');
  if(opening){
+  dialog.hidden=false;
+  if(typeof dialog.showModal==='function')dialog.showModal();
+  else dialog.setAttribute('open','');
+  document.body.classList.add('tf-ads-summary-modal-open');
   requestAnimationFrame(()=>{
-   if(!dialog.hidden)$('tfAdsSummaryClose')?.focus({preventScroll:true});
+   if(dialog.open||dialog.hasAttribute('open'))$('tfAdsSummaryClose')?.focus({preventScroll:true});
   });
  }
 }
@@ -199,15 +207,11 @@ function render(ctx){
   dialog?.addEventListener('click',e=>{
    if(e.target.closest('[data-tf-close-summary]')){selected='';sync()}
   });
-  document.addEventListener('keydown',e=>{
-   if(!dialog||dialog.hidden)return;
-   if(e.key==='Escape'){e.preventDefault();selected='';sync();return}
-   if(e.key!=='Tab')return;
-   const focusables=[...dialog.querySelectorAll('button:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')].filter(el=>!el.hidden&&el.getAttribute('aria-hidden')!=='true');
-   if(!focusables.length){e.preventDefault();dialog.focus();return}
-   const first=focusables[0],last=focusables[focusables.length-1];
-   if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
-   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+  // Diálogo del navegador: Escape cierra desde la capa superior.
+  dialog?.addEventListener('cancel',e=>{e.preventDefault();selected='';sync()});
+  // Mantener la selección y el desplazamiento seguros si el diálogo se cierra desde el navegador.
+  dialog?.addEventListener('close',()=>{
+   if(selected){selected='';sync()}
   });
   // Evitar ventanas persistentes al abandonar Resumen.
   document.addEventListener('click',e=>{
