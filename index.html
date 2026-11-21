@@ -878,7 +878,7 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 @media(max-width:600px){#moduleContent .tf-ads-private-key{font-size:11px}#moduleContent #tfAdsObjectiveResults table{min-width:660px}}
 </style>
 <script defer src="./ads-manager-modules.js?v=20261118-catalogo"></script>
-<script defer src="./ads-overview-v8.js?v=1"></script>
+<script defer src="./ads-overview-v8.js?v=2-dialog"></script>
 <style id="tfAdsCrystalizedHero2026">
 /* Fondo animado exclusivo del encabezado de inicio de sesión; no modifica el formulario. */
 #authView .auth-hero{
@@ -2200,7 +2200,7 @@ body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
 #appView #moduleContent .tf-ads-id-code{display:inline-block;width:max-content;max-width:100%;padding:4px 7px!important;margin:5px 0!important;border:1px solid rgba(107,203,230,.42);border-radius:6px;background:#123a5b!important;color:#abf3ff!important;font:800 11px/1.3 ui-monospace,monospace!important;letter-spacing:.035em;overflow-wrap:anywhere}
 </style>
 <link rel="stylesheet" href="./ads-visual-consistency-v20261119.css?v=7-profile-menu-icon">
-<link rel="stylesheet" href="./ads-overview-v8.css?v=1">
+<link rel="stylesheet" href="./ads-overview-v8.css?v=2-dialog">
 </head>
 <body>
 
@@ -2387,14 +2387,13 @@ body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
 <section class="view active" id="overviewView">
 <div class="heading"><div><span class="eyebrow">Centro comercial</span><h2>Resumen de publicidad</h2><p>Presupuestos por campaña y resultados confirmados por anuncio.</p></div><div class="tf-overview-actions"><button class="secondary" id="refreshBtn" type="button">Actualizar</button><button class="primary" type="button" data-new>Crear campaña</button></div></div>
 <div class="tf-ads-summary-grid" id="tfAdsSummaryCards" role="group" aria-label="Cinco indicadores del resumen">
-<button class="tf-ads-summary-card" data-tf-summary-card="active" type="button" aria-controls="tfAdsSummaryDetail" aria-expanded="false"><span class="tf-v8-card-title">Campañas activas</span><strong class="tf-v8-card-number" id="tfSummaryActive">0</strong><span class="tf-v8-card-hint">Ver campañas e información <span aria-hidden="true">›</span></span></button>
-<button class="tf-ads-summary-card" data-tf-summary-card="daily" type="button" aria-controls="tfAdsSummaryDetail" aria-expanded="false"><span class="tf-v8-card-title">Presupuesto diario</span><strong class="tf-v8-card-number" id="tfSummaryDaily">0 campañas</strong><span class="tf-v8-card-hint">Presupuesto individual y formatos <span aria-hidden="true">›</span></span></button>
-<button class="tf-ads-summary-card" data-tf-summary-card="total" type="button" aria-controls="tfAdsSummaryDetail" aria-expanded="false"><span class="tf-v8-card-title">Presupuesto final</span><strong class="tf-v8-card-number" id="tfSummaryTotal">Q0.00</strong><span class="tf-v8-card-hint">Suma de presupuestos diarios <span aria-hidden="true">›</span></span></button>
-<button class="tf-ads-summary-card" data-tf-summary-card="impressions" type="button" aria-controls="tfAdsSummaryDetail" aria-expanded="false"><span class="tf-v8-card-title">Impresiones</span><strong class="tf-v8-card-number" id="tfSummaryImpressions">—</strong><span class="tf-v8-card-hint">Por anuncio · últimos 30 días <span aria-hidden="true">›</span></span></button>
-<button class="tf-ads-summary-card" data-tf-summary-card="clicks" type="button" aria-controls="tfAdsSummaryDetail" aria-expanded="false"><span class="tf-v8-card-title">Clics en anuncios</span><strong class="tf-v8-card-number" id="tfSummaryClicks">—</strong><span class="tf-v8-card-hint">Por campaña, anuncio y edad <span aria-hidden="true">›</span></span></button>
+<button class="tf-ads-summary-card" data-tf-summary-card="active" type="button" aria-haspopup="dialog" aria-controls="tfAdsSummaryDetail" aria-expanded="false"><span class="tf-v8-card-title">Campañas activas</span><strong class="tf-v8-card-number" id="tfSummaryActive">0</strong><span class="tf-v8-card-hint">Ver campañas e información <span aria-hidden="true">›</span></span></button>
+<button class="tf-ads-summary-card" data-tf-summary-card="daily" type="button" aria-haspopup="dialog" aria-controls="tfAdsSummaryDetail" aria-expanded="false"><span class="tf-v8-card-title">Presupuesto diario</span><strong class="tf-v8-card-number" id="tfSummaryDaily">0 campañas</strong><span class="tf-v8-card-hint">Presupuesto individual y formatos <span aria-hidden="true">›</span></span></button>
+<button class="tf-ads-summary-card" data-tf-summary-card="total" type="button" aria-haspopup="dialog" aria-controls="tfAdsSummaryDetail" aria-expanded="false"><span class="tf-v8-card-title">Presupuesto final</span><strong class="tf-v8-card-number" id="tfSummaryTotal">Q0.00</strong><span class="tf-v8-card-hint">Suma de presupuestos diarios <span aria-hidden="true">›</span></span></button>
+<button class="tf-ads-summary-card" data-tf-summary-card="impressions" type="button" aria-haspopup="dialog" aria-controls="tfAdsSummaryDetail" aria-expanded="false"><span class="tf-v8-card-title">Impresiones</span><strong class="tf-v8-card-number" id="tfSummaryImpressions">—</strong><span class="tf-v8-card-hint">Por anuncio · últimos 30 días <span aria-hidden="true">›</span></span></button>
+<button class="tf-ads-summary-card" data-tf-summary-card="clicks" type="button" aria-haspopup="dialog" aria-controls="tfAdsSummaryDetail" aria-expanded="false"><span class="tf-v8-card-title">Clics en anuncios</span><strong class="tf-v8-card-number" id="tfSummaryClicks">—</strong><span class="tf-v8-card-hint">Por campaña, anuncio y edad <span aria-hidden="true">›</span></span></button>
 </div>
 <p id="tfAdsSummaryLive" class="tf-v8-live" role="status" aria-live="polite">Consultando métricas verificadas…</p>
-<section id="tfAdsSummaryDetail" class="tf-ads-summary-detail" role="region" aria-label="Detalle del indicador seleccionado" hidden></section>
 </section>
 <section class="view ads-manager-view" id="campaignsView">
 <div class="manager-titlebar">
@@ -2409,6 +2408,19 @@ body>.tf-filter-menu.tf-filter-portal .tf-filter-choice.selected{
 </section>
 <section class="view" id="placeholderView"><div class="heading"><div><span class="eyebrow">TaskFlow ADS</span><h2 id="placeholderTitle">Módulo</h2><p id="placeholderText">Módulo comercial.</p></div></div><div class="module-content" id="moduleContent"></div></section>
 </main>
+</div>
+<!-- Resumen ADS: diálogo independiente para no desplazar ni recortar el panel principal. -->
+<div id="tfAdsSummaryDetail" class="tf-ads-summary-dialog" role="dialog" aria-modal="true"
+ aria-labelledby="tfAdsSummaryTitle" tabindex="-1" hidden>
+ <div class="tf-v9-backdrop" data-tf-close-summary aria-hidden="true"></div>
+ <div class="tf-v9-dialog-window">
+  <header class="tf-v8-detail-head">
+   <div><small>TaskFlow ADS · Detalle del resumen</small><h3 id="tfAdsSummaryTitle">Indicador</h3></div>
+   <button type="button" id="tfAdsSummaryClose" class="tf-v9-dialog-close" data-tf-close-summary
+    aria-label="Cerrar ventana de detalle">Cerrar <span aria-hidden="true">×</span></button>
+  </header>
+  <div class="tf-v9-dialog-scroll" id="tfAdsSummaryContent" tabindex="0"></div>
+ </div>
 </div>
 <div class="modal" hidden="" id="campaignModal">
 <div class="modal-card">
