@@ -1,0 +1,25 @@
+name: ADS audience privacy regression checks
+on:
+  pull_request:
+    paths:
+      - 'services/analytics/**'
+      - '.github/workflows/ads-audience-guardrails.yml'
+  push:
+    branches:
+      - audiencia-taskflow-optin-v1-20261121
+    paths:
+      - 'services/analytics/**'
+      - '.github/workflows/ads-audience-guardrails.yml'
+permissions:
+  contents: read
+jobs:
+  privacy-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify audience privacy and consent
+        run: node --test services/analytics/tests/guardrails.test.mjs
