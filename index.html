@@ -3222,7 +3222,7 @@ async function updateSidebarProfilePhoto(file){
 }
 
 function setAuthMode(mode){resetPasswordVisibility();const reg=mode==='register';$('loginTab').classList.toggle('active',!reg);$('registerTab').classList.toggle('active',reg);$('loginTab').setAttribute('aria-selected',String(!reg));$('registerTab').setAttribute('aria-selected',String(reg));$('nameField').hidden=!reg;$('companyField').hidden=!reg;$('profilePhotoField').hidden=!reg;$('profilePhotoInput').required=reg;$('confirmField').hidden=!reg;if(!reg){$('profilePhotoInput').value='';clearPhotoPreview()}$('authSubmit').textContent=reg?'Crear cuenta':'Iniciar sesión';$('authForm').dataset.mode=reg?'register':'login';$('password').autocomplete=reg?'new-password':'current-password';window.TaskFlowGooey?.go(reg?1:0);authMsg('')}
-function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'auth/email-already-in-use':'Ese correo ya está registrado.','auth/invalid-email':'El correo electrónico no es válido.','auth/weak-password':'La contraseña debe tener al menos 8 caracteres.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Intenta nuevamente más tarde.','auth/network-request-failed':'No hay conexión con el servicio de cuentas.','auth/unauthorized-domain':'Este dominio todavía no está autorizado para iniciar sesión.'};return map[c]||'No fue posible completar el acceso.'}
+function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'auth/email-already-in-use':'Ese correo ya está registrado.','auth/invalid-email':'El correo electrónico no es válido.','auth/weak-password':'La contraseña debe tener al menos 8 caracteres.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Intenta nuevamente más tarde.','auth/network-request-failed':'No hay conexión con el servicio de cuentas.','auth/unauthorized-domain':'Este dominio todavía no está autorizado para iniciar sesión.','auth/user-disabled':'Esta cuenta está deshabilitada. Contacta con el administrador.','auth/operation-not-allowed':'El acceso con correo y contraseña no está habilitado en Firebase.','auth/web-storage-unsupported':'El navegador impide guardar la sesión. Comprueba la privacidad y el almacenamiento del navegador.','auth/internal-error':'El servicio de inicio de sesión devolvió un error interno.'};return map[c]||'No fue posible completar el acceso.'}
  async function handleAuth(e){
   e.preventDefault();authMsg('');
   const mode=$('authForm').dataset.mode||'login';
@@ -5006,7 +5006,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     await handleAuthState(user);
    }catch(err){
     console.error('ADS: no fue posible completar la carga de sesión',err);
-    authMsg(err?.message||'No fue posible cargar la cuenta comercial. Comprueba tu conexión e inténtalo nuevamente.','error');
+    authMsg(err?.code==='ads/timeout'?err.message:'No fue posible confirmar el perfil comercial. Comprueba tu conexión e inténtalo nuevamente.','error');
     const submit=$('authSubmit');if(submit){submit.disabled=false;submit.textContent='Iniciar sesión'}
    }
   },error=>{
