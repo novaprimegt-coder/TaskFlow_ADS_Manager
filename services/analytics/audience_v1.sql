@@ -132,6 +132,25 @@ REVOKE ALL ON FUNCTION public.taskflow_ads_audience_heartbeat(text,text)
 GRANT EXECUTE ON FUNCTION public.taskflow_ads_audience_heartbeat(text,text)
  TO service_role;
 
+-- Si el usuario actualiza su edad a menor de 18 años, su autorización
+-- de analítica se retira y todos sus registros diarios desaparecen en cascada.
+CREATE OR REPLACE FUNCTION public.taskflow_ads_audience_minor_guard()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp
+AS $function$
+BEGIN
+ IF NEW.declared_age IS NULL OR NEW.declared_age<18 THEN
+  DELETE FROM public.taskflow_ads_audience_optins WHERE uid=NEW.uid;
+ END IF;
+ RETURN NEW;
+END
+$function$;
+REVOKE ALL ON FUNCTION public.taskflow_ads_audience_minor_guard() FROM PUBLIC,anon,authenticated;
+DROP TRIGGER IF EXISTS taskflow_ads_minor_removes_audience_consent
+ ON public.taskflow_ads_user_profiles;
+CREATE TRIGGER taskflow_ads_minor_removes_audience_consent
+ AFTER UPDATE OF declared_age ON public.taskflow_ads_user_profiles
+ FOR EACH ROW EXECUTE FUNCTION public.taskflow_ads_audience_minor_guard();
+
 -- Reporte agregado para una ruta autenticada del administrador (nunca directo al cliente).
 -- No devuelve identificadores personales. Cohortes inferiores a 5 quedan ocultas.
 CREATE OR REPLACE FUNCTION public.taskflow_ads_audience_report()
