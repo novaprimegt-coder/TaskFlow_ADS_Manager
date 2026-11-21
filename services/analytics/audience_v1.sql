@@ -58,7 +58,7 @@ BEGIN
  IF p_area AND (
   v_country IS NULL OR v_country !~ '^[A-Z]{2}$'
   OR v_region IS NULL OR char_length(v_region) NOT BETWEEN 2 AND 80
-  OR v_region !~ '^[[:alpha:]ÁÉÍÓÚÜÑáéíóúüñ .''’()-]+
+  OR v_region !~ '^[[:alpha:]ÁÉÍÓÚÜÑáéíóúüñ .''’()-]+$'
  ) THEN RETURN false; END IF;
  INSERT INTO public.taskflow_ads_audience_optins
   (uid,activity_consent,area_consent,residence_country,residence_region,consented_at,updated_at)
