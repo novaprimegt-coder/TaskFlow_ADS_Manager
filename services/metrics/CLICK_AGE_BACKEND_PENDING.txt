@@ -1,10 +1,10 @@
 TASKFLOW ADS — MODIFICACIONES PENDIENTES AL SERVICIO PRIVADO DE MÉTRICAS
-Baseline: Supabase Edge Function taskflow-ads-delivery V34.
+Baseline revisado: Supabase Edge Function taskflow-ads-delivery V35 (versión activa al revisar).
 Estado: propuesta de integración no desplegada. El código del motor privado NO debe subirse al repositorio público.
 
 Antes de aplicar esta modificación:
 1. Ejecutar y verificar servicios/metrics/taskflow_ads_click_age_v1.sql en staging.
-2. Obtener la última versión REAL de taskflow-ads-delivery; comparar con V34.
+2. Obtener la última versión REAL de taskflow-ads-delivery; comparar con V35 y cualquier versión posterior que se haya desplegado.
 3. Realizar los cambios focalizados indicados a continuación en el servicio privado.
 4. Probar consentimiento, eventos repetidos, reintentos, edades no elegibles, límites y permisos.
 5. Publicar únicamente tras LANZAR y superar las pruebas de regresión.
