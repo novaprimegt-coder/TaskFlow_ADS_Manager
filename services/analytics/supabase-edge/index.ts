@@ -54,12 +54,17 @@ async function ownProfile(db,uid){
   .select("activity_consent,area_consent,residence_country,residence_region,consented_at")
   .eq("uid",uid).maybeSingle();
  if(error)throw Error("PROFILE_UNAVAILABLE");
+ // No devolver permisos ni región previamente guardados si la edad ya no
+ // acredita una cuenta adulta; el backend vuelve a comprobar cada lectura.
+ const adultEligible=await eligible(db,uid);
+ const activityConsent=adultEligible&&data?.activity_consent===true;
+ const areaConsent=adultEligible&&data?.area_consent===true;
  return {
-  adultEligible:await eligible(db,uid),
-  activityConsent:data?.activity_consent===true,
-  areaConsent:data?.area_consent===true,
-  country:data?.area_consent===true?data.residence_country||"": "",
-  region:data?.area_consent===true?data.residence_region||"": ""
+  adultEligible,
+  activityConsent,
+  areaConsent,
+  country:areaConsent?data.residence_country||"": "",
+  region:areaConsent?data.residence_region||"": ""
  };
 }
 async function preferences(db,uid,request){
