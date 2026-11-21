@@ -76,7 +76,7 @@ async function ownProfile(db,uid){
 async function preferences(db,uid,request){
  const value=await input(request);
  if(typeof value.activityConsent!=="boolean"||typeof value.areaConsent!=="boolean")throw Error("BAD_INPUT");
- const country=String(value.country||"").trim().toUpperCase(),region=String(value.region||"").trim().replace(/\s+/g," ");
+ const country=String(value.country||"").trim().toUpperCase(),region=String(value.region||"").normalize("NFC").trim().replace(/\s+/g," ");
  if(value.areaConsent&&(!COUNTRY.test(country)||!REGION.test(region)))throw Error("BAD_INPUT");
  if((value.areaConsent||value.activityConsent)&&!(await eligible(db,uid)))throw Error("NOT_ELIGIBLE");
  const {data,error}=await db.rpc("taskflow_ads_audience_preferences",{
