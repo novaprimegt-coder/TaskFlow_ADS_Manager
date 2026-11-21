@@ -30,9 +30,15 @@ function store(){
 async function authenticate(req){
  const auth=(req.headers.get("authorization")||"").match(/^Bearer ([^\s]+)$/);
  if(!auth)throw Error("NO_SESSION");
- const {payload}=await jwtVerify(auth[1],JWKS,{
-  algorithms:["RS256"],audience:FIREBASE_PROJECT,issuer:"https://securetoken.google.com/"+FIREBASE_PROJECT
- });
+ let payload;
+ try{
+  ({payload}=await jwtVerify(auth[1],JWKS,{
+   algorithms:["RS256"],audience:FIREBASE_PROJECT,issuer:"https://securetoken.google.com/"+FIREBASE_PROJECT
+  }));
+ }catch(_){
+  // Token inválido, vencido o con firma incorrecta: 401, no error 503.
+  throw Error("NO_SESSION");
+ }
  if(!UID.test(String(payload.sub||"")))throw Error("NO_SESSION");
  return {uid:String(payload.sub),admin:payload.taskflowAdsAdmin===true};
 }
