@@ -323,3 +323,182 @@ body.tf-ads-summary-modal-open{overflow:hidden!important}
  #tfAdsSummaryDetail .tf-v9-dialog-close{transition:none}
  #appView #overviewView .tf-ads-summary-card:hover{transform:none}
 }
+
+
+/* V11 — La ventana sustituye la pantalla de Resumen completa. */
+html body #tfAdsSummaryDetail:not([hidden]){
+ position:fixed!important;inset:0!important;display:flex!important;
+ width:100vw!important;height:100dvh!important;
+ max-width:none!important;max-height:none!important;
+ margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+ z-index:2147483000!important;overflow:hidden!important;
+ background:#061629!important;color:#f1fbff!important
+}
+#tfAdsSummaryDetail .tf-v9-backdrop{display:none!important}
+html body #tfAdsSummaryDetail .tf-v9-dialog-window{
+ width:100%!important;height:100%!important;max-width:none!important;
+ min-width:0!important;min-height:0!important;max-height:none!important;
+ border:0!important;border-radius:0!important;
+ background:radial-gradient(ellipse at 100% 0%,rgba(17,106,169,.24),transparent 43%),linear-gradient(160deg,#0b2c48,#071f37 53%,#041425)!important;
+ box-shadow:none!important
+}
+html body #tfAdsSummaryDetail .tf-v9-dialog-scroll{
+ padding:clamp(18px,2.9vw,32px)!important;
+ padding-bottom:max(30px,env(safe-area-inset-bottom))!important
+}
+
+/* Resumen V11: estadísticas y gráficas visibles después de los indicadores. */
+#appView #overviewView .tf-v11-analytics{
+ display:block;margin:26px 0 10px;padding:0;min-width:0;color:#e9f7ff
+}
+#appView #overviewView .tf-v11-insights-head{
+ display:flex;align-items:flex-end;justify-content:space-between;
+ gap:15px;padding:12px 2px 19px;margin-bottom:15px;
+ border-bottom:1px solid rgba(98,184,214,.26)
+}
+#appView #overviewView .tf-v11-eyebrow{
+ display:block;color:#69d8eb;font-size:10px;font-weight:850;
+ line-height:1.5;letter-spacing:.13em
+}
+#appView #overviewView .tf-v11-insights-head h3{
+ margin:5px 0 6px;color:#f1faff;font-weight:820;
+ font-size:clamp(20px,2.8vw,30px);line-height:1.13;letter-spacing:-.025em
+}
+#appView #overviewView .tf-v11-insights-head p{
+ margin:0;color:#a9c5d8;font-size:12px;line-height:1.6
+}
+#appView #overviewView .tf-v11-insights-mark{
+ display:inline-flex;gap:6px;align-items:center;flex:none;
+ padding:9px 12px;border:1px solid rgba(64,202,233,.34);
+ background:rgba(20,75,108,.55);border-radius:9px;
+ color:#4fe0f1;font-size:10px;font-weight:850;letter-spacing:.1em
+}
+#appView #overviewView .tf-v11-insights-mark span{color:#b5dae9;font-weight:700}
+#appView #overviewView .tf-v11-insights-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:15px;align-items:stretch
+}
+#appView #overviewView .tf-v11-graph-card{
+ position:relative;min-width:0;min-height:250px;
+ padding:23px;border:1px solid rgba(91,175,213,.34);border-radius:19px;
+ background:
+  radial-gradient(ellipse at 100% 0%,rgba(24,147,204,.1),transparent 45%),
+  linear-gradient(147deg,#113753 0%,#0b2943 53%,#092139 100%);
+ box-shadow:inset 0 1px rgba(184,234,255,.06),0 12px 25px rgba(0,17,37,.13);
+ color:#edf9ff
+}
+#appView #overviewView .tf-v11-graph-wide{grid-column:1/-1;min-height:180px}
+#appView #overviewView .tf-v11-graph-card>header{
+ display:flex;align-items:flex-start;gap:12px;
+ padding-bottom:17px;margin-bottom:18px;
+ border-bottom:1px solid rgba(119,198,224,.17)
+}
+#appView #overviewView .tf-v11-graph-icon{
+ display:grid;flex:none;place-items:center;width:35px;height:35px;
+ border:1px solid rgba(102,219,236,.32);border-radius:10px;
+ background:rgba(21,125,173,.25);color:#88e8f6;
+ font-size:12px;font-weight:900;font-variant-numeric:tabular-nums
+}
+#appView #overviewView .tf-v11-graph-card h4{
+ margin:1px 0 5px;color:#f3fcff;font-size:15px;line-height:1.4;font-weight:800
+}
+#appView #overviewView .tf-v11-graph-card header p{
+ margin:0;color:#9fbfd0;font-size:11px;line-height:1.5
+}
+#appView #overviewView .tf-v11-bar-chart{display:grid;gap:16px;margin:7px 0 17px}
+#appView #overviewView .tf-v11-bar-row{min-width:0}
+#appView #overviewView .tf-v11-bar-caption{
+ display:flex;align-items:baseline;justify-content:space-between;
+ gap:12px;margin:0 0 8px;color:#d1ebf7;
+ font-size:12px;line-height:1.5
+}
+#appView #overviewView .tf-v11-bar-caption span{min-width:0;overflow-wrap:anywhere}
+#appView #overviewView .tf-v11-bar-caption :is(strong,b){
+ flex:none;color:#9df0fb;font-size:12px;font-weight:800;
+ font-variant-numeric:tabular-nums
+}
+#appView #overviewView .tf-v11-bar-track{
+ height:10px;width:100%;overflow:hidden;border-radius:99px;
+ background:rgba(115,187,219,.17);border:1px solid rgba(145,202,232,.09)
+}
+#appView #overviewView .tf-v11-bar-track>span{
+ display:block;height:100%;border-radius:99px;
+ background:linear-gradient(90deg,#1c75df 0%,#20c5e5 75%,#74e6f1);
+ transition:width .3s ease
+}
+#appView #overviewView .tf-v11-click-track>span{
+ background:linear-gradient(90deg,#2cbea5,#67e8c3)
+}
+#appView #overviewView .tf-v11-type-chart{
+ display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;
+ padding:4px 0 17px
+}
+#appView #overviewView .tf-v11-ring{
+ flex:none;width:166px;aspect-ratio:1;border-radius:50%;
+ display:grid;place-items:center;
+ box-shadow:0 10px 28px rgba(0,9,23,.2)
+}
+#appView #overviewView .tf-v11-ring>div{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ width:112px;aspect-ratio:1;border-radius:50%;padding:8px;
+ background:#0d2944;color:#ecfaff
+}
+#appView #overviewView .tf-v11-ring strong{font-size:24px;font-weight:850}
+#appView #overviewView .tf-v11-ring small{font-size:11px;color:#a8d8e6}
+#appView #overviewView .tf-v11-legend{
+ display:flex;flex-direction:column;gap:11px;list-style:none;
+ margin:0;padding:0;flex:1;min-width:175px
+}
+#appView #overviewView .tf-v11-legend li{
+ display:grid;grid-template-columns:10px minmax(0,1fr) auto;
+ align-items:center;gap:9px;color:#d3ecf7;font-size:12px;line-height:1.4
+}
+#appView #overviewView .tf-v11-legend i{
+ display:block;width:10px;height:10px;border-radius:3px
+}
+#appView #overviewView .tf-v11-legend strong{
+ color:#9cecf9;font-weight:760;font-variant-numeric:tabular-nums
+}
+#appView #overviewView .tf-v11-performance-list{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px
+}
+#appView #overviewView .tf-v11-performance-entry{
+ padding:15px 16px;border:1px solid rgba(98,177,220,.22);
+ border-radius:12px;background:rgba(7,28,51,.46);min-width:0
+}
+#appView #overviewView .tf-v11-performance-entry>strong{
+ display:block;color:#e8f8ff;font-size:13px;margin-bottom:15px;
+ overflow-wrap:anywhere
+}
+#appView #overviewView .tf-v11-performance-entry .tf-v11-bar-track{margin-bottom:12px}
+#appView #overviewView .tf-v11-graph-foot{
+ display:block;margin-top:19px;padding-top:12px;
+ border-top:1px solid rgba(122,187,218,.16);
+ color:#96bace;font-size:11px;line-height:1.5
+}
+#appView #overviewView .tf-v11-graph-card .tf-v8-empty,
+#appView #overviewView .tf-v11-graph-card .tf-v8-note{
+ border:1px solid rgba(97,175,210,.2)!important;
+ background:rgba(16,65,99,.58)!important;color:#bddbe9!important;
+ padding:13px!important;border-radius:10px;font-size:12px!important;line-height:1.5
+}
+
+/* Fullscreen responsive y charts sin desplazamientos horizontales. */
+@media(max-width:880px){
+ #appView #overviewView .tf-v11-insights-grid{gap:12px}
+ #appView #overviewView .tf-v11-graph-card{padding:17px}
+ #appView #overviewView .tf-v11-type-chart{gap:16px}
+}
+@media(max-width:640px){
+ #appView #overviewView .tf-v11-insights-grid{grid-template-columns:minmax(0,1fr)}
+ #appView #overviewView .tf-v11-graph-wide{grid-column:auto}
+ #appView #overviewView .tf-v11-insights-head{align-items:flex-start}
+ #appView #overviewView .tf-v11-insights-mark{display:none}
+ #appView #overviewView .tf-v11-graph-card{min-height:0;padding:18px 16px}
+ #appView #overviewView .tf-v11-performance-list{grid-template-columns:1fr}
+ #appView #overviewView .tf-v11-ring{width:150px}
+ #appView #overviewView .tf-v11-ring>div{width:100px}
+}
+@media(prefers-reduced-motion:reduce){
+ #appView #overviewView .tf-v11-bar-track>span{transition:none}
+}
