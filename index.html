@@ -2256,6 +2256,49 @@ html body.tf-ads-summary-modal-open{overflow:hidden!important}
  html body #tfAdsSummaryDetail .tf-v8-detail-head{padding:max(14px,env(safe-area-inset-top)) 16px 14px!important}
  html body #tfAdsSummaryDetail .tf-v9-dialog-scroll{padding:18px 15px max(28px,env(safe-area-inset-bottom))!important}
 }
+
+/* Fallback gráfico: si el navegador móvil conserva una hoja externa antigua,
+   las estadísticas siguen teniendo la misma identidad visual. */
+html body #overviewView .tf-v11-analytics{display:block!important;min-width:0;margin:26px 0 10px;color:#edfaff!important}
+html body #overviewView .tf-v11-insights-head{display:flex;align-items:end;justify-content:space-between;gap:14px;padding:10px 0 17px;margin-bottom:15px;border-bottom:1px solid #326382}
+html body #overviewView .tf-v11-eyebrow{color:#72dfea!important;font-size:10px;font-weight:800;letter-spacing:.1em}
+html body #overviewView .tf-v11-insights-head h3{color:#f2fbff!important;font-size:clamp(20px,3vw,29px);margin:5px 0}
+html body #overviewView .tf-v11-insights-head p{color:#b6d3e3!important;font-size:12px;margin:0}
+html body #overviewView .tf-v11-insights-mark{color:#80eafa;font-size:10px}
+html body #overviewView .tf-v11-insights-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+html body #overviewView .tf-v11-graph-card{min-width:0;padding:20px;border:1px solid rgba(100,194,231,.35)!important;border-radius:17px;background:linear-gradient(145deg,#123a59,#092239)!important;color:#eaf7ff!important}
+html body #overviewView .tf-v11-graph-wide{grid-column:1/-1}
+html body #overviewView .tf-v11-graph-card>header{display:flex;gap:12px;margin-bottom:17px;padding-bottom:15px;border-bottom:1px solid rgba(125,206,238,.19)}
+html body #overviewView .tf-v11-graph-card h4{color:#f2fcff!important;font-size:15px;margin:0 0 5px}
+html body #overviewView .tf-v11-graph-card header p{color:#a3c6da!important;font-size:11px;margin:0}
+html body #overviewView .tf-v11-graph-icon{color:#8fe6f4;font-weight:850}
+html body #overviewView .tf-v11-bar-chart{display:grid;gap:15px}
+html body #overviewView .tf-v11-bar-caption{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 7px;color:#d6eef9!important;font-size:12px}
+html body #overviewView .tf-v11-bar-caption :is(b,strong){color:#91eafa!important}
+html body #overviewView .tf-v11-bar-track{display:block;height:10px;width:100%;overflow:hidden;border-radius:99px;background:#26465b!important}
+html body #overviewView .tf-v11-bar-track>span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#2371dc,#32d5e9)}
+html body #overviewView .tf-v11-click-track>span{background:linear-gradient(90deg,#239981,#5edab8)}
+html body #overviewView .tf-v11-type-chart{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap}
+html body #overviewView .tf-v11-ring{display:grid;place-items:center;width:160px;aspect-ratio:1;border-radius:50%}
+html body #overviewView .tf-v11-ring>div{display:grid;place-items:center;align-content:center;gap:2px;width:108px;aspect-ratio:1;border-radius:50%;background:#0c2d48;color:#f1fbff}
+html body #overviewView .tf-v11-ring strong{font-size:24px}
+html body #overviewView .tf-v11-ring small{font-size:11px;color:#a5d4e6}
+html body #overviewView .tf-v11-legend{list-style:none;display:grid;gap:10px;min-width:175px;flex:1;margin:0;padding:0}
+html body #overviewView .tf-v11-legend li{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:9px;align-items:center;color:#d5eef9;font-size:12px}
+html body #overviewView .tf-v11-legend i{display:block;width:10px;height:10px;border-radius:3px}
+html body #overviewView .tf-v11-legend strong{color:#9eeaf7}
+html body #overviewView .tf-v11-performance-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+html body #overviewView .tf-v11-performance-entry{min-width:0;padding:14px;border:1px solid #315d7d;border-radius:12px;background:#0b2c47}
+html body #overviewView .tf-v11-performance-entry>strong{display:block;margin-bottom:12px;color:#eafaff}
+html body #overviewView .tf-v11-graph-foot{display:block;margin-top:17px;padding-top:12px;border-top:1px solid #33566d;color:#a7c8d9!important;font-size:11px}
+html body #overviewView .tf-v11-graph-card .tf-v8-empty{padding:12px;border-radius:10px;background:#194363!important;color:#c4e4f2!important}
+@media(max-width:640px){
+ html body #overviewView .tf-v11-insights-grid{grid-template-columns:1fr}
+ html body #overviewView .tf-v11-graph-wide{grid-column:1}
+ html body #overviewView .tf-v11-performance-list{grid-template-columns:1fr}
+ html body #overviewView .tf-v11-graph-card{padding:16px}
+ html body #overviewView .tf-v11-insights-mark{display:none}
+}
 </style>
 </head>
 <body>
