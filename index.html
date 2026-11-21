@@ -3094,8 +3094,18 @@ function initFirebase(){
 function businessRef(uid){return fbDb.collection('users').doc(uid).collection('adsManager').doc('business')}
 function campaignsRef(uid){return fbDb.collection('users').doc(uid).collection('adsCampaigns')}
 function publicCampaignRef(id){return fbDb.collection('adsPublicCampaigns').doc(id)}
-async function getBusiness(uid){try{const snap=await businessRef(uid).get();return snap.exists?snap.data():null}catch(e){console.warn('ADS business load:',e);return null}}
-async function getAdminClaim(user){try{const t=await user.getIdTokenResult(true);return t&&t.claims&&t.claims.taskflowAdsAdmin===true}catch(_){return false}}
+async function getBusiness(uid){
+ // Ninguna petición de perfil puede dejar el inicio de sesión esperando indefinidamente.
+ // Si falla, no asumir que la cuenta comercial está autorizada.
+ const snap=await withDeadline(businessRef(uid).get(),12000,'No se pudo cargar el perfil comercial. Comprueba tu conexión e inténtalo nuevamente.');
+ return snap.exists?snap.data():null;
+}
+async function getAdminClaim(user){
+ try{
+  const t=await withDeadline(user.getIdTokenResult(true),10000,'La verificación administrativa tardó demasiado.');
+  return t?.claims?.taskflowAdsAdmin===true;
+ }catch(err){console.warn('ADS: permisos administrativos aún no confirmados',err?.code||err?.message);return false}
+}
 
 /* Foto de cuenta comercial: mismo almacenamiento Firebase Storage de ADS.
    La foto no se coloca en almacenamiento local, ni se envía a anuncios. */
@@ -3212,7 +3222,7 @@ async function updateSidebarProfilePhoto(file){
 }
 
 function setAuthMode(mode){resetPasswordVisibility();const reg=mode==='register';$('loginTab').classList.toggle('active',!reg);$('registerTab').classList.toggle('active',reg);$('loginTab').setAttribute('aria-selected',String(!reg));$('registerTab').setAttribute('aria-selected',String(reg));$('nameField').hidden=!reg;$('companyField').hidden=!reg;$('profilePhotoField').hidden=!reg;$('profilePhotoInput').required=reg;$('confirmField').hidden=!reg;if(!reg){$('profilePhotoInput').value='';clearPhotoPreview()}$('authSubmit').textContent=reg?'Crear cuenta':'Iniciar sesión';$('authForm').dataset.mode=reg?'register':'login';$('password').autocomplete=reg?'new-password':'current-password';window.TaskFlowGooey?.go(reg?1:0);authMsg('')}
-function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'auth/email-already-in-use':'Ese correo ya está registrado.','auth/invalid-email':'El correo electrónico no es válido.','auth/weak-password':'La contraseña debe tener al menos 8 caracteres.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Intenta nuevamente más tarde.','auth/network-request-failed':'No hay conexión con el servicio de cuentas.','auth/unauthorized-domain':'Este dominio todavía no está autorizado para iniciar sesión.'};return map[c]||'No fue posible completar el acceso.'}
+function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'auth/email-already-in-use':'Ese correo ya está registrado.','auth/invalid-email':'El correo electrónico no es válido.','auth/weak-password':'La contraseña debe tener al menos 8 caracteres.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Intenta nuevamente más tarde.','auth/network-request-failed':'No hay conexión con el servicio de cuentas.','auth/unauthorized-domain':'Este dominio todavía no está autorizado para iniciar sesión.','auth/user-disabled':'Esta cuenta está deshabilitada. Contacta con el administrador.','auth/operation-not-allowed':'El acceso con correo y contraseña no está habilitado en Firebase.','auth/web-storage-unsupported':'El navegador impide guardar la sesión. Comprueba la privacidad y el almacenamiento del navegador.','auth/internal-error':'El servicio de inicio de sesión devolvió un error interno.'};return map[c]||'No fue posible completar el acceso.'}
  async function handleAuth(e){
   e.preventDefault();authMsg('');
   const mode=$('authForm').dataset.mode||'login';
@@ -3228,7 +3238,7 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
    if(pass!==$('confirmPassword').value){authMsg('Las contraseñas no coinciden.','error');return}
   }
   if(!fbAuth||!fbDb){authMsg('No fue posible conectar con el servicio de cuentas. Verifica la conexión e inténtalo nuevamente.','error');return}
-  const submit=$('authSubmit');submit.disabled=true;
+  const submit=$('authSubmit'),initialSubmitText=submit.textContent;submit.disabled=true;submit.textContent=mode==='login'?'Verificando acceso…':'Creando cuenta…';
   let resolveGate=null,created=false,createdAccount=null,createdPhotoPath='';
   if(mode==='register')registrationGate=new Promise(resolve=>{resolveGate=resolve});
   try{
@@ -3248,7 +3258,8 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
     clearPhotoPreview();$('profilePhotoInput').value='';
     authMsg('Cuenta comercial creada correctamente.','success');
    }else{
-    await fbAuth.signInWithEmailAndPassword(email,pass);
+    await withDeadline(fbAuth.signInWithEmailAndPassword(email,pass),20000,'El servicio de inicio de sesión no respondió. Comprueba tu conexión e inténtalo nuevamente.');
+     authMsg('Credenciales verificadas. Cargando perfil comercial…','success');
    }
   }catch(err){
    if(mode==='register'&&created){
@@ -3264,10 +3275,10 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
     authMsg(rolledBack?
      'No se completó el registro ni la foto de perfil. Comprueba la conexión y vuelve a crear la cuenta.':
      'No se completó el registro de la foto. Si tu correo ya quedó registrado, inicia sesión y añade la foto desde el menú lateral.','error');
-   }else authMsg(friendlyAuthError(err),'error');
+   }else authMsg(err?.code==='ads/timeout'?err.message:friendlyAuthError(err),'error');
   }finally{
    if(resolveGate)resolveGate();
-   registrationGate=null;submit.disabled=false;
+   registrationGate=null;submit.disabled=false;submit.textContent=initialSubmitText;
   }
  }
 
@@ -3661,7 +3672,8 @@ async function handleAuthState(user){
   return;
  }
  authScreenInitialized=true;
- const business=await getBusiness(user.uid);
+ if($('authView')?.hidden===false)authMsg('Verificando perfil y acceso comercial…');
+  const business=await getBusiness(user.uid);
  if(!isCurrent())return;
  if(business&&business.accountStatus==='suspended'){authMsg('Esta cuenta comercial está suspendida.','error');await fbAuth.signOut();return}
  const admin=await getAdminClaim(user);
@@ -4951,7 +4963,7 @@ function setupCompactFilterMenus(){
  window.addEventListener('scroll',e=>{if(opened&&!opened.menu.contains(e.target))positionMenu(opened)},true);
  window.addEventListener('resize',close,{passive:true});
 }
-function bind(){document.addEventListener('error',e=>{if(e.target?.matches?.('.tf-creative-image'))e.target.remove()},{capture:true});setupCompactFilterMenus();updateObjectiveExperience();qa('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>togglePasswordVisibility(btn)));setAuthMode('login');$('loginTab').addEventListener('click',()=>setAuthMode('login'));$('registerTab').addEventListener('click',()=>setAuthMode('register'));$('authForm').addEventListener('submit',handleAuth);
+function bind(){document.addEventListener('error',e=>{if(e.target?.matches?.('.tf-creative-image'))e.target.remove()},{capture:true});setupCompactFilterMenus();updateObjectiveExperience();qa('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>togglePasswordVisibility(btn)));setAuthMode('login');$('loginTab').addEventListener('click',()=>setAuthMode('login'));$('registerTab').addEventListener('click',()=>setAuthMode('register'));$('authForm').addEventListener('submit',handleAuth);$('authForm').dataset.tfAuthBound='1';
 $('profilePhotoInput').addEventListener('change',e=>void showPhotoPreview(e.target.files?.[0]||null));
 $('sidebarPhotoButton').addEventListener('click',()=>$('sidebarPhotoInput').click());
 $('sidebarPhotoInput').addEventListener('change',e=>{const photo=e.target.files?.[0];if(photo)void updateSidebarProfilePhoto(photo)});
@@ -4978,7 +4990,36 @@ $('moduleContent').addEventListener('click',e=>{
  }catch(err){toast('No se pudo actualizar el Resumen: '+(err?.message||'Comprueba la conexión.'))}
  finally{button.disabled=false;button.textContent=oldText}
 });qa('[data-entity-level]').forEach(btn=>btn.addEventListener('click',()=>{managerLevel=btn.dataset.entityLevel;qa('[data-entity-level]').forEach(x=>x.classList.toggle('active',x===btn));selectedCampaignIds.clear();renderTable();renderManagerSummary()}));const mgrRefresh=$('managerRefresh');if(mgrRefresh)mgrRefresh.addEventListener('click',async()=>{await loadCampaigns();renderAll();if(window.TaskFlowADSModules?.paintCampaignMetrics&&currentUser)void window.TaskFlowADSModules.paintCampaignMetrics(adsModulesContext(),true);toast('Administrador actualizado.')});const clear=$('clearFilters');if(clear)clear.addEventListener('click',()=>{$('search').value='';$('statusFilter').value='all';$('approvalFilter').value='all';$('orderFilter').value='recent';['statusFilter','approvalFilter','orderFilter'].forEach(id=>$(id).dispatchEvent(new Event('tf-filter-sync')));renderTable()});const dupBtn=$('duplicateBtn');if(dupBtn)dupBtn.addEventListener('click',()=>{[...selectedCampaignIds].forEach(id=>duplicateCampaign(id));selectedCampaignIds.clear();renderAll()});const editBtn=$('bulkEditBtn');if(editBtn)editBtn.addEventListener('click',()=>{const id=[...selectedCampaignIds][0];if(id)openEdit(id)});$('bulkDeleteBtn').addEventListener('click',()=>void deleteSelectedCampaigns());blockExtraction()}
-document.addEventListener('DOMContentLoaded',()=>{bind();try{initFirebase();fbAuth.onAuthStateChanged(async u=>{try{if(u&&registrationGate)await registrationGate;if(u&&fbAuth.currentUser?.uid!==u.uid)return;await handleAuthState(u)}catch(e){console.error(e);authMsg('No fue posible cargar la cuenta comercial.','error')}})}catch(e){console.error(e);authMsg('No fue posible iniciar el servicio de cuentas.','error');animateAuth()}});
+document.addEventListener('DOMContentLoaded',()=>{
+ // La autenticación debe seguir disponible aunque fallen controles secundarios.
+ try{bind()}catch(err){
+  console.error('ADS: inicialización parcial de interfaz',err);
+  const form=$('authForm');
+  if(form&&!form.dataset.tfAuthBound){form.dataset.tfAuthBound='1';form.addEventListener('submit',handleAuth)}
+ }
+ try{
+  initFirebase();
+  fbAuth.onAuthStateChanged(async user=>{
+   try{
+    if(user&&registrationGate)await registrationGate;
+    if(user&&fbAuth.currentUser?.uid!==user.uid)return;
+    await handleAuthState(user);
+   }catch(err){
+    console.error('ADS: no fue posible completar la carga de sesión',err);
+    authMsg(err?.code==='ads/timeout'?err.message:'No fue posible confirmar el perfil comercial. Comprueba tu conexión e inténtalo nuevamente.','error');
+    const submit=$('authSubmit');if(submit){submit.disabled=false;submit.textContent='Iniciar sesión'}
+   }
+  },error=>{
+   console.error('ADS: estado de autenticación no disponible',error);
+   authMsg(friendlyAuthError(error),'error');
+   const submit=$('authSubmit');if(submit){submit.disabled=false;submit.textContent='Iniciar sesión'}
+  });
+ }catch(err){
+  console.error('ADS: fallo al iniciar Firebase Auth',err);
+  authMsg('No fue posible iniciar el servicio de cuentas. Comprueba tu conexión.','error');
+  animateAuth();
+ }
+});
 })();
 </script>
 </body>
