@@ -1,6 +1,6 @@
 # TaskFlow ADS — Analítica opcional y privada V1
 
-Estado: **preparado en rama de desarrollo; NO desplegado, NO está recopilando sesiones**.
+Estado: **estructura SQL y servicio `taskflow-ads-audience` desplegados en Supabase el 21/11/2026; la medición requiere consentimiento adulto y la publicación de los controles en TaskFlow**.
 
 ## Lo que ya existe y no se reemplaza
 
@@ -22,7 +22,7 @@ El endpoint `/admin/summary` se limita a JWT con `taskflowAdsAdmin` y devuelve e
 ## Orden de activación obligatorio
 
 1. Revisar políticas V178 y consentimiento visible en el perfil; validar alcance jurídico por país.
-2. Probar en una base de datos aislada la migración SQL, RLS y limpieza. Verificar que la extensión `pg_cron` esté disponible (se comprobó instalada en el proyecto; aún falta verificar el nuevo job al aplicar la migración).
+2. Probar en una base de datos aislada la migración SQL, RLS y limpieza. Verificar que la extensión `pg_cron` esté disponible (extensión y trabajo programado verificados en Supabase).
 3. Configurar en los secretos privados del proyecto Supabase `TF_ADS_ACTIVITY_HASH_KEY` con una clave aleatoria segura de al menos 32 caracteres. **No insertar ni publicar esa clave en GitHub, en TaskFlow ni en el chat.**
 4. Desplegar la función `taskflow-ads-audience` como servicio independiente. No reemplazar `taskflow-ads-delivery`, `taskflow-ads-paypal` ni `taskflow-noads`.
 5. Validar sesiones Firebase adultas autorizadas, minoría de edad, ausencia de consentimiento, retirada, errores de red, deduplicación y cron. Validar el informe agregado con umbral 5 antes de permitir lecturas administrativas.
