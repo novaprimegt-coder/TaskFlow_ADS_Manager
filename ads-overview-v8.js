@@ -7,6 +7,8 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const number=v=>fmt.format(Number(v)||0);
 const money=v=>cur.format(Number(v)||0);
 const labels={banner:'Banner',entry:'Anuncio de ingreso',interaction:'Por interacción'};
+const placementRank={banner:0,entry:1,interaction:2};
+const formatsAllowed={banner:'1200 × 180 o 2400 × 360',entry:'1080 × 1920 o 2160 × 3840',interaction:'1080 × 1920 o 2160 × 3840'};
 const objective={awareness:'Reconocimiento',traffic:'Tráfico',engagement:'Interacción',leads:'Clientes potenciales',sales:'Ventas',app:'Aplicación'};
 const PALETTE=['#24b9e3','#477de8','#936bf4','#34c69a','#f5aa53','#e879ae'];
 let api=null,owner='',selected='',data=null,loadedAt=0,busy=null,serial=0,started=false;
@@ -14,13 +16,23 @@ const $=id=>document.getElementById(id);
 const panel=()=>$('tfAdsSummaryDetail');
 const visible=()=>!!api?.currentUser&&document.visibilityState==='visible'&&$('overviewView')?.classList.contains('active')&&!$('appView')?.hidden;
 const active=()=>api?.campaigns?.filter(c=>c.status==='active')||[];
+const sortedActive=()=>active().slice().sort((a,b)=>(placementRank[a.placement]??99)-(placementRank[b.placement]??99)
+ ||String(a.name||'').localeCompare(String(b.name||''),'es'));
 const daily=()=>active().filter(c=>c.budgetType==='daily');
 const totalDaily=()=>daily().reduce((a,c)=>a+(Number.isFinite(Number(c.budget))?Math.max(0,Number(c.budget)):0),0);
 const verified=c=>data?.campaigns?.[c.id]||null;
 const metric=(c,key)=>{const m=verified(c);return m&&Number.isFinite(Number(m[key]))?Number(m[key]):null};
 const currency=(c)=>money(c.budget)+' '+(c.budgetType==='daily'?'/ día':'en total');
 function medium(a){const kind=String(a?.mediaMeta?.kind||''),mime=String(a?.mediaMeta?.mime||'');return kind==='video'||mime.startsWith('video/')?'Video':mime==='image/gif'?'GIF':a?.mediaMeta?'Imagen':'Sin archivo'}
-function formats(c){return (c.ads||[]).map(a=>a.name||'Anuncio').map((name,i)=>'<li><span>'+esc(name)+'</span><span>'+esc(labels[c.placement]||'Formato sin especificar')+' · '+esc(medium(c.ads[i]))+'</span></li>').join('')||'<li>Sin anuncios registrados</li>'}
+function formats(c){
+ const items=Array.isArray(c.ads)?c.ads:[];
+ return items.map(a=>{
+  const w=Number(a?.mediaMeta?.width),h=Number(a?.mediaMeta?.height);
+  const measured=Number.isInteger(w)&&w>0&&Number.isInteger(h)&&h>0;
+  const spec=measured?w+' × '+h+' px':'Medidas admitidas: '+(formatsAllowed[c.placement]||'No definidas');
+  return '<li><span>'+esc(a?.name||'Anuncio')+'</span><span>'+esc(labels[c.placement]||'Sin ubicación')+' · '+esc(medium(a))+' · '+esc(spec)+'</span></li>';
+ }).join('')||'<li>Sin anuncios registrados</li>';
+}
 function title(c){return '<strong>'+esc(c.name||'Campaña sin nombre')+'</strong><small>'+esc(objective[c.objective]||c.objective||'Objetivo sin definir')+' · '+esc(c.approvalStatus==='approved'?'Aprobada':c.approvalStatus==='rejected'?'Bloqueada':'En validación')+'</small>'}
 function row(c,html){return '<article class="tf-v8-row"><div class="tf-v8-row-head"><div>'+title(c)+'</div>'+html+'</div></article>'}
 function blocks(c,body){return '<article class="tf-v8-row"><div class="tf-v8-row-head"><div>'+title(c)+'</div></div>'+body+'</article>'}
@@ -47,11 +59,11 @@ function ageBreakdown(m,ad){
  return rows.length?'<div class="tf-v8-age"><b>Clics por edad declarada</b>'+chart(rows,'Clics')+'</div>':note('Todavía no hay clics con edad declarada disponible.');
 }
 function drawActive(){
- const list=active();
+ const list=sortedActive();
  return list.length?list.map(c=>blocks(c,'<div class="tf-v8-tags"><span>'+esc(labels[c.placement]||'Sin tipo')+'</span><span>'+esc(c.budgetType==='daily'?'Presupuesto diario':'Presupuesto final')+': '+esc(currency(c))+'</span><span>'+number((c.ads||[]).length)+' anuncios</span></div><ul class="tf-v8-formats">'+formats(c)+'</ul>')).join(''):tableEmpty('No hay campañas activas.');
 }
 function drawDaily(){
- const list=active().slice().sort((a,b)=>Number(a.budgetType==='total')-Number(b.budgetType==='total'));
+ const list=sortedActive().sort((a,b)=>Number(a.budgetType==='total')-Number(b.budgetType==='total'));
  return list.length?list.map(c=>blocks(c,'<div class="tf-v8-budget"><span>'+esc(c.budgetType==='daily'?'Presupuesto diario':'Presupuesto final de campaña')+'</span><strong>'+esc(money(c.budget))+'</strong><small>'+(c.budgetType==='daily'?'Cada día':'Importe total de esta campaña')+'</small></div><ul class="tf-v8-formats">'+formats(c)+'</ul>')).join('')+note('Los presupuestos mostrados son importes configurados, no gasto real ni dinero cobrado.'):tableEmpty('No hay campañas activas con presupuesto.');
 }
 function drawTotal(){
@@ -61,7 +73,7 @@ function drawTotal(){
  note('Esta suma corresponde al total de presupuestos diarios configurados. Las campañas con presupuesto final fijo no se suman aquí. No representa gasto efectuado.');
 }
 function drawImpressions(){
- const list=active();if(!list.length)return tableEmpty('No hay campañas activas.');
+ const list=sortedActive();if(!list.length)return tableEmpty('No hay campañas activas.');
  let missing=0;
  const content=list.map(c=>{
   const m=verified(c);if(!m)missing++;
