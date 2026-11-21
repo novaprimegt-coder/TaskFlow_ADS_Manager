@@ -2995,6 +2995,7 @@ function withDeadline(operation,ms,message){
  ]).finally(()=>clearTimeout(timer));
 }
  let registrationGate=null;
+let tfAdsAuthCheck=null;
 let authScreenInitialized=false;
 let fbApp=null,fbAuth=null,fbDb=null,fbStorage=null,currentUser=null,campaigns=[],step=1,objective='awareness',editingId=null,pendingMedia=null,existingMediaMeta=null,currentPreviewUrl=null,managerLevel='campaigns',selectedCampaignIds=new Set(),adDrafts=[],currentAdDraftId=null,isAdsAdmin=false,authReady=false;
 const placementSpecs={banner:{label:'Banner',width:1200,height:180,hdWidth:2400,hdHeight:360,accept:'image/jpeg,image/png,image/webp,image/gif',formats:'JPG · PNG · WEBP · GIF',specFormat:'Imagen / GIF',duration:'No aplica',frame:'banner'},entry:{label:'Anuncio de ingreso',width:1080,height:1920,hdWidth:2160,hdHeight:3840,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'Video: 10 s – 3 min',frame:'vertical'},interaction:{label:'Por interacción',width:1080,height:1920,hdWidth:2160,hdHeight:3840,accept:'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',formats:'JPG · PNG · WEBP · GIF · MP4 · WEBM',specFormat:'Imagen / GIF / Video',duration:'Video: 10 s – 3 min',frame:'vertical'}};
@@ -3095,14 +3096,41 @@ function businessRef(uid){return fbDb.collection('users').doc(uid).collection('a
 function campaignsRef(uid){return fbDb.collection('users').doc(uid).collection('adsCampaigns')}
 function publicCampaignRef(id){return fbDb.collection('adsPublicCampaigns').doc(id)}
 async function getBusiness(uid){
- // Ninguna petición de perfil puede dejar el inicio de sesión esperando indefinidamente.
- // Si falla, no asumir que la cuenta comercial está autorizada.
- const snap=await withDeadline(businessRef(uid).get(),12000,'No se pudo cargar el perfil comercial. Comprueba tu conexión e inténtalo nuevamente.');
- return snap.exists?snap.data():null;
+ // Consulta exclusivamente el documento remoto autorizado. Firestore SDK y REST
+ // son rutas alternativas para evitar bloqueos WebChannel en algunos móviles.
+ const user=fbAuth?.currentUser;
+ if(!user||user.uid!==uid)throw Object.assign(new Error('La sesión no está disponible.'),{code:'ads/profile-session'});
+ const abort=new AbortController();
+ const sdkRead=businessRef(uid).get({source:'server'}).then(snap=>snap.exists?snap.data():null);
+ const restRead=(async()=>{
+  const token=await user.getIdToken(false);
+  if(fbAuth?.currentUser?.uid!==uid)throw Object.assign(new Error('La sesión cambió.'),{code:'ads/profile-session'});
+  const url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE_CONFIG.projectId)+'/databases/(default)/documents/users/'+encodeURIComponent(uid)+'/adsManager/business';
+  const response=await fetch(url,{method:'GET',headers:{Authorization:'Bearer '+token},cache:'no-store',referrerPolicy:'no-referrer',signal:abort.signal});
+  if(response.status===404)return null;
+  if(!response.ok)throw Object.assign(new Error('Acceso al perfil rechazado.'),{code:response.status===401||response.status===403?'ads/profile-denied':'ads/profile-service'});
+  const raw=await response.json();
+  if(!raw||typeof raw.fields!=='object')throw Object.assign(new Error('Respuesta de perfil inválida.'),{code:'ads/profile-invalid'});
+  const data={};
+  for(const key of ['ownerUid','ownerName','ownerEmail','businessName','accountStatus','profilePhotoURL','photoStoragePath','country']){
+   const field=raw.fields[key];
+   if(field&&typeof field.stringValue==='string')data[key]=field.stringValue;
+  }
+  return data;
+ })();
+ try{
+  return await withDeadline(Promise.any([sdkRead,restRead]),5500,'El servicio de perfiles no respondió.');
+ }catch(err){
+  const causes=Array.isArray(err?.errors)?err.errors:[err];
+  const denied=causes.some(e=>['permission-denied','ads/profile-denied'].includes(e?.code));
+  const message=denied?'El servicio de perfiles rechazó esta consulta. Revisa los permisos de acceso.':'Firebase aceptó las credenciales, pero no se pudo confirmar el perfil comercial. No se han cambiado las cuentas ni los permisos.';
+  throw Object.assign(new Error(message),{code:denied?'ads/profile-denied':'ads/profile-unavailable'});
+ }finally{abort.abort()}
 }
 async function getAdminClaim(user){
  try{
-  const t=await withDeadline(user.getIdTokenResult(true),10000,'La verificación administrativa tardó demasiado.');
+  // El token de Firebase recién autenticado ya contiene los permisos firmados.
+  const t=await withDeadline(user.getIdTokenResult(false),3500,'No se pudieron confirmar permisos administrativos.');
   return t?.claims?.taskflowAdsAdmin===true;
  }catch(err){console.warn('ADS: permisos administrativos aún no confirmados',err?.code||err?.message);return false}
 }
@@ -3223,6 +3251,17 @@ async function updateSidebarProfilePhoto(file){
 
 function setAuthMode(mode){resetPasswordVisibility();const reg=mode==='register';$('loginTab').classList.toggle('active',!reg);$('registerTab').classList.toggle('active',reg);$('loginTab').setAttribute('aria-selected',String(!reg));$('registerTab').setAttribute('aria-selected',String(reg));$('nameField').hidden=!reg;$('companyField').hidden=!reg;$('profilePhotoField').hidden=!reg;$('profilePhotoInput').required=reg;$('confirmField').hidden=!reg;if(!reg){$('profilePhotoInput').value='';clearPhotoPreview()}$('authSubmit').textContent=reg?'Crear cuenta':'Iniciar sesión';$('authForm').dataset.mode=reg?'register':'login';$('password').autocomplete=reg?'new-password':'current-password';window.TaskFlowGooey?.go(reg?1:0);authMsg('')}
 function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'auth/email-already-in-use':'Ese correo ya está registrado.','auth/invalid-email':'El correo electrónico no es válido.','auth/weak-password':'La contraseña debe tener al menos 8 caracteres.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Intenta nuevamente más tarde.','auth/network-request-failed':'No hay conexión con el servicio de cuentas.','auth/unauthorized-domain':'Este dominio todavía no está autorizado para iniciar sesión.','auth/user-disabled':'Esta cuenta está deshabilitada. Contacta con el administrador.','auth/operation-not-allowed':'El acceso con correo y contraseña no está habilitado en Firebase.','auth/web-storage-unsupported':'El navegador impide guardar la sesión. Comprueba la privacidad y el almacenamiento del navegador.','auth/internal-error':'El servicio de inicio de sesión devolvió un error interno.'};return map[c]||'No fue posible completar el acceso.'}
+function ensureSessionReady(user){
+ // Un único chequeo por usuario; permite reintentar si Firebase ya conservaba la sesión.
+ if(!user?.uid)return handleAuthState(user);
+ if(currentUser?.id===user.uid&&!$('appView')?.hidden)return Promise.resolve();
+ if(tfAdsAuthCheck?.uid===user.uid)return tfAdsAuthCheck.promise;
+ const promise=Promise.resolve().then(()=>handleAuthState(user));
+ tfAdsAuthCheck={uid:user.uid,promise};
+ const clear=()=>{if(tfAdsAuthCheck?.promise===promise)tfAdsAuthCheck=null};
+ void promise.then(clear,clear);
+ return promise;
+}
  async function handleAuth(e){
   e.preventDefault();authMsg('');
   const mode=$('authForm').dataset.mode||'login';
@@ -3258,8 +3297,11 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
     clearPhotoPreview();$('profilePhotoInput').value='';
     authMsg('Cuenta comercial creada correctamente.','success');
    }else{
-    await withDeadline(fbAuth.signInWithEmailAndPassword(email,pass),20000,'El servicio de inicio de sesión no respondió. Comprueba tu conexión e inténtalo nuevamente.');
-     authMsg('Credenciales verificadas. Cargando perfil comercial…','success');
+    authMsg('Comprobando credenciales…');
+     const credential=await withDeadline(fbAuth.signInWithEmailAndPassword(email,pass),12000,'El servicio de autenticación no confirmó el acceso.');
+     // No depender de un nuevo evento de Firebase cuando se trata del mismo usuario.
+     // El listener y el formulario comparten una verificación sin duplicarla.
+     await ensureSessionReady(credential.user||fbAuth.currentUser);
    }
   }catch(err){
    if(mode==='register'&&created){
@@ -3275,7 +3317,7 @@ function friendlyAuthError(err){const c=String(err&&err.code||'');const map={'au
     authMsg(rolledBack?
      'No se completó el registro ni la foto de perfil. Comprueba la conexión y vuelve a crear la cuenta.':
      'No se completó el registro de la foto. Si tu correo ya quedó registrado, inicia sesión y añade la foto desde el menú lateral.','error');
-   }else authMsg(err?.code==='ads/timeout'?err.message:friendlyAuthError(err),'error');
+   }else authMsg(['ads/profile-unavailable','ads/profile-denied','ads/profile-session'].includes(err?.code)?err.message:err?.code==='ads/timeout'?'El servicio de autenticación no respondió a tiempo.':friendlyAuthError(err),'error');
   }finally{
    if(resolveGate)resolveGate();
    registrationGate=null;submit.disabled=false;submit.textContent=initialSubmitText;
@@ -3672,12 +3714,12 @@ async function handleAuthState(user){
   return;
  }
  authScreenInitialized=true;
- if($('authView')?.hidden===false)authMsg('Verificando perfil y acceso comercial…');
-  const business=await getBusiness(user.uid);
+ if($('authView')?.hidden===false)authMsg('Credenciales aceptadas. Confirmando el estado de la cuenta comercial…');
+ // La suspensión depende del documento confirmado en servidor. No otorgar
+ // acceso administrativo si no se verificaron los claims.
+ const [business,admin]=await Promise.all([getBusiness(user.uid),getAdminClaim(user)]);
  if(!isCurrent())return;
- if(business&&business.accountStatus==='suspended'){authMsg('Esta cuenta comercial está suspendida.','error');await fbAuth.signOut();return}
- const admin=await getAdminClaim(user);
- if(!isCurrent())return;
+ if(business?.accountStatus==='suspended'){authMsg('Esta cuenta comercial está suspendida.','error');await fbAuth.signOut();return}
  isAdsAdmin=admin;
  currentUser={id:user.uid,uid:user.uid,name:user.displayName||business?.ownerName||user.email||'Usuario',company:business?.businessName||'Cuenta comercial',email:user.email||'',accountStatus:business?.accountStatus||'active',profilePhotoURL:business?.profilePhotoURL||user.photoURL||'',photoStoragePath:business?.photoStoragePath||''};
  enterApp();
@@ -5003,10 +5045,10 @@ document.addEventListener('DOMContentLoaded',()=>{
    try{
     if(user&&registrationGate)await registrationGate;
     if(user&&fbAuth.currentUser?.uid!==user.uid)return;
-    await handleAuthState(user);
+    await ensureSessionReady(user);
    }catch(err){
     console.error('ADS: no fue posible completar la carga de sesión',err);
-    authMsg(err?.code==='ads/timeout'?err.message:'No fue posible confirmar el perfil comercial. Comprueba tu conexión e inténtalo nuevamente.','error');
+    authMsg(['ads/profile-unavailable','ads/profile-denied','ads/profile-session'].includes(err?.code)?err.message:err?.code==='ads/timeout'?'El servicio de inicio no respondió a tiempo.':'No se confirmó el acceso comercial. Inténtalo nuevamente.','error');
     const submit=$('authSubmit');if(submit){submit.disabled=false;submit.textContent='Iniciar sesión'}
    }
   },error=>{
