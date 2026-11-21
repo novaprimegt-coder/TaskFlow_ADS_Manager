@@ -934,5 +934,5 @@ function render(name,api){
  else return false;
  return true;
 }
-window.TaskFlowADSModules=Object.freeze({render,paintOverview,paintCampaignMetrics});
+window.TaskFlowADSModules=Object.freeze({render,paintOverview,paintCampaignMetrics,getVerifiedMetrics});
 })();
