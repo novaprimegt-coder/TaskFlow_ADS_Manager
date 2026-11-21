@@ -1,0 +1,133 @@
+/* TaskFlow ADS · únicamente Resumen V8 y tamaño del botón del menú lateral. */
+#appView #overviewView{max-width:100%;min-width:0}
+#appView #overviewView .tf-ads-summary-grid{
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;
+ margin:18px 0 10px;align-items:stretch
+}
+#appView #overviewView .tf-ads-summary-card{
+ position:relative;display:flex;flex-direction:column;gap:12px;align-items:flex-start;
+ justify-content:space-between;min-width:0;min-height:152px;width:100%;
+ padding:20px 17px 16px;border:1px solid rgba(106,178,214,.36);
+ border-radius:17px;background:linear-gradient(155deg,#123451,#0e253c);
+ box-shadow:0 9px 23px rgba(4,24,48,.14);color:#e7f7ff;
+ text-align:left;cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease
+}
+#appView #overviewView .tf-ads-summary-card:hover{
+ transform:translateY(-2px);border-color:#57d5ed;box-shadow:0 12px 28px rgba(4,24,48,.2)
+}
+#appView #overviewView .tf-ads-summary-card.is-selected{
+ border-color:#51d6f0;background:linear-gradient(155deg,#1a4c70,#113755);
+ box-shadow:0 0 0 2px rgba(69,204,236,.24),0 12px 28px rgba(4,24,48,.2)
+}
+#appView #overviewView .tf-ads-summary-card:focus-visible,
+#appView #overviewView .tf-v8-detail-head button:focus-visible{
+ outline:3px solid #5bdaf1;outline-offset:3px
+}
+#appView #overviewView .tf-v8-card-title{color:#b8e2f6!important;font-size:12px!important;font-weight:740!important;line-height:1.35;letter-spacing:.01em}
+#appView #overviewView .tf-v8-card-number{
+ display:block;max-width:100%;color:#fff!important;font-weight:820;font-size:clamp(21px,2.4vw,30px);
+ line-height:1.1;letter-spacing:-.025em;overflow-wrap:anywhere;font-variant-numeric:tabular-nums
+}
+#appView #overviewView #tfSummaryDaily{font-size:clamp(19px,2.2vw,26px)}
+#appView #overviewView .tf-v8-card-hint{
+ display:flex;align-items:center;justify-content:space-between;width:100%;gap:7px;
+ font-size:11px;color:#93c9dc!important;line-height:1.45
+}
+#appView #overviewView .tf-v8-card-hint svg{width:15px;height:15px;flex:none;stroke:currentColor}
+#appView #overviewView .tf-v8-live{
+ margin:8px 2px 18px;color:#647d91!important;font-size:12px!important;line-height:1.5
+}
+#appView #overviewView .tf-ads-summary-detail{
+ min-width:0;margin:12px 0 25px;padding:25px;
+ border:1px solid rgba(66,152,198,.30);border-radius:18px;
+ background:linear-gradient(160deg,#f6fbff,#fff 65%);
+ box-shadow:0 9px 25px rgba(15,56,91,.09);color:#183850
+}
+#appView #overviewView .tf-ads-summary-detail[hidden]{display:none!important}
+#appView #overviewView .tf-v8-detail-head{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 20px;
+ padding-bottom:16px;border-bottom:1px solid #dbe7ef
+}
+#appView #overviewView .tf-v8-detail-head small{display:block;color:#4686a5!important;font-size:11px!important;font-weight:750;text-transform:uppercase}
+#appView #overviewView .tf-v8-detail-head h3{margin:4px 0 0;color:#173a55!important;font-size:clamp(18px,2.4vw,24px);line-height:1.2}
+#appView #overviewView .tf-v8-detail-head button{
+ min-height:38px;padding:8px 13px;background:#eaf3f8;color:#145071;
+ border:1px solid #b9dce9;border-radius:9px;font-size:12px;font-weight:750;cursor:pointer
+}
+#appView #overviewView .tf-v8-row{
+ margin:0 0 12px;padding:18px;border:1px solid #dce8f1;border-radius:13px;background:#fff;
+ box-shadow:0 2px 6px rgba(16,65,98,.035)
+}
+#appView #overviewView .tf-v8-row-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+#appView #overviewView .tf-v8-row-head strong{display:block;color:#183e5d;font-size:15px;font-weight:800;line-height:1.4;overflow-wrap:anywhere}
+#appView #overviewView .tf-v8-row-head small{display:block;color:#627f95!important;font-size:12px!important;margin-top:4px;line-height:1.4}
+#appView #overviewView .tf-v8-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+#appView #overviewView .tf-v8-tags span{
+ display:inline-flex;padding:6px 10px;border-radius:8px;background:#ecf6fc;
+ color:#245878;font-size:11px;font-weight:700
+}
+#appView #overviewView .tf-v8-formats{list-style:none;display:flex;flex-direction:column;gap:0;padding:0;margin:15px 0 0}
+#appView #overviewView .tf-v8-formats li{
+ display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-top:1px solid #e5edf3;
+ font-size:12px;color:#2a516c;overflow-wrap:anywhere
+}
+#appView #overviewView .tf-v8-formats li>span:last-child,#appView #overviewView .tf-v8-formats li>b{color:#295d7b;font-weight:750;text-align:right}
+#appView #overviewView .tf-v8-budget{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 16px;margin:15px 0}
+#appView #overviewView .tf-v8-budget span{color:#627f95;font-size:12px}
+#appView #overviewView .tf-v8-budget strong{color:#085786;font-size:24px;font-weight:850;font-variant-numeric:tabular-nums}
+#appView #overviewView .tf-v8-budget small{color:#627f95!important;font-size:11px!important}
+#appView #overviewView .tf-v8-total{
+ display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;
+ padding:17px 19px;margin-bottom:15px;border-radius:14px;background:#e6f4fc;border:1px solid #b6d9ed
+}
+#appView #overviewView .tf-v8-total span{max-width:65ch;color:#385e76;font-size:13px;line-height:1.5}
+#appView #overviewView .tf-v8-total strong{color:#074f7b;font-size:clamp(25px,3.6vw,36px);font-weight:850;font-variant-numeric:tabular-nums}
+#appView #overviewView .tf-v8-bars{display:grid;gap:12px;margin:14px 0 17px}
+#appView #overviewView .tf-v8-bar-item{min-width:0}
+#appView #overviewView .tf-v8-bar-caption{display:flex;justify-content:space-between;align-items:baseline;gap:15px;margin:0 0 7px;font-size:12px;color:#385e78}
+#appView #overviewView .tf-v8-bar-caption span:first-child{min-width:0;overflow-wrap:anywhere}
+#appView #overviewView .tf-v8-bar-caption b{flex-shrink:0;color:#12567c;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+#appView #overviewView .tf-v8-track{height:10px;overflow:hidden;border-radius:99px;background:#e3edf5}
+#appView #overviewView .tf-v8-track>span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#169ace,#3cc9de);transition:width .2s ease}
+#appView #overviewView .tf-v8-pie{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:26px;margin:22px 0;padding:18px;border-radius:14px;background:#f0f7fb}
+#appView #overviewView .tf-v8-donut{display:grid;place-items:center;width:174px;aspect-ratio:1;border-radius:50%;flex-shrink:0}
+#appView #overviewView .tf-v8-donut>div{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+ width:114px;aspect-ratio:1;border-radius:50%;background:#f0f7fb;text-align:center;padding:8px
+}
+#appView #overviewView .tf-v8-donut strong{color:#124465;font-size:15px;overflow-wrap:anywhere}
+#appView #overviewView .tf-v8-donut small{color:#66859a!important;font-size:11px!important}
+#appView #overviewView .tf-v8-legend{list-style:none;display:flex;flex-direction:column;gap:10px;min-width:180px;padding:0;margin:0;flex:1;max-width:480px}
+#appView #overviewView .tf-v8-legend li{display:grid;grid-template-columns:11px minmax(0,1fr) auto;align-items:center;gap:9px;color:#325875;font-size:12px}
+#appView #overviewView .tf-v8-swatch{width:11px;height:11px;border-radius:3px}
+#appView #overviewView .tf-v8-legend b{color:#1b5476;font-variant-numeric:tabular-nums}
+#appView #overviewView .tf-v8-campaign-count{margin:14px 0 12px;color:#4f7289;font-size:13px}
+#appView #overviewView .tf-v8-campaign-count b{color:#0d608a;font-size:18px}
+#appView #overviewView .tf-v8-campaign-count small{color:#74899b!important;font-size:11px!important}
+#appView #overviewView .tf-v8-click-ad{margin:12px 0;padding:11px 12px;border:1px solid #e1eef6;border-radius:12px;background:#f8fbfd}
+#appView #overviewView .tf-v8-age{padding:9px 0}
+#appView #overviewView .tf-v8-age>b{color:#35647f;font-size:12px}
+#appView #overviewView .tf-v8-empty,#appView #overviewView .tf-v8-note{
+ margin:14px 0;padding:11px 14px;border-radius:9px;background:#edf6fc;color:#345d79!important;
+ font-size:12px!important;line-height:1.55
+}
+#appView #overviewView .tf-v8-empty{background:#f2f5f8;color:#597388!important}
+#appView #menuBtn{width:37px!important;height:37px!important;min-width:37px!important;min-height:37px!important;border-radius:10px!important}
+#appView #menuBtn .tf-icon{width:20px!important;height:20px!important;stroke-width:2.3px!important}
+@media(max-width:1180px){#appView #overviewView .tf-ads-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:780px){#appView #overviewView .tf-ads-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#appView #overviewView .tf-ads-summary-detail{padding:17px}}
+@media(max-width:420px){
+ #appView #overviewView .tf-ads-summary-grid{gap:9px}
+ #appView #overviewView .tf-ads-summary-card{padding:15px 12px;min-height:144px}
+ #appView #overviewView .tf-v8-card-number{font-size:20px}
+ #appView #overviewView .tf-v8-formats li{flex-direction:column;gap:2px}
+ #appView #overviewView .tf-v8-formats li>span:last-child,#appView #overviewView .tf-v8-formats li>b{text-align:left}
+ #appView #overviewView .tf-v8-detail-head{align-items:flex-start}
+ #appView #menuBtn{width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important}
+ #appView #menuBtn .tf-icon{width:19px!important;height:19px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #appView #overviewView .tf-ads-summary-card,
+ #appView #overviewView .tf-v8-track>span{transition:none}
+ #appView #overviewView .tf-ads-summary-card:hover{transform:none}
+}
