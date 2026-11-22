@@ -1,0 +1,21 @@
+name: TaskFlow ADS media upload guardrails
+on:
+  pull_request:
+    paths: ['index.html', 'README.md', 'storage.ads.rules.example', 'tests/ads-media-upload.test.mjs', '.github/workflows/ads-media-upload-guardrails.yml']
+  push:
+    branches: [main]
+    paths: ['index.html', 'README.md', 'storage.ads.rules.example', 'tests/ads-media-upload.test.mjs', '.github/workflows/ads-media-upload-guardrails.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  media-guardrails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify upload fallback, media types and integrity checks
+        run: node --test tests/ads-media-upload.test.mjs
