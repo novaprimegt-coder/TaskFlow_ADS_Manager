@@ -4663,7 +4663,7 @@ async function uploadCreative(campaignId,ad,placement){
  // El servicio Blob cambia a multipartes por encima de 5 MB.
  // Para creativos verticales grandes, preferir subida reanudable Firebase.
  // Si falla el proveedor principal, probar el alternativo sin perder el archivo.
- const providers=!isVertical?['blob']:ad._blob.size>5*1024*1024&&ad._blob.size<=90*1024*1024?['firebase','blob']:['blob','firebase'];
+ const providers=isVertical&&ad._blob.size>5*1024*1024&&ad._blob.size<=90*1024*1024?['firebase','blob']:['blob','firebase'];
  const errors=[];
  const attemptBlob=async()=>{
   if(typeof window.TaskFlowAdsFileUpload!=='function')throw new Error('Servicio de carga Blob no disponible.');

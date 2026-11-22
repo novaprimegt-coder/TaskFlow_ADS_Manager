@@ -52,7 +52,7 @@ Cada anuncio conserva:
 ### Ingreso
 - 1080 × 1920 px.
 - JPG, PNG, WEBP, GIF, MP4 o WEBM.
-- Video: 10 segundos.
+- Video: entre 10 segundos y 3 minutos (180 segundos).
 
 ### Interacción
 - 1080 × 1920 px.
